@@ -176,3 +176,11 @@ h1 {
     color: var(--text-light);
     font-size: 0.9rem;
 }
+
+
+blockquote {
+    border-left: 3px solid #80808040;
+    color: #808080;
+    padding-left: 12px;
+    margin-left: 6px;
+}

@@ -89,20 +89,37 @@ async function analyzePR(): Promise<void> {
 
     // Try to fetch data
     let data;
-    try {
-      data = await fetchGitHubData(owner, repo, number, githubToken || undefined);
-    } catch (error) {
-      // If auth error, prompt for token and retry
-      if (error instanceof Error &&
-          error.message.includes('Authentication failed') &&
-          promptForGitHubToken()) {
-        try {
-          data = await fetchGitHubData(owner, repo, number, githubToken || undefined);
-        } catch (retryError) {
-          throw retryError;
+    // Check cache first
+    const cacheKey = `pr-data-${prUrl}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`);
+    const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+
+    // Check if cache exists and is not expired
+    if (cachedData && cacheTimestamp && (Date.now() - Number(cacheTimestamp)) < ONE_HOUR) {
+      data = JSON.parse(cachedData);
+    } else {
+      try {
+        data = await fetchGitHubData(owner, repo, number, githubToken || undefined);
+        // Cache the data with timestamp
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
+      } catch (error) {
+        // If auth error, prompt for token and retry
+        if (error instanceof Error &&
+            error.message.includes('Authentication failed') &&
+            promptForGitHubToken()) {
+          try {
+            data = await fetchGitHubData(owner, repo, number, githubToken || undefined);
+            // Cache the data after successful retry
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+            localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
+          } catch (retryError) {
+            throw retryError;
+          }
+        } else {
+          throw error;
         }
-      } else {
-        throw error;
       }
     }
 
