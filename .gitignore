@@ -15,3 +15,5 @@ public/data/*.json
 # OS
 .DS_Store
 Thumbs.db
+
+public/js/
