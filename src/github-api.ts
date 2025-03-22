@@ -11,12 +11,12 @@ async function executeGraphQL(query: string, variables: any, token?: string): Pr
     throw new Error("GitHub token is required for GraphQL queries");
   }
 
-  console.log('Executing GraphQL query with variables:', JSON.stringify(variables));
+  console.log("Executing GraphQL query with variables:", JSON.stringify(variables));
 
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ query, variables }),
@@ -29,20 +29,25 @@ async function executeGraphQL(query: string, variables: any, token?: string): Pr
 
   const data = await response.json();
   if (data.errors) {
-    console.error('GraphQL response returned errors:', data.errors);
+    console.error("GraphQL response returned errors:", data.errors);
     throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   }
 
-  console.log('GraphQL response received successfully');
+  console.log("GraphQL response received successfully");
   return data.data;
 }
 
 /**
  * Fetch linked issue data for a pull request using the reliable bidirectional approach
  */
-async function fetchLinkedIssue(owner: string, repo: string, prNumber: string, token?: string): Promise<LinkedIssue | undefined> {
+async function fetchLinkedIssue(
+  owner: string,
+  repo: string,
+  prNumber: string,
+  token?: string
+): Promise<LinkedIssue | undefined> {
   if (!token) {
-    console.log('No token provided, cannot fetch linked issues');
+    console.log("No token provided, cannot fetch linked issues");
     return undefined;
   }
 
@@ -50,7 +55,7 @@ async function fetchLinkedIssue(owner: string, repo: string, prNumber: string, t
     console.log(`Fetching linked issue for PR ${owner}/${repo}#${prNumber} using bidirectional approach`);
     return await findLinkedIssue(owner, repo, prNumber, token);
   } catch (error) {
-    console.error('Error in bidirectional issue lookup:', error);
+    console.error("Error in bidirectional issue lookup:", error);
     return undefined;
   }
 }
@@ -226,7 +231,7 @@ export async function fetchGitHubData(
                 title: item.title,
                 url: item.html_url,
                 state: item.state,
-                author: { login: item.user.login }
+                author: { login: item.user.login },
               }));
 
             console.log(`Found ${linkedPullRequests.length} PRs from search that mention issue #${number}`);
@@ -242,7 +247,7 @@ export async function fetchGitHubData(
       comments,
       type,
       linkedIssue,
-      linkedPullRequests: linkedPullRequests.length > 0 ? linkedPullRequests : undefined
+      linkedPullRequests: linkedPullRequests.length > 0 ? linkedPullRequests : undefined,
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));

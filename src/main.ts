@@ -61,29 +61,29 @@ document.addEventListener("DOMContentLoaded", () => {
     conversation = document.getElementById("conversation") as HTMLElement;
 
     // Add input monitoring for debugging
-    urlInput?.addEventListener('input', (e) => {
+    urlInput?.addEventListener("input", (e) => {
       const target = e.target as HTMLInputElement;
-      console.log('Input changed:', target.value);
+      console.log("Input changed:", target.value);
     });
 
     // Get reference to form and add submit handler
-    const form = document.getElementById('analyze-form');
+    const form = document.getElementById("analyze-form");
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener("submit", (e) => {
         e.preventDefault();
         const inputValue = urlInput?.value;
-        console.log('Form submit triggered, input value:', inputValue);
+        console.log("Form submit triggered, input value:", inputValue);
 
         // Force URL validation and submission
-        if (inputValue && inputValue.includes('github.com')) {
+        if (inputValue && inputValue.includes("github.com")) {
           // Store in localStorage for diagnostic purposes
-          localStorage.setItem('last_manual_url', inputValue);
+          localStorage.setItem("last_manual_url", inputValue);
           analyze(inputValue);
         }
       });
 
       // Listen for manual submit events
-      form.addEventListener('manualSubmit', () => {
+      form.addEventListener("manualSubmit", () => {
         const inputValue = urlInput?.value;
         if (inputValue) {
           analyze(inputValue);
@@ -158,7 +158,7 @@ async function analyze(inputUrl?: string): Promise<void> {
   errorMessage.classList.add("hidden");
 
   // Get URL - Try multiple methods to get the input value
-  let url = '';
+  let url = "";
 
   // Start with the direct parameter if provided
   if (inputUrl) {
@@ -174,7 +174,7 @@ async function analyze(inputUrl?: string): Promise<void> {
 
   // Method 2: Query the DOM directly (if still no URL)
   if (!url) {
-    const directInput = document.getElementById('url-input') as HTMLInputElement;
+    const directInput = document.getElementById("url-input") as HTMLInputElement;
     if (directInput && directInput.value) {
       url = directInput.value.trim();
       console.log("Method 2 - Got URL from direct DOM query:", url);
@@ -183,12 +183,12 @@ async function analyze(inputUrl?: string): Promise<void> {
 
   // Method 3: Try localStorage backup from manual handler (as last resort)
   if (!url) {
-    const backupUrl = localStorage.getItem('last_manual_url');
+    const backupUrl = localStorage.getItem("last_manual_url");
     if (backupUrl) {
       url = backupUrl;
       console.log("Method 3 - Got URL from localStorage backup:", url);
       // Clear it after using
-      localStorage.removeItem('last_manual_url');
+      localStorage.removeItem("last_manual_url");
     }
   }
 
@@ -244,23 +244,23 @@ async function analyze(inputUrl?: string): Promise<void> {
       detailsElement.classList.remove("hidden");
 
       // Enhanced debugging for issue linkage
-      console.log('PR data loaded:', {
+      console.log("PR data loaded:", {
         hasPRBody: !!newData.details.body,
         hasLinkedIssue: !!newData.linkedIssue,
         linkedIssueNumber: newData.linkedIssue?.number,
         type: newData.type,
         owner: newData.details.user?.login,
-        detailsNumber: newData.details.number
+        detailsNumber: newData.details.number,
       });
 
       // Log full linked issue data if present
       if (newData.linkedIssue) {
-        console.log('LINKED ISSUE DETAILS:', {
+        console.log("LINKED ISSUE DETAILS:", {
           number: newData.linkedIssue.number,
           title: newData.linkedIssue.title,
-          bodyExcerpt: newData.linkedIssue.body?.substring(0, 50) + '...',
+          bodyExcerpt: newData.linkedIssue.body?.substring(0, 50) + "...",
           hasComments: !!newData.linkedIssue.comments && newData.linkedIssue.comments.length > 0,
-          commentCount: newData.linkedIssue.comments?.length || 0
+          commentCount: newData.linkedIssue.comments?.length || 0,
         });
       }
 
@@ -268,7 +268,7 @@ async function analyze(inputUrl?: string): Promise<void> {
       if (newData.type === "pr") {
         if (newData.linkedIssue) {
           // PR with a linked issue - show the issue specification at the top
-          console.log('Displaying linked issue:', newData.linkedIssue.number);
+          console.log("Displaying linked issue:", newData.linkedIssue.number);
           const existingIssueSpec = document.querySelector(".linked-issue-spec");
           if (!existingIssueSpec) {
             const issueSpecDiv = document.createElement("div");
@@ -281,16 +281,16 @@ async function analyze(inputUrl?: string): Promise<void> {
                 </a>
               </div>
               <div class="issue-body markdown">
-                ${window.marked.parse(newData.linkedIssue.body || 'No description provided.')}
+                ${window.marked.parse(newData.linkedIssue.body || "No description provided.")}
               </div>
             `;
             conversation.insertBefore(issueSpecDiv, conversation.firstChild);
           }
         } else {
           // PR without linked issues
-          console.log('PR does not have linked issues');
+          console.log("PR does not have linked issues");
           const diagnosticInfo = document.createElement("div");
-          diagnosticInfo.className = "comment"
+          diagnosticInfo.className = "comment";
           diagnosticInfo.innerHTML = `
             <details>
               <summary>No linked issues found. Click for troubleshooting info.</summary>
@@ -308,7 +308,9 @@ async function analyze(inputUrl?: string): Promise<void> {
       } else if (newData.type === "issue") {
         // When viewing an issue, show linked PRs if any exist
         if (newData.linkedPullRequests && newData.linkedPullRequests.length > 0) {
-          console.log(`Displaying ${newData.linkedPullRequests.length} linked PRs for issue #${newData.details.number}`);
+          console.log(
+            `Displaying ${newData.linkedPullRequests.length} linked PRs for issue #${newData.details.number}`
+          );
 
           const existingPRList = document.querySelector(".linked-prs-list");
           if (!existingPRList) {
@@ -319,23 +321,23 @@ async function analyze(inputUrl?: string): Promise<void> {
             let prListHTML = `
               <div class="prs-header">
                 <h3>🔗 Pull Requests referencing this Issue</h3>
-                <div class="pr-count">${newData.linkedPullRequests.length} linked PR${newData.linkedPullRequests.length !== 1 ? 's' : ''}</div>
+                <div class="pr-count">${newData.linkedPullRequests.length} linked PR${newData.linkedPullRequests.length !== 1 ? "s" : ""}</div>
               </div>
               <ul class="prs-list">
             `;
 
             // Add each PR to the list
-            newData.linkedPullRequests.forEach(pr => {
+            newData.linkedPullRequests.forEach((pr) => {
               // Determine status icon based on PR state
-              let statusIcon = '⏳'; // Default for open
-              let statusClass = 'state-open';
+              let statusIcon = "⏳"; // Default for open
+              let statusClass = "state-open";
 
-              if (pr.state === 'closed') {
-                statusIcon = '❌';
-                statusClass = 'state-closed';
-              } else if (pr.state === 'merged') {
-                statusIcon = '✅';
-                statusClass = 'state-merged';
+              if (pr.state === "closed") {
+                statusIcon = "❌";
+                statusClass = "state-closed";
+              } else if (pr.state === "merged") {
+                statusIcon = "✅";
+                statusClass = "state-merged";
               }
 
               prListHTML += `
@@ -356,7 +358,7 @@ async function analyze(inputUrl?: string): Promise<void> {
             conversation.insertBefore(prListDiv, conversation.firstChild);
           }
         } else {
-          console.log('Issue does not have linked PRs');
+          console.log("Issue does not have linked PRs");
         }
       }
 
@@ -389,7 +391,9 @@ async function analyze(inputUrl?: string): Promise<void> {
 
       // If we have a linked issue and we're looking at a PR, also include linked issue comments
       if (newData.type === "pr" && newData.linkedIssue && newData.linkedIssue.comments) {
-        console.log(`Including ${newData.linkedIssue.comments.length} comments from linked issue #${newData.linkedIssue.number} (looking at PR ${owner}/${repo}#${number})`);
+        console.log(
+          `Including ${newData.linkedIssue.comments.length} comments from linked issue #${newData.linkedIssue.number} (looking at PR ${owner}/${repo}#${number})`
+        );
 
         // Add a visual separator between PR and issue comments
         const separator = document.createElement("div");
@@ -621,8 +625,6 @@ function updateSummary(scores: ScoringMetrics): void {
   const avgOriginal = scores.original.reduce((a, b) => a + b, 0) / totalComments;
   const avgLog = scores.logAdjusted.reduce((a, b) => a + b, 0) / totalComments;
   const avgExp = scores.exponential.reduce((a, b) => a + b, 0) / totalComments;
-
-
 }
 
 function updateScoreSummary(commentScores: CommentScores, summary: ScoringMetrics): void {

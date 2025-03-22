@@ -60,35 +60,6 @@ export async function findLinkedIssue(
 ): Promise<LinkedIssue | undefined> {
   console.log(`🔎 DIAGNOSTIC: Finding linked issue for PR ${owner}/${repo}#${prNumber}`);
 
-  // Special case handling for command-ask #31 PR
-  if (owner === "ubiquity-os-marketplace" && repo === "command-ask" && prNumber === "31") {
-    console.log("🔍 SPECIAL CASE: command-ask PR #31 detected, looking for issue #30");
-
-    try {
-      // Direct fetch for issue #30
-      const issueUrl = `https://api.github.com/repos/${owner}/${repo}/issues/30`;
-      const response = await fetch(issueUrl, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.github.v3+json"
-        }
-      });
-
-      if (response.ok) {
-        const issue = await response.json();
-        console.log("✅ Successfully found linked issue #30 via direct lookup");
-        return {
-          number: issue.number,
-          title: issue.title || "No title",
-          body: issue.body || "",
-          html_url: issue.html_url
-        };
-      }
-    } catch (error) {
-      console.error("Error in direct issue lookup for PR #31:", error);
-    }
-  }
-
   try {
     // Try forward direction first (PR → Issue)
     const forwardLink = await findIssuesFromPR(owner, repo, prNumber, token);
@@ -126,11 +97,15 @@ async function findIssuesFromPR(
   try {
     console.log(`Looking for issues closed by PR ${owner}/${repo}#${prNumber}`);
 
-    const data = await executeGitHubGraphQL(PR_TO_ISSUES_QUERY, {
-      owner,
-      repo,
-      prNumber: parseInt(prNumber, 10)
-    }, token);
+    const data = await executeGitHubGraphQL(
+      PR_TO_ISSUES_QUERY,
+      {
+        owner,
+        repo,
+        prNumber: parseInt(prNumber, 10),
+      },
+      token
+    );
 
     if (!data?.repository?.pullRequest) {
       console.log("Pull request not found or insufficient permissions");
@@ -145,10 +120,9 @@ async function findIssuesFromPR(
         number: issue.number,
         title: issue.title || "No title",
         body: issue.body || "",
-        html_url: issue.url
+        html_url: issue.url,
       };
     }
-
 
     return undefined;
   } catch (error) {
@@ -169,15 +143,13 @@ async function findIssueForPRFromIssues(
   token: string
 ): Promise<LinkedIssue | undefined> {
   // For efficiency, we'll try the most likely issue numbers first
-  // Typically, PRs close issues with similar numbers (often PR number - 1)
+  // Typically, PRs close issues with similar numbers
   const prNum = parseInt(targetPrNumber, 10);
 
-  // First try potential issue numbers based on common patterns
-  // First check the most common case (matches our tests showing PR #31 -> Issue #30)
+  // Try potential issue numbers based on common patterns
   const potentialIssueNumbers = [
-    prNum - 1,      // Most common pattern: PR #31 often closes issue #30 (our exact case)
+    prNum - 1,      // Most common pattern: PR often closes issue with number one less
     prNum,          // Sometimes PR and issue have same number
-    30,             // Hardcoded test case for ubiquity-os-marketplace/command-ask#31
   ];
 
   // Also try a range around the PR number
@@ -190,17 +162,23 @@ async function findIssueForPRFromIssues(
   // Deduplicate and sort issue numbers
   const uniqueIssueNumbers = [...new Set(potentialIssueNumbers)].sort((a, b) => a - b);
 
-  console.log(`Checking potential issues that might be closed by PR #${targetPrNumber}: ${uniqueIssueNumbers.join(', ')}`);
+  console.log(
+    `Checking potential issues that might be closed by PR #${targetPrNumber}: ${uniqueIssueNumbers.join(", ")}`
+  );
 
   // Try each potential issue number
   for (const issueNumber of uniqueIssueNumbers) {
     try {
       // Ensure clean parameter passing without spaces
-      const data = await executeGitHubGraphQL(ISSUE_TO_PRS_QUERY, {
-        owner,
-        repo,
-        issueNumber
-      }, token);
+      const data = await executeGitHubGraphQL(
+        ISSUE_TO_PRS_QUERY,
+        {
+          owner,
+          repo,
+          issueNumber,
+        },
+        token
+      );
 
       if (!data?.repository?.issue) continue;
 
@@ -208,9 +186,7 @@ async function findIssueForPRFromIssues(
       const closingPRs = issue.closedByPullRequestsReferences?.nodes || [];
 
       // Check if any of these PRs match our target
-      const matchingPR = closingPRs.find((pr: { number: number }) =>
-        pr.number === parseInt(targetPrNumber, 10)
-      );
+      const matchingPR = closingPRs.find((pr: { number: number }) => pr.number === parseInt(targetPrNumber, 10));
 
       if (matchingPR) {
         console.log(`Found issue #${issueNumber} is closed by PR #${targetPrNumber}`);
@@ -218,7 +194,7 @@ async function findIssueForPRFromIssues(
           number: issue.number,
           title: issue.title || "No title",
           body: issue.body || "",
-          html_url: issue.url
+          html_url: issue.url,
         };
       }
     } catch (error) {
@@ -241,10 +217,10 @@ async function executeGitHubGraphQL(query: string, variables: any, token: string
     const response = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     });
 
     if (!response.ok) {
