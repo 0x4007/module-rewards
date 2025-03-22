@@ -9,6 +9,54 @@ import { CommentScores, GitHubComment } from "../types";
 // Export the scoreMap for use by other components
 export const scoreMap = new Map<number, CommentScores>();
 
+/**
+ * Common bot usernames to detect
+ */
+const COMMON_BOT_NAMES = [
+  'dependabot',
+  'renovate',
+  'github-actions',
+  'codecov',
+  'stale',
+  'imgbot',
+  'semantic-release',
+  'netlify',
+  'allcontributors',
+  'now',
+  'vercel',
+  'snyk'
+];
+
+/**
+ * Determines if a username belongs to a bot
+ */
+function isBotUsername(username?: string): boolean {
+  if (!username) return false;
+
+  // Check for standard [bot] suffix
+  if (username.endsWith('[bot]')) return true;
+
+  // Check against list of common bot names
+  return COMMON_BOT_NAMES.some(botName =>
+    username.toLowerCase().includes(botName.toLowerCase())
+  );
+}
+
+/**
+ * Check if a user object represents a bot
+ */
+function isBotUser(user?: { login?: string; type?: string; }): boolean {
+  if (!user) return false;
+
+  // Check username pattern
+  if (isBotUsername(user.login)) return true;
+
+  // Check GitHub user type
+  if (user.type === 'Bot') return true;
+
+  return false;
+}
+
 export interface CommentDisplayOptions {
   containerSelector: string;
   idPrefix?: string;
@@ -96,11 +144,20 @@ export function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-    // Add scores if provided and showScores is true (and not a slash command with 0 score)
+    // Add scores if provided and showScores is true
     if (scores && showScores) {
-      // Add a special class if this is a slash command
-      if (scores.wordCount === 0 && comment.body.trim().startsWith('/')) {
-        commentElement.classList.add('slash-command');
+      // Add special classes for identified comment types
+      if (scores.wordCount === 0) {
+        // Add slash command styling
+        if (comment.body.trim().startsWith('/')) {
+          commentElement.classList.add('slash-command');
+        }
+
+        // Add bot comment styling (check for bot indicators in username)
+        if (comment.user?.login?.endsWith('[bot]') ||
+            isBotUsername(comment.user?.login)) {
+          commentElement.classList.add('bot-comment');
+        }
       }
 
       const scoresElement = renderScores(scores);
@@ -244,9 +301,10 @@ export function renderComments(
       }
     } else {
     // For comments not in a group, calculate scores normally
-    // Check if this is a slash command
+    // Check for special comment types
     const isSlashCommand = comment.body.trim().startsWith('/');
-    commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand);
+    const isBot = isBotUser(comment.user);
+    commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
 
       // Store scores in the map
       if (commentScores) {

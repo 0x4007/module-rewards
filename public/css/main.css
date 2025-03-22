@@ -70,9 +70,9 @@ header {
 }
 
 footer {
-  margin-top: 3rem;
+  /* margin-top: 3rem; */
   padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  /* border-top: 1px solid var(--border); */
   color: var(--text-light);
   font-size: 0.9rem;
   text-align: center;
@@ -250,13 +250,85 @@ footer {
 .comment {
   border-radius: 4px;
   margin-bottom: 8px;
-  padding: 16px;
+  padding: 8px 16px;
   background: #80808010;
+  position: relative;
 }
 
 /* Styles for grouped comments (consecutive comments from the same user) */
 .grouped-comment {
   border-left: 3px solid var(--error);
+  background-color: rgba(255, 68, 68, 0.05);
+}
+
+.grouped-comment .comment-scores {
+  opacity: 0.8;
+}
+
+.grouped-comment::before {
+  content: "Double Post";
+  display: inline-block;
+  font-size: 11px;
+  background-color: var(--error);
+  color: white;
+  padding: 0px 8px;
+  border-radius: 3px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  margin: 8px 16px;
+}
+
+/* Styles for slash command comments */
+.slash-command {
+  border-left: 3px solid var(--primary);
+  background-color: rgba(0, 102, 204, 0.05);
+}
+
+.slash-command .comment-scores {
+  opacity: 0.5;
+}
+
+.slash-command::before {
+  content: "Slash Command";
+  display: inline-block;
+  font-size: 11px;
+  background-color: var(--primary);
+  color: white;
+  padding: 0px 8px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  margin: 8px 16px;
+}
+
+/* Styles for bot comments */
+.bot-comment {
+  border-left: 3px solid var(--success);
+  background-color: rgba(0, 170, 85, 0.05);
+}
+
+.bot-comment .comment-scores {
+  opacity: 0.5;
+}
+
+.bot-comment::before {
+  content: "Bot";
+  display: inline-block;
+  font-size: 11px;
+  background-color: var(--success);
+  color: white;
+  padding: 0px 8px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  position: absolute;
+  /* top: 0; */
+  /* right: 0; */
+  right: 8px;
+  top: 8px;
+  margin: 8px 16px;
 }
 
 .comment-header .avatar {

@@ -3,14 +3,14 @@ import { CommentScores } from "./types";
 
 /**
  * Counts words in a text, excluding code blocks, URLs, etc.
- * For slash commands (starting with '/'), returns 0 to exclude them from scoring.
+ * For slash commands (starting with '/') and bot comments, returns 0 to exclude them from scoring.
  */
-export function countWords(text: string, isSlashCommand?: boolean): number {
+export function countWords(text: string, isSlashCommand?: boolean, isBot?: boolean): number {
   // Skip if text is empty
   if (!text || typeof text !== "string") return 0;
 
-  // Skip scoring if this is a slash command
-  if (isSlashCommand === true) return 0;
+  // Skip scoring if this is a slash command or from a bot
+  if (isSlashCommand === true || isBot === true) return 0;
 
   // Remove block quotes (lines starting with >)
   let cleanedText = text.replace(/^>.*(?:\r?\n|$)/gm, "");
@@ -55,11 +55,16 @@ export function calculateExponentialScore(wordCount: number): number {
 /**
  * Calculates all scoring metrics for a given text
  * Optionally accepts a commentGroup parameter for handling consecutive comments
- * and a flag indicating if the text is a slash command
+ * and flags indicating if the text is a slash command or from a bot
  */
-export function calculateAllScores(text: string, commentGroup?: CommentGroup, isSlashCommand?: boolean): CommentScores {
+export function calculateAllScores(
+  text: string,
+  commentGroup?: CommentGroup,
+  isSlashCommand?: boolean,
+  isBot?: boolean
+): CommentScores {
   // Get the word count from the text
-  const individualWordCount = countWords(text, isSlashCommand);
+  const individualWordCount = countWords(text, isSlashCommand, isBot);
 
   // If no comment group is provided, or this is a single comment, calculate normally
   if (!commentGroup || commentGroup.commentIds.length <= 1) {
@@ -92,17 +97,19 @@ export function calculateAllScores(text: string, commentGroup?: CommentGroup, is
  * @param commentId The comment ID
  * @param groupMap A map of comment IDs to their groups
  * @param isSlashCommand Whether the comment is a slash command
+ * @param isBot Whether the comment is from a bot
  * @returns CommentScores object with appropriate scores
  */
 export function calculateGroupAwareScores(
   text: string,
   commentId: string | number,
   groupMap: Record<string, CommentGroup>,
-  isSlashCommand?: boolean
+  isSlashCommand?: boolean,
+  isBot?: boolean
 ): CommentScores {
   // Get the comment group if this comment is part of one
   const group = groupMap[String(commentId)];
 
   // Calculate scores (if part of a group, the group's word count will be used)
-  return calculateAllScores(text, group, isSlashCommand);
+  return calculateAllScores(text, group, isSlashCommand, isBot);
 }
