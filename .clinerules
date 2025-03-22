@@ -1,0 +1,77 @@
+# Project Rules and Patterns
+
+## File Organization
+- Source code goes in `src/` directory
+- Data files go in `data/` directory
+- Documentation in `docs/` and `memory-bank/`
+- Use kebab-case for all filenames
+
+## Code Style
+- HTML/CSS/JavaScript
+- No build tools or complex dependencies
+- Only external dependency: marked.js
+- Client-side processing only
+- Modular file organization
+
+## Development Patterns
+- Self-contained HTML files
+- Inline styles and scripts
+- GitHub-inspired styling
+- BEM-like CSS naming
+
+## Documentation
+- Memory bank contains all project context
+- Update documentation with significant changes
+- Keep technical documentation current
+- Document all algorithms clearly
+
+## Scoring Implementation
+- Word count excludes code blocks
+- Retains blockquote content
+- Processes markdown formatting
+- Three scoring algorithms:
+  1. Original: wordCount^0.85
+  2. Log-adjusted: wordCount^0.85 * (1/log2(wordCount + 2))
+  3. Exponential: wordCount^0.85 * exp(-wordCount/100)
+
+## Project Intelligence
+- Focus on comment quality analysis
+- Balance between length and conciseness
+- GitHub-centric implementation
+- Browser-based processing
+
+## Workflow
+- Direct browser testing
+- Manual data updates
+- Visual verification
+- Local file system access
+
+## Known Patterns
+- Markdown processing needs optimization
+- Large datasets may need chunking
+- Memory usage requires monitoring
+- Browser limitations affect features
+
+## User Preferences
+- Clean, GitHub-like interface
+- Clear score comparisons
+- Interactive visualizations
+- Comprehensive documentation
+
+## Critical Paths
+1. Markdown parsing and rendering
+2. Word counting implementation
+3. Score calculation
+4. Data visualization
+
+## Evolution Notes
+- Started with basic scoring
+- Added adjustments for length
+- Enhanced visualization features
+- Expanded documentation scope
+
+## Future Considerations
+- May need build process later
+- Possible API integration
+- Performance optimization needed
+- Testing framework planned

@@ -1,0 +1,17 @@
+{
+  "name": "conversation",
+  "module": "src/fetch-pr-comments.ts",
+  "type": "module",
+  "scripts": {
+    "fetch": "bun run src/fetch-pr-comments.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
