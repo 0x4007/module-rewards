@@ -1,7 +1,50 @@
+/**
+ * DOM Utilities - Basic DOM manipulation functions
+ * Simplified version to avoid redundancy with dom-manager.ts
+ */
 import { CommentDisplayOptions, ErrorDisplayOptions } from "./types";
 
 /**
+ * Clear any existing results from the DOM
+ * @deprecated Use domManager.clearContent instead
+ */
+export function clearResults(containerSelector: string): void {
+  console.warn("clearResults is deprecated, use domManager.clearContent instead");
+  const container = document.querySelector(containerSelector);
+  if (container) {
+    // Keep the structure (title, meta) but clear the content
+    const title = container.querySelector(".title");
+    const meta = container.querySelector(".meta");
+
+    // Clear the container
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+
+    // Add back the title and meta if they existed
+    if (title) {
+      title.textContent = "";
+      container.appendChild(title);
+    }
+
+    if (meta) {
+      meta.textContent = "";
+      container.appendChild(meta);
+    }
+  }
+
+  // Also clear conversation containers
+  ["#issue-conversation", "#pr-conversation"].forEach((selector) => {
+    const convoContainer = document.querySelector(selector);
+    if (convoContainer) {
+      convoContainer.innerHTML = "";
+    }
+  });
+}
+
+/**
  * Append a comment to the DOM with specified options
+ * @deprecated Use components/comment-component.ts instead
  */
 export function appendCommentToDOM(
   comment: {
@@ -16,6 +59,7 @@ export function appendCommentToDOM(
   },
   options: CommentDisplayOptions
 ): void {
+  console.warn("appendCommentToDOM is deprecated, use components/comment-component.ts instead");
   const { containerSelector, idPrefix = "comment", className = "comment" } = options;
   const container = document.querySelector(containerSelector);
 
@@ -86,45 +130,11 @@ export function appendCommentToDOM(
 }
 
 /**
- * Clear any existing results from the DOM
- */
-export function clearResults(containerSelector: string): void {
-  const container = document.querySelector(containerSelector);
-  if (container) {
-    // Keep the structure (title, meta) but clear the content
-    const title = container.querySelector(".title");
-    const meta = container.querySelector(".meta");
-
-    // Clear the container
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
-
-    // Add back the title and meta if they existed
-    if (title) {
-      title.textContent = "";
-      container.appendChild(title);
-    }
-
-    if (meta) {
-      meta.textContent = "";
-      container.appendChild(meta);
-    }
-  }
-
-  // Also clear conversation containers
-  ["#issue-conversation", "#pr-conversation"].forEach((selector) => {
-    const convoContainer = document.querySelector(selector);
-    if (convoContainer) {
-      convoContainer.innerHTML = "";
-    }
-  });
-}
-
-/**
  * Show an error message to the user
+ * @deprecated Use domManager.withElement with errorMessage instead
  */
 export function showError(message: string, options: ErrorDisplayOptions = {}): void {
+  console.warn("showError is deprecated, use domManager with errorMessage instead");
   const { duration = 5000, className = "error-message" } = options;
 
   const errorDiv = document.createElement("div");
