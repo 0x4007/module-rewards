@@ -10,43 +10,11 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@9.0.0/marked.min.js"></script>
     <!-- Load our bundled script -->
     <script type="module" src="js/main.js"></script>
-    <!-- Diagnostic script to help debug input value issues -->
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        // Monitor URL input changes
-        const input = document.getElementById('url-input');
-        if (input) {
-          input.addEventListener('input', (e) => {
-            console.log('Direct HTML script - input changed:', e.target.value);
-          });
-        }
-
-        // Get reference to form and add manual submit handler
-        const form = document.getElementById('analyze-form');
-        if (form) {
-          form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const inputValue = document.getElementById('url-input').value;
-            console.log('Form submit triggered manually, input value:', inputValue);
-
-            // Force URL validation and submission
-            if (inputValue && inputValue.includes('github.com')) {
-              // Store in localStorage for diagnostic purposes
-              localStorage.setItem('last_manual_url', inputValue);
-
-              // This triggers our main app to process it
-              const event = new Event('manualSubmit');
-              form.dispatchEvent(event);
-            }
-          });
-        }
-      });
-    </script>
   </head>
   <body>
     <h1>Module Rewards Viewer</h1>
 
-    <form id="analyze-form" class="analyze-form" onsubmit="return false;">
+    <form id="analyze-form" class="analyze-form">
       <input type="text" id="url-input" placeholder="Enter PR or Issue URL" class="url-input" />
       <button type="submit" id="analyze-btn" class="analyze-btn">Analyze</button>
     </form>

@@ -60,6 +60,37 @@ document.addEventListener("DOMContentLoaded", () => {
     meta = document.querySelector("#details .meta") as HTMLElement;
     conversation = document.getElementById("conversation") as HTMLElement;
 
+    // Add input monitoring for debugging
+    urlInput?.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      console.log('Input changed:', target.value);
+    });
+
+    // Get reference to form and add submit handler
+    const form = document.getElementById('analyze-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputValue = urlInput?.value;
+        console.log('Form submit triggered, input value:', inputValue);
+
+        // Force URL validation and submission
+        if (inputValue && inputValue.includes('github.com')) {
+          // Store in localStorage for diagnostic purposes
+          localStorage.setItem('last_manual_url', inputValue);
+          analyze(inputValue);
+        }
+      });
+
+      // Listen for manual submit events
+      form.addEventListener('manualSubmit', () => {
+        const inputValue = urlInput?.value;
+        if (inputValue) {
+          analyze(inputValue);
+        }
+      });
+    }
+
     // Verify all required elements are present
     if (
       !urlInput ||
