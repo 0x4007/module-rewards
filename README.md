@@ -1,61 +1,78 @@
-# PR Conversation Analyzer
+# PR Comment Analysis
 
-A tool to analyze and score GitHub PR conversations, now with dynamic PR loading support.
-
-## Setup
-
-1. Install dependencies:
-```bash
-bun install
-```
-
-2. Copy .env.example to .env and add your GitHub token:
-```bash
-cp .env.example .env
-# Edit .env and add your GITHUB_TOKEN
-```
-
-## Usage
-
-### Running the Server
-
-Start the local server:
-```bash
-bun start
-```
-
-The server will run at http://localhost:8080. You can analyze any GitHub PR in two ways:
-
-1. Using the web interface:
-   - Visit http://localhost:8080
-   - Paste the GitHub PR URL (e.g., https://github.com/ubiquity-os-marketplace/command-ask/pull/31)
-   - Click "Analyze Conversation"
-
-2. Using URL parameters:
-   - Format: http://localhost:8080/?url=github-pr-url
-   - Example: http://localhost:8080/?url=https://github.com/ubiquity-os-marketplace/command-ask/pull/31
-
-### Fetching PR Data
-
-To fetch PR data for offline analysis:
-
-```bash
-bun fetch --owner org --repo name --number pr_number
-```
-
-Example:
-```bash
-bun fetch --owner ubiquity-os-marketplace --repo command-ask --number 31
-```
+Analyze GitHub PR comments using multiple scoring algorithms to evaluate comment quality and contribution effectiveness.
 
 ## Features
 
-- Dynamic PR loading through URL parameters
-- Instant scoring and analysis
-- Three scoring algorithms:
-  1. Original: wordCount^0.85
-  2. Log-adjusted: wordCount^0.85 * (1/log2(wordCount + 2))
-  3. Exponential: wordCount^0.85 * exp(-wordCount/100)
-- GitHub-style comment rendering
-- Word counting with code block exclusion
-- Comment statistics and averages
+- Multiple scoring algorithms (original, log-adjusted, exponential)
+- Word count analysis excluding code blocks and URLs
+- Comment visualization with GitHub-style formatting
+- Statistical summaries and averages
+- Support for both PR and issue comments
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   bun install
+   ```
+3. Create a `.env` file using `.env.example` as a template and add your GitHub token:
+   ```
+   GITHUB_TOKEN=your_github_token
+   ```
+
+## Usage
+
+1. Fetch PR comments:
+   ```bash
+   bun run fetch --owner organization --repo repository --number pr_number
+   ```
+
+2. Build and start the server:
+   ```bash
+   bun run build   # Build client-side code
+   bun run start   # Start the server
+   ```
+
+3. Open http://localhost:3000 in your browser to view the analysis
+
+## Scoring Algorithms
+
+1. **Original Score**: wordCount^0.85
+   - Basic scoring that grows sub-linearly with length
+
+2. **Log-Adjusted Score**: wordCount^0.85 * (1/log2(wordCount + 2))
+   - Penalizes very long comments while maintaining readability emphasis
+
+3. **Exponential Score**: wordCount^0.85 * exp(-wordCount/100)
+   - Strongly prefers concise, information-dense comments
+
+## Development
+
+- Source code in `src/` directory
+- Client-side code compiled to `public/`
+- Data files stored in `public/data/`
+
+### File Structure
+
+```
+├── src/
+│   ├── app.ts         # Server implementation
+│   ├── client.ts      # Browser UI implementation
+│   ├── scoring.ts     # Scoring algorithms
+│   ├── types.ts       # TypeScript interfaces
+│   └── fetch-pr-comments.ts  # GitHub data fetcher
+├── public/
+│   ├── pr-viewer.html # Main UI
+│   ├── styles.css     # UI styling
+│   └── data/         # JSON data files
+```
+
+## Project Documentation
+
+See the `memory-bank/` directory for detailed project documentation:
+- Project brief and goals
+- System architecture
+- Technical decisions
+- Implementation progress
