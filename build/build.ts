@@ -1,48 +1,53 @@
 #!/usr/bin/env bun
-import { build } from 'esbuild';
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
-import { join } from 'path';
 
-// Ensure output directory exists
-const outputDir = './public/js';
-if (!existsSync(outputDir)) {
-  mkdirSync(outputDir, { recursive: true });
-}
+console.log('🔨 Build process starting...');
 
-// Clean up any existing files in the output directory
-try {
-  const files = readdirSync(outputDir);
-  for (const file of files) {
-    unlinkSync(join(outputDir, file));
-  }
-} catch (err) {
-  console.error('Error cleaning output directory:', err);
-}
+const BUILD_TIMEOUT = 10000; // 10 seconds
 
-// Run the build process
-async function runBuild() {
+// Handle unexpected errors
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled promise rejection in build:', err);
+  process.exit(1);
+});
+
+// Run build with timeout
+const buildPromise = new Promise(async (resolve, reject) => {
   try {
-    console.log('Starting esbuild...');
+    console.log('Starting Bun build...');
+    const startTime = Date.now();
 
-    await build({
-      entryPoints: ['./src/main.ts'],
-      bundle: true,
-      outfile: join(outputDir, 'main.js'),
+    await Bun.build({
+      entrypoints: ['./src/main.ts'],
+      outdir: './public/js',
+      target: 'browser',
       format: 'esm',
-      platform: 'browser',
-      target: ['es2020'],
+      sourcemap: process.env.NODE_ENV !== 'production' ? 'inline' : false,
       minify: process.env.NODE_ENV === 'production',
-      sourcemap: process.env.NODE_ENV !== 'production',
-      external: ['marked'], // Mark marked as external since we load it from CDN
-      logLevel: 'info',
+      external: ['marked'],
+    }).then(result => {
+      if (!result.success) {
+        throw new Error(`Build failed: ${result.logs}`);
+      }
+      const buildTime = Date.now() - startTime;
+      console.log(`✓ Build completed in ${buildTime}ms`);
+      resolve(result);
     });
-
-    console.log('Build completed successfully!');
   } catch (error) {
-    console.error('Build failed:', error);
-    process.exit(1);
+    reject(error);
   }
-}
+});
 
-// Run build
-runBuild();
+const timeoutPromise = new Promise((_, reject) => {
+  setTimeout(() => {
+    reject(new Error('Build timed out after 10 seconds'));
+  }, BUILD_TIMEOUT);
+});
+
+Promise.race([buildPromise, timeoutPromise])
+  .catch(error => {
+    console.error('Build process error:', error);
+    process.exit(1);
+  })
+  .then(() => {
+    process.exit(0);
+  });

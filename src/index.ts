@@ -1,7 +1,7 @@
-import { GitHubAdapter } from './adapters/github/github-adapter';
-import { EventRouter } from './core/event-router';
-import { ModuleChain, ModuleChainRegistry } from './core/module-chain';
-import { ContentFilter } from './modules/content-filter';
+import { GitHubAdapter } from "./adapters/github/github-adapter";
+import { EventRouter } from "./core/event-router";
+import { ModuleChain, ModuleChainRegistry } from "./core/module-chain";
+import { ContentFilter } from "./modules/content-filter";
 
 /**
  * Initialize the module chain registry with our available chains
@@ -10,15 +10,15 @@ function initializeModuleChains(): ModuleChainRegistry {
   const registry = new ModuleChainRegistry();
 
   // Create a simple chain for GitHub issue comments
-  const issueCommentChain = new ModuleChain('github-issue-comment-chain');
+  const issueCommentChain = new ModuleChain("github-issue-comment-chain");
 
   // Add modules to the chain
   issueCommentChain.addModule(
     new ContentFilter({
       excludeBots: true,
       minLength: 5,
-      excludeUsers: ['github-actions[bot]'],
-      filterPatterns: []
+      excludeUsers: ["github-actions[bot]"],
+      filterPatterns: [],
     })
   );
 
@@ -35,7 +35,7 @@ function initializeAdapters() {
   // For now, just create the GitHub adapter
   // Later, we can add Google Docs, Telegram, etc.
   return {
-    github: new GitHubAdapter()
+    github: new GitHubAdapter(),
   };
 }
 
@@ -58,7 +58,7 @@ export async function processWebhook(
 
   // Validate the webhook
   if (!adapter.validateWebhook(headers, payload)) {
-    throw new Error('Invalid webhook signature');
+    throw new Error("Invalid webhook signature");
   }
 
   // Normalize the event
@@ -84,7 +84,7 @@ export async function processGitHubWebhook(
   payload: any,
   headers: Record<string, string> = {}
 ): Promise<any> {
-  return processWebhook('github', eventType, payload, headers);
+  return processWebhook("github", eventType, payload, headers);
 }
 
 /**
@@ -94,34 +94,34 @@ async function exampleUsage() {
   // Create a sample GitHub issue comment event
   const samplePayload = {
     repository: {
-      html_url: 'https://github.com/example/repo'
+      html_url: "https://github.com/example/repo",
     },
     issue: {
       number: 123,
-      html_url: 'https://github.com/example/repo/issues/123',
+      html_url: "https://github.com/example/repo/issues/123",
       user: {
-        login: 'example-user'
-      }
+        login: "example-user",
+      },
     },
     comment: {
       id: 456,
-      body: 'This is a sample comment',
+      body: "This is a sample comment",
       user: {
-        login: 'example-user'
-      }
+        login: "example-user",
+      },
     },
     sender: {
-      login: 'example-user'
-    }
+      login: "example-user",
+    },
   };
 
   try {
     // Process the webhook
-    const results = await processGitHubWebhook('issue_comment.created', samplePayload);
+    const results = await processGitHubWebhook("issue_comment.created", samplePayload);
 
-    console.log('Webhook processing results:', results);
+    console.log("Webhook processing results:", results);
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error("Error processing webhook:", error);
   }
 }
 

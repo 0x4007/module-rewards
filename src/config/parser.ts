@@ -1,4 +1,4 @@
-import { SimpleEventMatcher, WorkflowConfig } from './types';
+import { SimpleEventMatcher, WorkflowConfig } from "./types";
 
 /**
  * Parser for YAML workflow configurations
@@ -18,24 +18,24 @@ export class ConfigParser {
     // For now, we'll just return a placeholder
     // This should be replaced with actual YAML parsing
     const placeholderConfig: WorkflowConfig = {
-      name: 'Placeholder Configuration',
+      name: "Placeholder Configuration",
       on: {
         github: {
-          issue_comment: ['created', 'edited']
-        }
+          issue_comment: ["created", "edited"],
+        },
       },
       modules: [
         {
-          uses: 'contributor-identifier',
-          id: 'users'
+          uses: "contributor-identifier",
+          id: "users",
         },
         {
-          uses: 'content-filter',
+          uses: "content-filter",
           with: {
-            exclude_bots: true
-          }
-        }
-      ]
+            exclude_bots: true,
+          },
+        },
+      ],
     };
 
     return placeholderConfig;

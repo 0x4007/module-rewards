@@ -1,5 +1,5 @@
-import { CloudEvent } from '../utils/cloud-events';
-import { Module } from './module-base';
+import { CloudEvent } from "../utils/cloud-events";
+import { Module } from "./module-base";
 
 /**
  * Configuration for a module in a chain

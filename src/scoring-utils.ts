@@ -1,23 +1,26 @@
-import { CommentScores } from './types';
+import { CommentScores } from "./types";
 
 /**
  * Counts words in a text, excluding code blocks, URLs, etc.
  */
 export function countWords(text: string): number {
   // Skip if text is empty
-  if (!text || typeof text !== 'string') return 0;
+  if (!text || typeof text !== "string") return 0;
 
   // Remove code blocks
-  let cleanedText = text.replace(/```[\s\S]*?```/g, '');
+  let cleanedText = text.replace(/```[\s\S]*?```/g, "");
 
   // Remove inline code
-  cleanedText = cleanedText.replace(/`[^`]+`/g, '');
+  cleanedText = cleanedText.replace(/`[^`]+`/g, "");
 
   // Remove URLs
-  cleanedText = cleanedText.replace(/https?:\/\/\S+/g, '');
+  cleanedText = cleanedText.replace(/https?:\/\/\S+/g, "");
 
   // Count words (non-empty strings after splitting by whitespace)
-  return cleanedText.trim().split(/\s+/).filter(word => word.length > 0).length;
+  return cleanedText
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 }
 
 /**
@@ -50,6 +53,6 @@ export function calculateAllScores(text: string): CommentScores {
     wordCount,
     original: calculateOriginalScore(wordCount),
     logAdjusted: calculateLogAdjustedScore(wordCount),
-    exponential: calculateExponentialScore(wordCount)
+    exponential: calculateExponentialScore(wordCount),
   };
 }

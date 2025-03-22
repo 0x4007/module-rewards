@@ -1,4 +1,4 @@
-import { FetchedData, UrlParseResult } from './types';
+import { FetchedData, UrlParseResult } from "./types";
 
 /**
  * Parse a GitHub PR or Issue URL into its components
@@ -6,7 +6,7 @@ import { FetchedData, UrlParseResult } from './types';
 export function parseUrl(url: string): UrlParseResult {
   try {
     // Remove any trailing slashes and whitespace
-    const cleanUrl = url.trim().replace(/\/$/, '');
+    const cleanUrl = url.trim().replace(/\/$/, "");
 
     // Extract parts using regex
     // Support both full URLs and shorthand formats:
@@ -17,7 +17,7 @@ export function parseUrl(url: string): UrlParseResult {
     const match = cleanUrl.match(regex);
 
     if (!match) {
-      throw new Error('Invalid GitHub URL format. Must be a PR or Issue URL.');
+      throw new Error("Invalid GitHub URL format. Must be a PR or Issue URL.");
     }
 
     const [, owner, repo, type, number] = match;
@@ -25,7 +25,7 @@ export function parseUrl(url: string): UrlParseResult {
       owner,
       repo,
       number,
-      type: type.toLowerCase().startsWith('pull') ? 'pr' : 'issue'
+      type: type.toLowerCase().startsWith("pull") ? "pr" : "issue",
     };
   } catch (error) {
     throw new Error(`Could not parse GitHub PR URL: ${error instanceof Error ? error.message : String(error)}`);
@@ -35,29 +35,35 @@ export function parseUrl(url: string): UrlParseResult {
 /**
  * Fetch data from GitHub API for a PR or Issue
  */
-export async function fetchGitHubData(owner: string, repo: string, number: string, type: 'pr' | 'issue', token?: string): Promise<FetchedData> {
+export async function fetchGitHubData(
+  owner: string,
+  repo: string,
+  number: string,
+  type: "pr" | "issue",
+  token?: string
+): Promise<FetchedData> {
   const headers: HeadersInit = {
-    'Accept': 'application/vnd.github.v3+json'
+    Accept: "application/vnd.github.v3+json",
   };
 
   // Add authorization header if token exists
   if (token) {
-    headers['Authorization'] = `token ${token}`;
+    headers["Authorization"] = `token ${token}`;
   }
 
   // Base GitHub API URL
-  const baseUrl = 'https://api.github.com';
+  const baseUrl = "https://api.github.com";
 
   try {
     // Fetch details (PR or Issue)
     const detailsResponse = await fetch(
-      `${baseUrl}/repos/${owner}/${repo}/${type === 'pr' ? 'pulls' : 'issues'}/${number}`,
+      `${baseUrl}/repos/${owner}/${repo}/${type === "pr" ? "pulls" : "issues"}/${number}`,
       { headers }
     );
 
     if (!detailsResponse.ok) {
       if (detailsResponse.status === 401 || detailsResponse.status === 403) {
-        throw new Error('Authentication failed. Please provide a valid GitHub token.');
+        throw new Error("Authentication failed. Please provide a valid GitHub token.");
       } else if (detailsResponse.status === 404) {
         throw new Error(`${type.toUpperCase()} not found. Check the URL or your access permissions.`);
       } else {
@@ -70,7 +76,7 @@ export async function fetchGitHubData(owner: string, repo: string, number: strin
     // Fetch all comments
     let comments = [];
 
-    if (type === 'pr') {
+    if (type === "pr") {
       // For PRs, fetch:
       // 1. Review comments (inline comments)
       const reviewCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${number}/comments`;
@@ -93,7 +99,7 @@ export async function fetchGitHubData(owner: string, repo: string, number: strin
             user: review.user,
             created_at: review.submitted_at,
             updated_at: review.submitted_at,
-            html_url: review.html_url
+            html_url: review.html_url,
           }));
         comments.push(...reviewComments);
       }
@@ -112,7 +118,7 @@ export async function fetchGitHubData(owner: string, repo: string, number: strin
     return {
       details,
       comments,
-      type
+      type,
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));

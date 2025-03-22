@@ -31,13 +31,13 @@ export function createCloudEvent<T = any>(params: {
   datacontenttype?: string;
 }): CloudEvent<T> {
   return {
-    specversion: '1.0',
+    specversion: "1.0",
     id: params.id,
     source: params.source,
     type: params.type,
     time: new Date().toISOString(),
-    datacontenttype: params.datacontenttype || 'application/json',
+    datacontenttype: params.datacontenttype || "application/json",
     subject: params.subject,
-    data: params.data
+    data: params.data,
   };
 }

@@ -1,4 +1,4 @@
-import { CloudEvent } from '../utils/cloud-events';
+import { CloudEvent } from "../utils/cloud-events";
 
 /**
  * Configuration for a workflow
@@ -77,11 +77,11 @@ export class SimpleEventMatcher implements EventMatcher {
   matches(event: CloudEvent): boolean {
     // Match based on CloudEvents type
     // Expected format: com.{platform}.{eventType}
-    const parts = event.type.split('.');
+    const parts = event.type.split(".");
     if (parts.length < 3) return false;
 
     const eventPlatform = parts[1];
-    const eventAction = parts.slice(2).join('.');
+    const eventAction = parts.slice(2).join(".");
 
     return eventPlatform === this.platform && eventAction === this.eventType;
   }

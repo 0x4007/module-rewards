@@ -23,9 +23,9 @@ export interface GitHubComment {
   created_at: string;
   updated_at: string;
   html_url: string;
-  path?: string;           // For PR review comments
-  position?: number;       // For PR review comments
-  commit_id?: string;      // For PR review comments
+  path?: string; // For PR review comments
+  position?: number; // For PR review comments
+  commit_id?: string; // For PR review comments
   pull_request_url?: string; // For PR comments
 }
 
@@ -60,13 +60,13 @@ export interface UrlParseResult {
   owner: string;
   repo: string;
   number: string;
-  type: 'pr' | 'issue';
+  type: "pr" | "issue";
 }
 
 export interface FetchedData {
   details: GitHubPR | GitHubIssue;
   comments: GitHubComment[];
-  type: 'pr' | 'issue';
+  type: "pr" | "issue";
 }
 
 export interface CommentScores {

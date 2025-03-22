@@ -1,4 +1,4 @@
-import { CloudEvent } from '../utils/cloud-events';
+import { CloudEvent } from "../utils/cloud-events";
 
 /**
  * Interface for platform-specific adapters
@@ -59,6 +59,6 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
    */
   protected standardizeEventType(eventType: string): string {
     // Replace spaces with dots, convert to lowercase
-    return `com.${this.platformName}.${eventType.toLowerCase().replace(/\s+/g, '.')}`;
+    return `com.${this.platformName}.${eventType.toLowerCase().replace(/\s+/g, ".")}`;
   }
 }

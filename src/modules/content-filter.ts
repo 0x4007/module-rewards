@@ -1,5 +1,5 @@
-import { BaseModule } from '../core/module-base';
-import { CloudEvent } from '../utils/cloud-events';
+import { BaseModule } from "../core/module-base";
+import { CloudEvent } from "../utils/cloud-events";
 
 /**
  * Configuration for the ContentFilter module
@@ -33,7 +33,7 @@ const DEFAULT_CONFIG: ContentFilterConfig = {
   excludeBots: true,
   minLength: 10,
   excludeUsers: [],
-  filterPatterns: []
+  filterPatterns: [],
 };
 
 /**
@@ -41,7 +41,7 @@ const DEFAULT_CONFIG: ContentFilterConfig = {
  * Inspired by the original DataPurgeModule
  */
 export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string, any>> {
-  readonly name = 'content-filter';
+  readonly name = "content-filter";
   // Use a single regex that matches all supported types
   readonly supportedEventTypes = /com\.(github|google-docs|telegram)\..*/;
 
@@ -64,7 +64,7 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
 
     // If we couldn't extract content, return unchanged
     if (!content) {
-      return { ...result, filtered: false, reason: 'no-content' };
+      return { ...result, filtered: false, reason: "no-content" };
     }
 
     // Apply filtering rules
@@ -75,7 +75,7 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
       return {
         ...result,
         filtered: true,
-        reason: filterResult.reason
+        reason: filterResult.reason,
       };
     }
 
@@ -84,7 +84,7 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
       ...result,
       filtered: false,
       content,
-      author
+      author,
     };
   }
 
@@ -95,49 +95,49 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
     const data = event.data as any;
 
     // GitHub issue comment
-    if (event.type.includes('github.issue_comment')) {
+    if (event.type.includes("github.issue_comment")) {
       return {
         content: data?.comment?.body,
-        author: data?.comment?.user?.login
+        author: data?.comment?.user?.login,
       };
     }
 
     // GitHub issue
-    if (event.type.includes('github.issues')) {
+    if (event.type.includes("github.issues")) {
       return {
         content: data?.issue?.body,
-        author: data?.issue?.user?.login
+        author: data?.issue?.user?.login,
       };
     }
 
     // GitHub pull request
-    if (event.type.includes('github.pull_request')) {
+    if (event.type.includes("github.pull_request")) {
       return {
         content: data?.pull_request?.body,
-        author: data?.pull_request?.user?.login
+        author: data?.pull_request?.user?.login,
       };
     }
 
     // Google Docs document
-    if (event.type.includes('google-docs.document')) {
+    if (event.type.includes("google-docs.document")) {
       return {
         content: data?.document?.content,
-        author: data?.document?.author
+        author: data?.document?.author,
       };
     }
 
     // Telegram message
-    if (event.type.includes('telegram.message')) {
+    if (event.type.includes("telegram.message")) {
       return {
         content: data?.message?.text,
-        author: data?.message?.from?.username
+        author: data?.message?.from?.username,
       };
     }
 
     // Default fallback - try some common patterns
     return {
       content: data?.content || data?.body || data?.text,
-      author: data?.author || data?.user?.login || data?.sender?.login
+      author: data?.author || data?.user?.login || data?.sender?.login,
     };
   }
 
@@ -147,24 +147,24 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
   private applyFilterRules(content: string, author?: string): { filtered: boolean; reason?: string } {
     // Check for bot if excludeBots is enabled
     if (this.config.excludeBots && author && this.isBot(author)) {
-      return { filtered: true, reason: 'bot-author' };
+      return { filtered: true, reason: "bot-author" };
     }
 
     // Check minimum length
     if (this.config.minLength && content.length < this.config.minLength) {
-      return { filtered: true, reason: 'too-short' };
+      return { filtered: true, reason: "too-short" };
     }
 
     // Check excluded users
     if (author && this.config.excludeUsers?.includes(author)) {
-      return { filtered: true, reason: 'excluded-user' };
+      return { filtered: true, reason: "excluded-user" };
     }
 
     // Check filter patterns
     if (this.config.filterPatterns?.length) {
       for (const pattern of this.config.filterPatterns) {
-        if (new RegExp(pattern, 'i').test(content)) {
-          return { filtered: true, reason: 'matched-pattern' };
+        if (new RegExp(pattern, "i").test(content)) {
+          return { filtered: true, reason: "matched-pattern" };
         }
       }
     }
@@ -178,6 +178,6 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
    * This can be enhanced with platform-specific logic
    */
   private isBot(author: string): boolean {
-    return author.endsWith('[bot]') || author.toLowerCase().includes('bot');
+    return author.endsWith("[bot]") || author.toLowerCase().includes("bot");
   }
 }

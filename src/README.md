@@ -43,11 +43,13 @@ src/
 To test the new architecture:
 
 1. Install dependencies:
+
    ```
    bun add js-yaml @types/js-yaml
    ```
 
 2. Uncomment the example usage code in `src/index.ts`:
+
    ```typescript
    if (require.main === module) {
      exampleUsage();
@@ -106,19 +108,20 @@ To add a new module:
 Example:
 
 ```typescript
-import { BaseModule } from '../core/module-base';
-import { CloudEvent } from '../utils/cloud-events';
+import { BaseModule } from "../core/module-base";
+import { CloudEvent } from "../utils/cloud-events";
 
 interface MyModuleConfig {
   // Configuration options
 }
 
 export class MyModule extends BaseModule<MyModuleConfig, Record<string, any>> {
-  readonly name = 'my-module';
+  readonly name = "my-module";
   readonly supportedEventTypes = /com\.github\..*/;
 
   async transform(event: CloudEvent, result: Record<string, any>): Promise<Record<string, any>> {
     // Module implementation
-    return { ...result, myResult: 'value' };
+    return { ...result, myResult: "value" };
   }
 }
+```

@@ -1,5 +1,5 @@
-import { CloudEvent } from '../utils/cloud-events';
-import { ModuleChain, ModuleChainRegistry } from './module-chain';
+import { CloudEvent } from "../utils/cloud-events";
+import { ModuleChain, ModuleChainRegistry } from "./module-chain";
 
 /**
  * Event router that directs events to the appropriate module chains
@@ -22,9 +22,7 @@ export class EventRouter {
     }
 
     // Execute each chain with the event
-    const results = await Promise.all(
-      matchingChains.map(chain => chain.execute(event))
-    );
+    const results = await Promise.all(matchingChains.map((chain) => chain.execute(event)));
 
     return results;
   }

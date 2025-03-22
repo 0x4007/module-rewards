@@ -1,4 +1,4 @@
-import { CloudEvent } from '../utils/cloud-events';
+import { CloudEvent } from "../utils/cloud-events";
 
 /**
  * The base interface that all modules must implement
