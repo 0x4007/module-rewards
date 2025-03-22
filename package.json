@@ -1,0 +1,19 @@
+{
+  "name": "pr-analysis",
+  "version": "1.0.0",
+  "description": "GitHub PR comment analysis tool",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run build/dev.ts",
+    "build": "bun run build/build.ts",
+    "start": "bun run src/server.ts"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "marked": "^9.0.0"
+  }
+}
