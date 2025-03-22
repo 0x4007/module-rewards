@@ -73,6 +73,24 @@ export async function analyze(inputUrl: string): Promise<void> {
     uiStateManager.setContentLoaded("pr", prComments.length > 0);
     uiStateManager.setContentLoaded("issue", issueComments.length > 0);
 
+    // Generate the score summary from both sets of comments
+    try {
+      // Using dynamic import to avoid circular dependencies
+      import("./components/score-summary-component").then(summaryModule => {
+        if (typeof summaryModule.renderScoreSummary === 'function') {
+          // Import scoreMap from comment-component
+          import("./components/comment-component").then(commentModule => {
+            // Only show score summary if we have comments
+            if (prComments.length > 0 || issueComments.length > 0) {
+              summaryModule.renderScoreSummary(prComments, issueComments, commentModule.scoreMap);
+            }
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Failed to render score summary:", error);
+    }
+
     // Perform background refresh to check for updates
     backgroundRefresh(owner, repo, number, type, data);
   } catch (error) {
@@ -91,6 +109,10 @@ function clearResults(): void {
   // Reset title and meta
   domManager.setText("title", "");
   domManager.setText("meta", "");
+
+  // Clear score summary
+  domManager.clearContent("scoreSummaryContent");
+  domManager.hide("scoreSummary");
 
   // Clear conversation containers
   domManager.clearContent("issueConversation");
@@ -140,6 +162,21 @@ async function backgroundRefresh(
         // Update UI state
         uiStateManager.setContentLoaded("pr", prComments.length > 0);
         uiStateManager.setContentLoaded("issue", issueComments.length > 0);
+
+        // Update the score summary
+        try {
+          import("./components/score-summary-component").then(summaryModule => {
+            if (typeof summaryModule.renderScoreSummary === 'function') {
+              import("./components/comment-component").then(commentModule => {
+                if (prComments.length > 0 || issueComments.length > 0) {
+                  summaryModule.renderScoreSummary(prComments, issueComments, commentModule.scoreMap);
+                }
+              });
+            }
+          });
+        } catch (error) {
+          console.error("Failed to update score summary:", error);
+        }
 
         // Show notification
         notifyContentUpdated();

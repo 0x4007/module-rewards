@@ -13,6 +13,8 @@ interface DOMElements {
   detailsElement: HTMLElement;
   title: HTMLElement;
   meta: HTMLElement;
+  scoreSummary: HTMLElement;
+  scoreSummaryContent: HTMLElement;
   issueConversation: HTMLElement;
   prConversation: HTMLElement;
   contentColumns: HTMLElement;
@@ -37,6 +39,8 @@ class DOMManager {
         detailsElement: document.getElementById("details") as HTMLElement,
         title: document.querySelector("#details .title") as HTMLElement,
         meta: document.querySelector("#details .meta") as HTMLElement,
+        scoreSummary: document.getElementById("score-summary") as HTMLElement,
+        scoreSummaryContent: document.getElementById("score-summary-content") as HTMLElement,
         issueConversation: document.getElementById("issue-conversation") as HTMLElement,
         prConversation: document.getElementById("pr-conversation") as HTMLElement,
         contentColumns: document.getElementById("content-columns") as HTMLElement

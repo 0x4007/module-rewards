@@ -160,7 +160,7 @@ footer {
 }
 
 .meta strong {
-  color: var(--primary);
+  /* color: var(--primary); */
   font-weight: 600;
 }
 
@@ -247,7 +247,7 @@ footer {
 .comment {
   border-radius: 4px;
   margin-bottom: 8px;
-  padding: 8px 16px;
+  padding: 16px;
   background: #80808010;
 }
 
@@ -292,7 +292,7 @@ footer {
   overflow-wrap: break-word;
   line-height: 1.5;
   color: var(--text);
-  margin-bottom: 1rem;
+  /* margin-bottom: 1rem; */
 }
 
 /* Markdown styling */
@@ -385,16 +385,17 @@ footer {
   font-size: 12px;
   color: var(--text-light);
   /* align-items: end; */
-  text-align: right;
+  /* text-align: center; */
   /* display: inline-block; */
   /* float: left; */
+  /* opacity: 0.5; */
 }
 
 .group-info {
-  background-color: rgba(var(--primary-rgb, 0, 102, 204), 0.1);
-  padding: 2px 6px;
-  border-radius: 12px;
-  margin-top: 4px;
+  /* background-color: var(--error); */
+  /* padding: 2px 6px; */
+  /* border-radius: 12px; */
+  /* margin-top: 4px; */
 }
 
 .group-indicator {
@@ -405,7 +406,9 @@ footer {
 .score-info {
   display: inline-block;
   align-items: center;
-  margin-left: 8px;
+  /* margin-left: 12px; */
+  opacity: 0.5;
+  padding: 4px 8px;
 }
 
 .score-label {
@@ -425,6 +428,100 @@ footer {
   background-color: var(--success);
   color: var(--bg);
   border-color: var(--primary);
+}
+
+/* ========== SCORE SUMMARY STYLES ========== */
+
+.score-summary {
+  /* background-color: var(--hover); */
+  /* border: 1px solid var(--border); */
+  border-radius: 4px;
+  padding: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.score-summary h3 {
+  margin-top: 0;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.score-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.score-summary-table th,
+.score-summary-table td {
+  text-align: left;
+  padding: 8px;
+  /* border-bottom: 1px solid var(--border); */
+  text-align: right;
+}
+
+.score-summary-table th {
+  background-color: var(--hover);
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.score-summary-table th.sort-column {
+  /* background-color: var(--primary); */
+  color: white;
+  position: relative;
+}
+
+.score-summary-table th.sort-column::after {
+  content: "▼";
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+
+.score-summary-table td.sort-column-cell {
+  font-weight: bold;
+  /* background-color: rgba(var(--primary-rgb, 0, 102, 204), 0.1); */
+  /* color: var(--primary); */
+}
+
+.score-summary-table tr:nth-child(even) {
+  /* background-color: var(--hover); */
+}
+
+.contributor-cell {
+  display: flex;
+  align-items: center;
+  text-align: left;
+}
+
+.summary-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.summary-username {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.summary-username:hover {
+  text-decoration: underline;
+}
+
+.contributor-col {
+  width: 30%;
+}
+
+.score-col {
+  width: 17.5%;
 }
 
 /* ========== LINKED CONTENT STYLES ========== */
@@ -492,4 +589,19 @@ footer {
     flex-direction: column;
     gap: 8px;
   }
+}
+
+
+.score-info:hover {
+    opacity: 1;
+}
+
+
+.comment-header {
+    margin-bottom: 24px;
+}
+
+
+tr {
+    /* text-align: right; */
 }

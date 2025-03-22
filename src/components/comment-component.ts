@@ -6,6 +6,9 @@ import { CommentGroupMap, detectConsecutiveComments } from "../comment-grouping"
 import { calculateGroupAwareScores } from "../scoring-utils";
 import { CommentScores, GitHubComment } from "../types";
 
+// Export the scoreMap for use by other components
+export const scoreMap = new Map<number, CommentScores>();
+
 export interface CommentDisplayOptions {
   containerSelector: string;
   idPrefix?: string;
@@ -184,6 +187,11 @@ export function renderComments(
   // Detect consecutive comments from the same user within the same context
   const commentGroups: CommentGroupMap = detectConsecutiveComments(sortedComments, section);
 
+  // Only clear scores when we're processing PR comments (the first set)
+  if (section === "pr") {
+    scoreMap.clear();
+  }
+
   // Render each comment
   for (const comment of sortedComments) {
     if (!comment.body) continue;
@@ -201,10 +209,20 @@ export function renderComments(
       if (isLastInGroup) {
         // For the last comment, calculate scores based on the entire group
         commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+
+        // Store scores in the map
+        if (commentScores) {
+          scoreMap.set(comment.id, commentScores);
+        }
       }
     } else {
       // For comments not in a group, calculate scores normally
       commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+
+      // Store scores in the map
+      if (commentScores) {
+        scoreMap.set(comment.id, commentScores);
+      }
     }
 
     // Render the comment
@@ -218,6 +236,9 @@ export function renderComments(
       commentScores
     );
   }
+
+  // Note: Score summary rendering is now handled by the analyzer.ts file
+  // after both PR and issue comments are processed
 }
 
 /**
