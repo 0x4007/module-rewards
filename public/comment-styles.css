@@ -1,12 +1,12 @@
 /* Comment and conversation styling (dark-mode compatible) */
 
 .comment {
-  margin: 20px 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
+  /* margin: 20px 0; */
+  /* border: 1px solid var(--border); */
+  /* border-radius: 6px; */
+  /* overflow: hidden; */
   /* background-color: var(--bg); */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */
 }
 
 .comment-header {
