@@ -1,14 +1,29 @@
-export function updateContributorSummary(contributors: {
-  [key: string]: {
-    avatar: string;
-    url: string;
-    totalWords: number;
-    originalScore: number;
-    logAdjustedScore: number;
-    exponentialScore: number;
-    commentCount: number;
-  };
-}): void {
+import { CommentScores, ScoringMetrics, ContributorStats, ContributorSummary } from "./types";
+
+// DOM Elements
+let metaElement: HTMLElement | null = null;
+
+export function initializeSummary(metaEl: HTMLElement) {
+  metaElement = metaEl;
+}
+
+export function updateScoreSummary(commentScores: CommentScores, summary: ScoringMetrics): void {
+  summary.original.push(commentScores.original);
+  summary.logAdjusted.push(commentScores.logAdjusted);
+  summary.exponential.push(commentScores.exponential);
+
+  // Update the overall summary display
+  const totalComments = summary.original.length;
+  if (totalComments === 0) return;
+
+  const avgExp = summary.exponential.reduce((a, b) => a + b, 0) / totalComments;
+
+  if (metaElement) {
+    metaElement.textContent = `Total comments: ${totalComments} | Avg Exp Score: ${avgExp.toFixed(2)}`;
+  }
+}
+
+export function updateContributorSummary(contributors: ContributorSummary): void {
   console.log("Updating contributor summary with data for", Object.keys(contributors).length, "contributors");
 
   // Remove any existing summary before creating a new one
