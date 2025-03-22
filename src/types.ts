@@ -78,7 +78,13 @@ export interface LinkedPullRequest {
   state: string;
   author: {
     login: string;
+    html_url?: string;
+    avatar_url?: string;
   };
+  // These properties are added for PR conversations
+  body?: string;
+  details?: GitHubPR;
+  comments?: GitHubComment[];
 }
 
 export interface FetchedData {

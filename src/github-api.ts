@@ -224,7 +224,7 @@ export async function fetchGitHubData(
             const searchData = await searchResponse.json();
 
             // Convert search results to match our expected format
-            linkedPullRequests = searchData.items
+            const foundPRs = searchData.items
               .filter((item: any) => item.pull_request) // Ensure it's a PR
               .map((item: any) => ({
                 number: item.number,
@@ -234,7 +234,83 @@ export async function fetchGitHubData(
                 author: { login: item.user.login },
               }));
 
-            console.log(`Found ${linkedPullRequests.length} PRs from search that mention issue #${number}`);
+            console.log(`Found ${foundPRs.length} PRs from search that mention issue #${number}`);
+
+            // For each linked PR, fetch its complete conversation
+            if (foundPRs.length > 0) {
+              // We'll focus on the first PR to get its full conversation
+              const mainPR = foundPRs[0];
+              console.log(`Fetching complete conversation for PR #${mainPR.number}`);
+
+              try {
+                // Fetch PR details
+                const prDetailsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${mainPR.number}`;
+                const prDetailsResponse = await fetch(prDetailsUrl, { headers });
+
+                if (prDetailsResponse.ok) {
+                  const prDetails = await prDetailsResponse.json();
+
+                  // Fetch PR comments (review comments)
+                  const prCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${mainPR.number}/comments`;
+                  const reviewCommentsResponse = await fetch(prCommentsUrl, { headers });
+                  let reviewComments = [];
+                  if (reviewCommentsResponse.ok) {
+                    reviewComments = await reviewCommentsResponse.json();
+                  }
+
+                  // Fetch PR reviews
+                  const prReviewsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${mainPR.number}/reviews`;
+                  const prReviewsResponse = await fetch(prReviewsUrl, { headers });
+                  let reviewsComments = [];
+                  if (prReviewsResponse.ok) {
+                    const reviews = await prReviewsResponse.json();
+                    reviewsComments = reviews
+                      .filter((review: any) => review.body)
+                      .map((review: any) => ({
+                        id: review.id,
+                        body: review.body,
+                        user: review.user,
+                        created_at: review.submitted_at,
+                        updated_at: review.submitted_at,
+                        html_url: review.html_url,
+                      }));
+                  }
+
+                  // Fetch PR issue comments
+                  const prIssueCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/issues/${mainPR.number}/comments`;
+                  const prIssueCommentsResponse = await fetch(prIssueCommentsUrl, { headers });
+                  let prIssueComments = [];
+                  if (prIssueCommentsResponse.ok) {
+                    prIssueComments = await prIssueCommentsResponse.json();
+                  }
+
+                  // Combine all PR comments
+                  const allPRComments = [...reviewComments, ...reviewsComments, ...prIssueComments];
+
+                  // Create a full PR object with its conversation
+                  const fullPR = {
+                    details: prDetails,
+                    comments: allPRComments,
+                    number: mainPR.number,
+                    title: prDetails.title,
+                    url: prDetails.html_url,
+                    state: prDetails.state,
+                    author: { login: prDetails.user.login },
+                    body: prDetails.body
+                  };
+
+                  // Set the main linked PR with full conversation
+                  linkedPullRequests = [fullPR, ...foundPRs.slice(1)];
+                  console.log(`Successfully fetched complete conversation for PR #${mainPR.number} with ${allPRComments.length} comments`);
+                }
+              } catch (error) {
+                console.error(`Error fetching complete PR conversation: ${error}`);
+                // Fall back to the basic PR information if fetching the complete conversation fails
+                linkedPullRequests = foundPRs;
+              }
+            } else {
+              linkedPullRequests = foundPRs;
+            }
           }
         } catch (error) {
           console.error("Error in REST API search:", error);
