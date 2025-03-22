@@ -54,7 +54,7 @@ export async function analyze(inputUrl: string): Promise<void> {
     // Check cache first
     const cachedData = localStorage.getItem(cacheKey);
     const cachedTimestamp = localStorage.getItem(cachedTimestampKey);
-    const cacheExpired = !cachedTimestamp || (Date.now() - parseInt(cachedTimestamp)) > CACHE_EXPIRY;
+    const cacheExpired = !cachedTimestamp || Date.now() - parseInt(cachedTimestamp) > CACHE_EXPIRY;
 
     // Use cached data if available and fresh
     if (cachedData && !cacheExpired) {
@@ -209,7 +209,7 @@ function processIssueView(data: FetchedData): void {
         user: {
           login: mainPR.author.login,
           html_url: mainPR.author.html_url || "",
-          avatar_url: mainPR.author.avatar_url || ""
+          avatar_url: mainPR.author.avatar_url || "",
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -286,14 +286,14 @@ function displayComments(section: "pr" | "issue", comments: GitHubComment[]): vo
       wordCount: commentScores.wordCount,
       original: commentScores.original,
       logAdjusted: commentScores.logAdjusted,
-      exponential: commentScores.exponential
+      exponential: commentScores.exponential,
     };
 
     // Render comment with score metadata
     const containerSelector = `#${section}-conversation`;
     appendCommentToDOM(comment, {
       containerSelector,
-      className: "comment"
+      className: "comment",
     });
 
     // Add score display below the comment
@@ -350,8 +350,7 @@ function generatePRListHTML(prs: any[]): string {
  */
 function hasContentChanged(oldData: FetchedData, newData: FetchedData): boolean {
   // Compare basic properties
-  if (oldData.details.title !== newData.details.title ||
-      oldData.details.body !== newData.details.body) {
+  if (oldData.details.title !== newData.details.title || oldData.details.body !== newData.details.body) {
     return true;
   }
 

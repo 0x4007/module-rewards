@@ -10,7 +10,7 @@ export function appendCommentToDOM(
     user?: {
       login: string;
       html_url?: string;
-      avatar_url?: string
+      avatar_url?: string;
     };
     created_at?: string;
   },
@@ -113,7 +113,7 @@ export function clearResults(containerSelector: string): void {
   }
 
   // Also clear conversation containers
-  ["#issue-conversation", "#pr-conversation"].forEach(selector => {
+  ["#issue-conversation", "#pr-conversation"].forEach((selector) => {
     const convoContainer = document.querySelector(selector);
     if (convoContainer) {
       convoContainer.innerHTML = "";
