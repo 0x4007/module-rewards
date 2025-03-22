@@ -1,5 +1,5 @@
 import { findLinkedIssue } from "./github-bidirectional";
-import { FetchedData, LinkedIssue, UrlParseResult } from "./types";
+import { FetchedData, LinkedIssue, LinkedPullRequest, UrlParseResult } from "./types";
 
 const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
 
@@ -35,29 +35,6 @@ async function executeGraphQL(query: string, variables: any, token?: string): Pr
 
   console.log("GraphQL response received successfully");
   return data.data;
-}
-
-/**
- * Fetch linked issue data for a pull request using the reliable bidirectional approach
- */
-async function fetchLinkedIssue(
-  owner: string,
-  repo: string,
-  prNumber: string,
-  token?: string
-): Promise<LinkedIssue | undefined> {
-  if (!token) {
-    console.log("No token provided, cannot fetch linked issues");
-    return undefined;
-  }
-
-  try {
-    console.log(`Fetching linked issue for PR ${owner}/${repo}#${prNumber} using bidirectional approach`);
-    return await findLinkedIssue(owner, repo, prNumber, token);
-  } catch (error) {
-    console.error("Error in bidirectional issue lookup:", error);
-    return undefined;
-  }
 }
 
 /**
@@ -106,12 +83,10 @@ export async function fetchGitHubData(
     Accept: "application/vnd.github.v3+json",
   };
 
-  // Add authorization header if token exists
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Base GitHub API URL
   const baseUrl = "https://api.github.com";
 
   try {
@@ -132,13 +107,11 @@ export async function fetchGitHubData(
     }
 
     const details = await detailsResponse.json();
-
-    // Fetch all comments
     let comments = [];
 
+    // For PRs, fetch review comments and PR reviews
     if (type === "pr") {
-      // For PRs, fetch:
-      // 1. Review comments (inline comments)
+      // Review comments (inline comments)
       const reviewCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${number}/comments`;
       const reviewCommentsResponse = await fetch(reviewCommentsUrl, { headers });
       if (reviewCommentsResponse.ok) {
@@ -146,7 +119,7 @@ export async function fetchGitHubData(
         comments.push(...reviewComments);
       }
 
-      // 2. PR review comments (top-level review comments)
+      // PR review comments (top-level review comments)
       const prReviewsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${number}/reviews`;
       const prReviewsResponse = await fetch(prReviewsUrl, { headers });
       if (prReviewsResponse.ok) {
@@ -165,156 +138,39 @@ export async function fetchGitHubData(
       }
     }
 
-    // 3. Issue comments (for both PRs and Issues)
+    // Issue comments (for both PRs and Issues)
     const issueCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/issues/${number}/comments`;
     const issueCommentsResponse = await fetch(issueCommentsUrl, { headers });
     if (issueCommentsResponse.ok) {
       const issueComments = await issueCommentsResponse.json();
       comments.push(...issueComments);
-    } else {
-      throw new Error(`Failed to fetch comments: ${issueCommentsResponse.status}`);
     }
 
-    // Handle bidirectional linking (PR → Issue and Issue → PR)
-    let linkedIssue;
-    let linkedPullRequests = [];
+    // Handle bidirectional linking
+    let linkedIssue: LinkedIssue | undefined;
+    let linkedPullRequests: LinkedPullRequest[] | undefined;
 
     if (token) {
       if (type === "pr") {
-        // PR → Issue direction: Find linked issue for this PR
-        console.log(`Attempting to find linked issue for PR ${owner}/${repo}#${number}`);
-        linkedIssue = await fetchLinkedIssue(owner, repo, number, token);
-
-        // If we found a linked issue, fetch its comments too
+        linkedIssue = await findLinkedIssue(owner, repo, number, token);
         if (linkedIssue) {
-          console.log(`Found linked issue #${linkedIssue.number}, fetching its comments...`);
-
           try {
-            // Fetch comments for the linked issue
-            const issueCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/issues/${linkedIssue.number}/comments`;
+            const issueCommentsUrl = `${baseUrl}/repos/${linkedIssue.repository?.owner || owner}/${
+              linkedIssue.repository?.name || repo
+            }/issues/${linkedIssue.number}/comments`;
             const issueCommentsResponse = await fetch(issueCommentsUrl, { headers });
-
             if (issueCommentsResponse.ok) {
               const issueComments = await issueCommentsResponse.json();
-              console.log(`Retrieved ${issueComments.length} comments from linked issue #${linkedIssue.number}`);
-
-              // Add comments to the linkedIssue object
               linkedIssue.comments = issueComments;
-            } else {
-              console.error(`Failed to fetch linked issue comments: ${issueCommentsResponse.status}`);
             }
           } catch (error) {
             console.error("Error fetching linked issue comments:", error);
-            // Continue even if comments fetching fails - we'll still have the issue itself
           }
         }
       } else if (type === "issue") {
-        // Issue → PR direction: Find PRs that reference this issue
-        console.log(`Attempting to find PRs that reference issue ${owner}/${repo}#${number}`);
-
-        // Skip GraphQL for issue→PR direction since it's unreliable
-        // Go directly to REST API search which is more effective based on testing
-        console.log("Using REST API search to find PRs that mention this issue...");
-        try {
-          // Look for PRs that mention issue #number
-          const searchUrl = `${baseUrl}/search/issues?q=repo:${owner}/${repo}+is:pr+${number}+in:body`;
-          const searchResponse = await fetch(searchUrl, { headers });
-
-          if (searchResponse.ok) {
-            const searchData = await searchResponse.json();
-
-            // Convert search results to match our expected format
-            const foundPRs = searchData.items
-              .filter((item: any) => item.pull_request) // Ensure it's a PR
-              .map((item: any) => ({
-                number: item.number,
-                title: item.title,
-                url: item.html_url,
-                state: item.state,
-                author: { login: item.user.login },
-              }));
-
-            console.log(`Found ${foundPRs.length} PRs from search that mention issue #${number}`);
-
-            // For each linked PR, fetch its complete conversation
-            if (foundPRs.length > 0) {
-              // We'll focus on the first PR to get its full conversation
-              const mainPR = foundPRs[0];
-              console.log(`Fetching complete conversation for PR #${mainPR.number}`);
-
-              try {
-                // Fetch PR details
-                const prDetailsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${mainPR.number}`;
-                const prDetailsResponse = await fetch(prDetailsUrl, { headers });
-
-                if (prDetailsResponse.ok) {
-                  const prDetails = await prDetailsResponse.json();
-
-                  // Fetch PR comments (review comments)
-                  const prCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${mainPR.number}/comments`;
-                  const reviewCommentsResponse = await fetch(prCommentsUrl, { headers });
-                  let reviewComments = [];
-                  if (reviewCommentsResponse.ok) {
-                    reviewComments = await reviewCommentsResponse.json();
-                  }
-
-                  // Fetch PR reviews
-                  const prReviewsUrl = `${baseUrl}/repos/${owner}/${repo}/pulls/${mainPR.number}/reviews`;
-                  const prReviewsResponse = await fetch(prReviewsUrl, { headers });
-                  let reviewsComments = [];
-                  if (prReviewsResponse.ok) {
-                    const reviews = await prReviewsResponse.json();
-                    reviewsComments = reviews
-                      .filter((review: any) => review.body)
-                      .map((review: any) => ({
-                        id: review.id,
-                        body: review.body,
-                        user: review.user,
-                        created_at: review.submitted_at,
-                        updated_at: review.submitted_at,
-                        html_url: review.html_url,
-                      }));
-                  }
-
-                  // Fetch PR issue comments
-                  const prIssueCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/issues/${mainPR.number}/comments`;
-                  const prIssueCommentsResponse = await fetch(prIssueCommentsUrl, { headers });
-                  let prIssueComments = [];
-                  if (prIssueCommentsResponse.ok) {
-                    prIssueComments = await prIssueCommentsResponse.json();
-                  }
-
-                  // Combine all PR comments
-                  const allPRComments = [...reviewComments, ...reviewsComments, ...prIssueComments];
-
-                  // Create a full PR object with its conversation
-                  const fullPR = {
-                    details: prDetails,
-                    comments: allPRComments,
-                    number: mainPR.number,
-                    title: prDetails.title,
-                    url: prDetails.html_url,
-                    state: prDetails.state,
-                    author: { login: prDetails.user.login },
-                    body: prDetails.body
-                  };
-
-                  // Set the main linked PR with full conversation
-                  linkedPullRequests = [fullPR, ...foundPRs.slice(1)];
-                  console.log(`Successfully fetched complete conversation for PR #${mainPR.number} with ${allPRComments.length} comments`);
-                }
-              } catch (error) {
-                console.error(`Error fetching complete PR conversation: ${error}`);
-                // Fall back to the basic PR information if fetching the complete conversation fails
-                linkedPullRequests = foundPRs;
-              }
-            } else {
-              linkedPullRequests = foundPRs;
-            }
-          }
-        } catch (error) {
-          console.error("Error in REST API search:", error);
-        }
+        // No need to search - use the bidirectional API to find linked PRs
+        // This uses the same GraphQL query under the hood
+        linkedIssue = await findLinkedIssue(owner, repo, number, token);
       }
     }
 
@@ -323,7 +179,7 @@ export async function fetchGitHubData(
       comments,
       type,
       linkedIssue,
-      linkedPullRequests: linkedPullRequests.length > 0 ? linkedPullRequests : undefined,
+      linkedPullRequests,
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));

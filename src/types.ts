@@ -68,10 +68,15 @@ export interface LinkedIssue {
   title: string;
   body: string;
   html_url: string;
-  comments?: GitHubComment[]; // Comments from the linked issue
+  comments?: any[];
+  repository?: {
+    owner: string;
+    name: string;
+  };
 }
 
 export interface LinkedPullRequest {
+  id?: string;
   number: number;
   title: string;
   url: string;
@@ -80,6 +85,12 @@ export interface LinkedPullRequest {
     login: string;
     html_url?: string;
     avatar_url?: string;
+  };
+  repository?: {
+    owner: {
+      login: string;
+    };
+    name: string;
   };
   // These properties are added for PR conversations
   body?: string;
