@@ -67,7 +67,7 @@ export interface CommentDisplayOptions {
 /**
  * Render a GitHub comment to the DOM
  */
-export function renderComment(
+function renderComment(
   comment: GitHubComment,
   options: CommentDisplayOptions,
   scores?: CommentScores
@@ -331,7 +331,7 @@ export function renderComments(
 /**
  * Generate HTML for PR list
  */
-export function generatePRListHTML(prs: any[]): string {
+function generatePRListHTML(prs: any[]): string {
   let html = `# Linked Pull Requests\n\n`;
 
   prs.forEach((pr) => {

@@ -5,7 +5,7 @@
 import { GitHubClient } from "../github/github-client";
 import { FetchedData, UrlParseResult } from "../github/types";
 
-export class GitHubApiService {
+class GitHubApiService {
   private client: GitHubClient;
   private readonly CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 

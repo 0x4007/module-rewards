@@ -152,7 +152,7 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
 /**
  * Generate HTML for PR list
  */
-export function generatePRListHTML(prs: LinkedPullRequest[]): string {
+function generatePRListHTML(prs: LinkedPullRequest[]): string {
   let html = `# Linked Pull Requests\n\n`;
 
   prs.forEach((pr) => {

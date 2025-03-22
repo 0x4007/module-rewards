@@ -5,7 +5,7 @@ import { CommentScores } from "./types";
  * Counts words in a text, excluding code blocks, URLs, etc.
  * For slash commands (starting with '/') and bot comments, returns 0 to exclude them from scoring.
  */
-export function countWords(text: string, isSlashCommand?: boolean, isBot?: boolean): number {
+function countWords(text: string, isSlashCommand?: boolean, isBot?: boolean): number {
   // Skip if text is empty
   if (!text || typeof text !== "string") return 0;
 
@@ -34,21 +34,21 @@ export function countWords(text: string, isSlashCommand?: boolean, isBot?: boole
 /**
  * Calculates the original score based on power-law (0.85 exponent)
  */
-export function calculateOriginalScore(wordCount: number): number {
+function calculateOriginalScore(wordCount: number): number {
   return Math.pow(wordCount, 0.85);
 }
 
 /**
  * Calculates the log-adjusted score which balances length
  */
-export function calculateLogAdjustedScore(wordCount: number): number {
+function calculateLogAdjustedScore(wordCount: number): number {
   return Math.pow(wordCount, 0.85) * (1 / Math.log2(wordCount + 2));
 }
 
 /**
  * Calculates the exponential score which penalizes verbosity
  */
-export function calculateExponentialScore(wordCount: number): number {
+function calculateExponentialScore(wordCount: number): number {
   return Math.pow(wordCount, 0.85) * Math.exp(-wordCount / 100);
 }
 

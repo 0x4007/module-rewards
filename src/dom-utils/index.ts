@@ -8,7 +8,7 @@ import { CommentDisplayOptions, ErrorDisplayOptions } from "./types";
  * Clear any existing results from the DOM
  * @deprecated Use domManager.clearContent instead
  */
-export function clearResults(containerSelector: string): void {
+function clearResults(containerSelector: string): void {
   console.warn("clearResults is deprecated, use domManager.clearContent instead");
   const container = document.querySelector(containerSelector);
   if (container) {
@@ -46,7 +46,7 @@ export function clearResults(containerSelector: string): void {
  * Append a comment to the DOM with specified options
  * @deprecated Use components/comment-component.ts instead
  */
-export function appendCommentToDOM(
+function appendCommentToDOM(
   comment: {
     id: string | number;
     body: string;

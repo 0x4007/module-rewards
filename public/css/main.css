@@ -123,6 +123,7 @@ footer {
   grid-template-columns: 1fr 1fr;
   /* margin-top: 2rem; */
   /* width: 100%; */
+  gap: 8px;
 }
 
 .column {

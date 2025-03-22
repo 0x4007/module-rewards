@@ -16,7 +16,7 @@ interface ContributorScores {
 /**
  * Aggregates scores by contributor across all comments
  */
-export function aggregateScoresByContributor(
+function aggregateScoresByContributor(
   prComments: GitHubComment[],
   issueComments: GitHubComment[],
   scoreMap: Map<number, CommentScores>
@@ -156,7 +156,7 @@ export function renderScoreSummary(
 /**
  * Clear the score summary
  */
-export function clearScoreSummary(): void {
+function clearScoreSummary(): void {
   domManager.clearContent("scoreSummaryContent");
   domManager.hide("scoreSummary");
 }

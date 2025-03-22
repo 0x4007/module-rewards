@@ -9,7 +9,7 @@ export interface CloudEvent<T = any> {
   subject?: string;
 }
 
-export function createCloudEvent<T>(
+function createCloudEvent<T>(
   type: string,
   source: string,
   data: T,
