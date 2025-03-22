@@ -1,19 +1,17 @@
 {
-  "name": "conversation",
-  "module": "src/fetch-pr-comments.ts",
+  "name": "pr-conversation-analyzer",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "serve": "static ./src/",
-    "fetch": "bun run src/fetch-pr-comments.ts"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "start": "bun src/server.ts",
+    "fetch": "bun src/fetch-pr-comments.ts"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2",
-    "node-static": "^0.7.11"
+    "marked": "^4.0.0",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "@types/node": "^20.0.0"
   }
 }

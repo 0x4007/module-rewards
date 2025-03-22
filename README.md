@@ -1,45 +1,61 @@
-# Comment Score Analysis
+# PR Conversation Analyzer
 
-A visualization tool for analyzing GitHub comment scores using different scoring algorithms. This project aims to evaluate conversation quality in GitHub discussions by applying various scoring methods to comment content.
+A tool to analyze and score GitHub PR conversations, now with dynamic PR loading support.
 
-## Scoring Algorithms
+## Setup
 
-- **Original**: `wordCount^0.85`
-  - Basic power-law relationship rewarding length with diminishing returns
-- **Log-Adjusted**: `wordCount^0.85 * (1/log2(wordCount + 2))`
-  - Introduces logarithmic penalty for very long comments
-- **Exponential-Adjusted**: `wordCount^0.85 * exp(-wordCount/100)`
-  - Adds exponential decay to more aggressively penalize excessive length
+1. Install dependencies:
+```bash
+bun install
+```
 
-## Project Structure
+2. Copy .env.example to .env and add your GitHub token:
+```bash
+cp .env.example .env
+# Edit .env and add your GITHUB_TOKEN
+```
 
-- `src/` - Source code for the visualizations
-  - `comment-scores.html` - Latest version with full feature set
-  - `score-comparison-v2.html` - Enhanced comparison view
-  - `score-comparison.html` - Initial comparison implementation
-  - `score-visualization.html` - Original prototype
-- `data/` - JSON data files from GitHub
-- `docs/` - Documentation and analysis
-  - [Project Context](docs/project-context.md) - Detailed background and technical information
-  - `pr-31-conversation.md` - Original PR conversation
+## Usage
+
+### Running the Server
+
+Start the local server:
+```bash
+bun start
+```
+
+The server will run at http://localhost:8080. You can analyze any GitHub PR in two ways:
+
+1. Using the web interface:
+   - Visit http://localhost:8080
+   - Paste the GitHub PR URL (e.g., https://github.com/ubiquity-os-marketplace/command-ask/pull/31)
+   - Click "Analyze Conversation"
+
+2. Using URL parameters:
+   - Format: http://localhost:8080/?url=github-pr-url
+   - Example: http://localhost:8080/?url=https://github.com/ubiquity-os-marketplace/command-ask/pull/31
+
+### Fetching PR Data
+
+To fetch PR data for offline analysis:
+
+```bash
+bun fetch --owner org --repo name --number pr_number
+```
+
+Example:
+```bash
+bun fetch --owner ubiquity-os-marketplace --repo command-ask --number 31
+```
 
 ## Features
 
-- GitHub-style markdown rendering
-- Proper handling of code blocks, blockquotes, links, and formatting
-- Per-comment metrics and user-based statistics
-- Comparative analysis of different scoring approaches
-- Clean, responsive visualization
-
-## Getting Started
-
-1. Clone this repository
-2. Open `src/comment-scores.html` in a browser
-3. Review the [Project Context](docs/project-context.md) for detailed information
-
-## Contributing
-
-When working with this codebase:
-1. The visualization is self-contained with only marked.js as external dependency
-2. Word counting carefully handles markdown elements while preserving content
-3. Scoring algorithms balance thoroughness with conciseness
+- Dynamic PR loading through URL parameters
+- Instant scoring and analysis
+- Three scoring algorithms:
+  1. Original: wordCount^0.85
+  2. Log-adjusted: wordCount^0.85 * (1/log2(wordCount + 2))
+  3. Exponential: wordCount^0.85 * exp(-wordCount/100)
+- GitHub-style comment rendering
+- Word counting with code block exclusion
+- Comment statistics and averages

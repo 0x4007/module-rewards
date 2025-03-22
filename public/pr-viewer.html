@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Conversation Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="pr-header">
+            <h1 class="pr-title">Loading PR data...</h1>
+            <div class="pr-meta"></div>
+        </div>
+        <div id="score-summary">
+            <h2>Conversation Analysis</h2>
+            <div class="algorithm-scores"></div>
+        </div>
+        <div id="conversation"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module" src="pr-viewer.js"></script>
+</body>
+</html>

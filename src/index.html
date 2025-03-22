@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PR #31 Conversation Analysis</title>
+    <title>GitHub PR Conversation Analysis</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -116,23 +116,147 @@
         .algorithm-score {
             flex: 1;
         }
+
+        .error-message {
+            color: #cb2431;
+            background-color: #ffeef0;
+            border: 1px solid #f97583;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #586069;
+        }
+
+        .input-form {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .input-form input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e1e4e8;
+            border-radius: 3px;
+        }
+
+        .input-form button {
+            background-color: #2ea44f;
+            color: white;
+            border: 1px solid rgba(27, 31, 35, 0.15);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .input-form button:hover {
+            background-color: #2c974b;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <div class="pr-header">
-            <h1 class="pr-title">Loading PR data...</h1>
-            <div class="pr-meta"></div>
+        <div class="input-form">
+            <h2>GitHub PR Conversation Analysis</h2>
+            <form id="prForm" onsubmit="handleFormSubmit(event)">
+                <label for="url">GitHub PR URL</label>
+                <input type="url" id="url" name="url" required
+                    placeholder="e.g., https://github.com/ubiquity-os-marketplace/command-ask/pull/31"
+                    style="font-family: monospace;">
+                <button type="submit">Analyze Conversation</button>
+            </form>
         </div>
-        <div id="score-summary">
-            <h2>Conversation Analysis</h2>
-            <div class="algorithm-scores"></div>
+
+        <div id="content">
+            <div class="pr-header">
+                <h1 class="pr-title">Enter PR details above to begin analysis</h1>
+                <div class="pr-meta"></div>
+            </div>
+            <div id="score-summary">
+                <h2>Conversation Analysis</h2>
+                <div class="algorithm-scores"></div>
+            </div>
+            <div id="conversation"></div>
         </div>
-        <div id="conversation"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        // Parse GitHub URL
+        function parseGitHubUrl(url) {
+            try {
+                const regex = /github\.com\/([^\/]+)\/([^\/]+)\/(pull|issues)\/(\d+)/;
+                const match = url.match(regex);
+                if (!match) return null;
+
+                return {
+                    owner: match[1],
+                    repo: match[2],
+                    type: match[3] === 'pull' ? 'pull' : 'issue',
+                    number: match[4]
+                };
+            } catch (error) {
+                return null;
+            }
+        }
+
+        // URL parameter handling
+        function getUrlParams() {
+            const url = new URL(window.location.href);
+            const githubUrl = url.searchParams.get('url');
+
+            if (githubUrl) {
+                return parseGitHubUrl(githubUrl);
+            }
+
+            // Fallback to individual params for backward compatibility
+            const owner = url.searchParams.get('owner');
+            const repo = url.searchParams.get('repo');
+            const number = url.searchParams.get('number');
+            const type = url.searchParams.get('type') || 'pull';
+
+            if (owner && repo && number) {
+                return { owner, repo, type, number };
+            }
+
+            return null;
+        }
+
+        // Form submission
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const params = new URLSearchParams({
+                url: form.url.value
+            });
+            window.location.search = params.toString();
+        }
+
+        // Populate form from URL params
+        function populateForm() {
+            const params = getUrlParams();
+            const urlInput = document.getElementById('url');
+            if (params) {
+                urlInput.value = `https://github.com/${params.owner}/${params.repo}/${params.type}/${params.number}`;
+            }
+        }
+
         // Scoring algorithms
         function calculateOriginalScore(wordCount) {
             return Math.pow(wordCount, 0.85);
@@ -157,20 +281,71 @@
             return text.trim().split(/\s+/).filter(word => word.length > 0).length;
         }
 
+        function showError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error-message">
+                    ${message}
+                </div>
+            `;
+        }
+
+        function showLoading() {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading">
+                    Loading PR data...
+                </div>
+            `;
+        }
+
         async function loadData() {
+            const params = getUrlParams();
+
+            // Check for required parameters
+            if (!params.owner || !params.repo || !params.number) {
+                if (window.location.search) { // Only show error if there was an attempt to load data
+                    showError('Missing required parameters. Please fill in all fields above.');
+                }
+                return;
+            }
+
+            showLoading();
+
             try {
+                const baseUrl = 'https://api.github.com/repos';
+                const headers = {
+                    'Accept': 'application/vnd.github.v3+json'
+                };
+
+                // Optional GitHub token
+                if (window.GITHUB_TOKEN) {
+                    headers['Authorization'] = `token ${window.GITHUB_TOKEN}`;
+                }
+
                 const [prDetails, prComments, issueComments] = await Promise.all([
-                    fetch('../data/pr_details.json').then(r => r.json()),
-                    fetch('../data/pr_comments.json').then(r => r.json()),
-                    fetch('../data/issue_comments.json').then(r => r.json())
+                    fetch(`${baseUrl}/${params.owner}/${params.repo}/pulls/${params.number}`, { headers }).then(r => r.json()),
+                    fetch(`${baseUrl}/${params.owner}/${params.repo}/pulls/${params.number}/comments`, { headers }).then(r => r.json()),
+                    fetch(`${baseUrl}/${params.owner}/${params.repo}/issues/${params.number}/comments`, { headers }).then(r => r.json())
                 ]);
 
-                // Update PR header
-                document.querySelector('.pr-title').textContent = `${prDetails.title} (#${prDetails.number})`;
-                document.querySelector('.pr-meta').textContent =
-                    `Created by ${prDetails.user.login} on ${new Date(prDetails.created_at).toLocaleDateString()}`;
+                if (prDetails.message) {
+                    throw new Error(prDetails.message);
+                }
 
-                // Process comments
+                const content = document.getElementById('content');
+                content.innerHTML = `
+                    <div class="pr-header">
+                        <h1 class="pr-title">${prDetails.title} (#${prDetails.number})</h1>
+                        <div class="pr-meta">Created by ${prDetails.user.login} on ${new Date(prDetails.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div id="score-summary">
+                        <h2>Conversation Analysis</h2>
+                        <div class="algorithm-scores"></div>
+                    </div>
+                    <div id="conversation"></div>
+                `;
+
                 const conversation = document.getElementById('conversation');
                 const comments = [...prComments, ...issueComments].sort((a, b) =>
                     new Date(a.created_at) - new Date(b.created_at)
@@ -252,13 +427,13 @@
                 `;
 
             } catch (error) {
+                showError(`Error loading PR data: ${error.message}`);
                 console.error('Error loading data:', error);
-                document.body.innerHTML = `<div style="color: red; padding: 2rem;">
-                    Error loading PR data. Please check the console for details.
-                </div>`;
             }
         }
 
+        // Initialize
+        populateForm();
         loadData();
     </script>
 </body>
