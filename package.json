@@ -14,7 +14,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/ws": "^8.18.0",
+    "js-yaml": "^4.1.0",
     "marked": "^9.0.0",
     "ws": "^8.18.1"
   }

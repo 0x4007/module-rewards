@@ -34,8 +34,9 @@
 
 * {
     font-family: var(--font-family);
+    /* background-color: #80808008; */
 }
-
+/* html{background-color: #000;} */
 body {
     line-height: 1.6;
     color: var(--text);
@@ -151,23 +152,8 @@ h1 {
     overflow: auto;
 }
 
-.algorithm-scores {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin: 2rem 0;
-}
 
-.algorithm-score {
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-}
 
-.algorithm-score h3 {
-    margin: 0 0 0.5rem;
-    font-size: 1rem;
-}
 
 .loading-indicator {
     padding: 0.5rem 1rem;
