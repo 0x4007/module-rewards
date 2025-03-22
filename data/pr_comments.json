@@ -1,0 +1,490 @@
+[
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826471336",
+    "pull_request_review_id": 2411149240,
+    "id": 1826471336,
+    "node_id": "PRRC_kwDOMVbFZ85s3b2o",
+    "diff_hunk": "@@ -0,0 +1,138 @@\n+import OpenAI from \"openai\";\n+\n+export class OutputFormatter {\n+  private static async _formatWithO1Mini(text: string, client: OpenAI): Promise<string> {\n+    try {\n+      const response = await client.chat.completions.create({\n+        model: \"gpt-4o\",\n+        messages: [\n+          {\n+            role: \"system\",\n+            content: `You are an authoritative technical writer. Format and rephrase the input text following these rules:\n+\n+1. Writing Style:\n+- Use direct, authoritative statements\n+- Remove phrases like \"Based on the context\", \"I think\", \"It appears\"\n+- Start sentences with action verbs when possible\n+- Be concise.\n+- Do Not Add titles to your responses.\n+- Maintain technical accuracy\n+- Keep existing citations intact\n+- Expand on technical concepts when relevant\n+- Include detailed explanations for complex topics\n+- Provide context for technical decisions\n+- Add clarifying examples where helpful\n+\n+2. Formatting:\n+For code:\n+\\`\\`\\`language\n+code here\n+\\`\\`\\`\n+\n+For lists:\n+- Main point with detailed explanation\n+  - Sub-detail with context\n+  - Sub-detail with examples\n+\n+For headings:\n+# Main Topic with Context\n+\n+## Sub-topic with Details\n+\n+For paragraphs:\n+One clear statement per paragraph with supporting details.\n+\n+Add empty line between paragraphs.\n+\n+Return only the formatted text with improved style.`,\n+          },\n+          {\n+            role: \"user\",\n+            content: `Format and improve this text:\\n\\n${text}`,\n+          },\n+        ],\n+        temperature: 0.1,\n+        max_tokens: 2000,\n+      });\n+\n+      const formattedText = response.choices[0]?.message?.content;\n+      if (!formattedText) {\n+        return this._fallbackFormatting(text);\n+      }\n+\n+      return formattedText;\n+    } catch (error) {\n+      console.error(\"Error formatting with o1-mini:\", error);\n+      return this._fallbackFormatting(text);\n+    }\n+  }\n+\n+  private static _fallbackFormatting(text: string): string {\n+    let formattedText = text;\n+\n+    // Format code blocks\n+    formattedText = formattedText.replace(/```([\\s\\S]*?)```/g, (match, code) => {\n+      const trimmedCode = code.trim();\n+      return `\\n\\n\\`\\`\\`\\n${trimmedCode}\\n\\`\\`\\`\\n\\n`;\n+    });\n+\n+    // Format inline code\n+    formattedText = formattedText.replace(/`([^`]+)`/g, (match) => `\\n${match}\\n`);\n+\n+    // Format lists\n+    formattedText = formattedText.replace(/^[-*]\\s/gm, \"\\n- \");\n+    formattedText = formattedText.replace(/^\\d+\\.\\s/gm, (match) => `\\n${match}`);\n+\n+    // Format headings\n+    formattedText = formattedText.replace(/^(#{1,6}\\s.*?)$/gm, \"\\n$1\\n\");\n+\n+    // Format paragraphs with improved spacing\n+    formattedText = formattedText\n+      .split(\"\\n\")\n+      .map((line) => line.trim())\n+      .filter((line) => line.length > 0)\n+      .join(\"\\n\\n\");\n+\n+    // Clean up multiple newlines while preserving paragraph spacing\n+    formattedText = formattedText.replace(/\\n{3,}/g, \"\\n\\n\");\n+\n+    return formattedText.trim();\n+  }\n+\n+  private static _removeWeakPhrases(text: string): string {",
+    "path": "src/adapters/openai/helpers/format-output.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "0x4007",
+      "id": 4975670,
+      "node_id": "MDQ6VXNlcjQ5NzU2NzA=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4975670?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/0x4007",
+      "html_url": "https://github.com/0x4007",
+      "followers_url": "https://api.github.com/users/0x4007/followers",
+      "following_url": "https://api.github.com/users/0x4007/following{/other_user}",
+      "gists_url": "https://api.github.com/users/0x4007/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/0x4007/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/0x4007/subscriptions",
+      "organizations_url": "https://api.github.com/users/0x4007/orgs",
+      "repos_url": "https://api.github.com/users/0x4007/repos",
+      "events_url": "https://api.github.com/users/0x4007/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/0x4007/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "I think this is only viable with temperature 0 etc. couldn't this also cause a problem with quotes? If the text is quoted from elsewhere and it contains one of these expressions it might cause problems. ",
+    "created_at": "2024-11-02T04:00:06Z",
+    "updated_at": "2024-11-02T04:02:05Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826471336",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "MEMBER",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826471336"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826471336"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826471336/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 102,
+    "original_line": 102,
+    "side": "RIGHT",
+    "original_position": 102,
+    "position": 102,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826471496",
+    "pull_request_review_id": 2411149240,
+    "id": 1826471496,
+    "node_id": "PRRC_kwDOMVbFZ85s3b5I",
+    "diff_hunk": "@@ -19,61 +44,44 @@ export async function askQuestion(context: Context, question: string) {\n   if (!question) {\n     throw context.logger.error(\"No question provided\");\n   }\n-  const { specAndBodies, streamlinedComments } = await recursivelyFetchLinkedIssues({\n-    context,\n-    owner: context.payload.repository.owner.login,\n-    repo: context.payload.repository.name,\n+\n+  const response = await askGpt(context, question);\n+  context.logger.info(`Answer: ${response.answer}`, {\n+    caller: \"_Logs.<anonymous>\",",
+    "path": "src/handlers/ask-llm.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "0x4007",
+      "id": 4975670,
+      "node_id": "MDQ6VXNlcjQ5NzU2NzA=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4975670?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/0x4007",
+      "html_url": "https://github.com/0x4007",
+      "followers_url": "https://api.github.com/users/0x4007/followers",
+      "following_url": "https://api.github.com/users/0x4007/following{/other_user}",
+      "gists_url": "https://api.github.com/users/0x4007/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/0x4007/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/0x4007/subscriptions",
+      "organizations_url": "https://api.github.com/users/0x4007/orgs",
+      "repos_url": "https://api.github.com/users/0x4007/repos",
+      "events_url": "https://api.github.com/users/0x4007/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/0x4007/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "What is this ",
+    "created_at": "2024-11-02T04:01:24Z",
+    "updated_at": "2024-11-02T04:02:05Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826471496",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "MEMBER",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826471496"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826471496"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826471496/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 50,
+    "original_line": 50,
+    "side": "RIGHT",
+    "original_position": 56,
+    "position": 56,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826472030",
+    "pull_request_review_id": 2411150011,
+    "id": 1826472030,
+    "node_id": "PRRC_kwDOMVbFZ85s3cBe",
+    "diff_hunk": "@@ -19,61 +44,44 @@ export async function askQuestion(context: Context, question: string) {\n   if (!question) {\n     throw context.logger.error(\"No question provided\");\n   }\n-  const { specAndBodies, streamlinedComments } = await recursivelyFetchLinkedIssues({\n-    context,\n-    owner: context.payload.repository.owner.login,\n-    repo: context.payload.repository.name,\n+\n+  const response = await askGpt(context, question);\n+  context.logger.info(`Answer: ${response.answer}`, {\n+    caller: \"_Logs.<anonymous>\",",
+    "path": "src/handlers/ask-llm.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "shiv810",
+      "id": 53160903,
+      "node_id": "MDQ6VXNlcjUzMTYwOTAz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53160903?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/shiv810",
+      "html_url": "https://github.com/shiv810",
+      "followers_url": "https://api.github.com/users/shiv810/followers",
+      "following_url": "https://api.github.com/users/shiv810/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shiv810/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/shiv810/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shiv810/subscriptions",
+      "organizations_url": "https://api.github.com/users/shiv810/orgs",
+      "repos_url": "https://api.github.com/users/shiv810/repos",
+      "events_url": "https://api.github.com/users/shiv810/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/shiv810/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "This was hardcoded into the tests, for askQuestion. I'll remove this",
+    "created_at": "2024-11-02T04:02:54Z",
+    "updated_at": "2024-11-02T04:02:54Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826472030",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "MEMBER",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826472030"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826472030"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826472030/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 50,
+    "original_line": 50,
+    "side": "RIGHT",
+    "in_reply_to_id": 1826471496,
+    "original_position": 56,
+    "position": 56,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826472479",
+    "pull_request_review_id": 2411150668,
+    "id": 1826472479,
+    "node_id": "PRRC_kwDOMVbFZ85s3cIf",
+    "diff_hunk": "@@ -0,0 +1,138 @@\n+import OpenAI from \"openai\";\n+\n+export class OutputFormatter {\n+  private static async _formatWithO1Mini(text: string, client: OpenAI): Promise<string> {\n+    try {\n+      const response = await client.chat.completions.create({\n+        model: \"gpt-4o\",\n+        messages: [\n+          {\n+            role: \"system\",\n+            content: `You are an authoritative technical writer. Format and rephrase the input text following these rules:\n+\n+1. Writing Style:\n+- Use direct, authoritative statements\n+- Remove phrases like \"Based on the context\", \"I think\", \"It appears\"\n+- Start sentences with action verbs when possible\n+- Be concise.\n+- Do Not Add titles to your responses.\n+- Maintain technical accuracy\n+- Keep existing citations intact\n+- Expand on technical concepts when relevant\n+- Include detailed explanations for complex topics\n+- Provide context for technical decisions\n+- Add clarifying examples where helpful\n+\n+2. Formatting:\n+For code:\n+\\`\\`\\`language\n+code here\n+\\`\\`\\`\n+\n+For lists:\n+- Main point with detailed explanation\n+  - Sub-detail with context\n+  - Sub-detail with examples\n+\n+For headings:\n+# Main Topic with Context\n+\n+## Sub-topic with Details\n+\n+For paragraphs:\n+One clear statement per paragraph with supporting details.\n+\n+Add empty line between paragraphs.\n+\n+Return only the formatted text with improved style.`,\n+          },\n+          {\n+            role: \"user\",\n+            content: `Format and improve this text:\\n\\n${text}`,\n+          },\n+        ],\n+        temperature: 0.1,\n+        max_tokens: 2000,\n+      });\n+\n+      const formattedText = response.choices[0]?.message?.content;\n+      if (!formattedText) {\n+        return this._fallbackFormatting(text);\n+      }\n+\n+      return formattedText;\n+    } catch (error) {\n+      console.error(\"Error formatting with o1-mini:\", error);\n+      return this._fallbackFormatting(text);\n+    }\n+  }\n+\n+  private static _fallbackFormatting(text: string): string {\n+    let formattedText = text;\n+\n+    // Format code blocks\n+    formattedText = formattedText.replace(/```([\\s\\S]*?)```/g, (match, code) => {\n+      const trimmedCode = code.trim();\n+      return `\\n\\n\\`\\`\\`\\n${trimmedCode}\\n\\`\\`\\`\\n\\n`;\n+    });\n+\n+    // Format inline code\n+    formattedText = formattedText.replace(/`([^`]+)`/g, (match) => `\\n${match}\\n`);\n+\n+    // Format lists\n+    formattedText = formattedText.replace(/^[-*]\\s/gm, \"\\n- \");\n+    formattedText = formattedText.replace(/^\\d+\\.\\s/gm, (match) => `\\n${match}`);\n+\n+    // Format headings\n+    formattedText = formattedText.replace(/^(#{1,6}\\s.*?)$/gm, \"\\n$1\\n\");\n+\n+    // Format paragraphs with improved spacing\n+    formattedText = formattedText\n+      .split(\"\\n\")\n+      .map((line) => line.trim())\n+      .filter((line) => line.length > 0)\n+      .join(\"\\n\\n\");\n+\n+    // Clean up multiple newlines while preserving paragraph spacing\n+    formattedText = formattedText.replace(/\\n{3,}/g, \"\\n\\n\");\n+\n+    return formattedText.trim();\n+  }\n+\n+  private static _removeWeakPhrases(text: string): string {",
+    "path": "src/adapters/openai/helpers/format-output.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "shiv810",
+      "id": 53160903,
+      "node_id": "MDQ6VXNlcjUzMTYwOTAz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53160903?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/shiv810",
+      "html_url": "https://github.com/shiv810",
+      "followers_url": "https://api.github.com/users/shiv810/followers",
+      "following_url": "https://api.github.com/users/shiv810/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shiv810/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/shiv810/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shiv810/subscriptions",
+      "organizations_url": "https://api.github.com/users/shiv810/orgs",
+      "repos_url": "https://api.github.com/users/shiv810/repos",
+      "events_url": "https://api.github.com/users/shiv810/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/shiv810/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "This only removes, the phrases from the generated output, and not quoted text. I don't think this is necessary, basically ensures the tone of the response.",
+    "created_at": "2024-11-02T04:06:56Z",
+    "updated_at": "2024-11-02T04:06:56Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826472479",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "MEMBER",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826472479"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826472479"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826472479/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 102,
+    "original_line": 102,
+    "side": "RIGHT",
+    "in_reply_to_id": 1826471336,
+    "original_position": 102,
+    "position": 102,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826540323",
+    "pull_request_review_id": 2411227376,
+    "id": 1826540323,
+    "node_id": "PRRC_kwDOMVbFZ85s3ssj",
+    "diff_hunk": "@@ -19,61 +44,44 @@ export async function askQuestion(context: Context, question: string) {\n   if (!question) {\n     throw context.logger.error(\"No question provided\");\n   }\n-  const { specAndBodies, streamlinedComments } = await recursivelyFetchLinkedIssues({\n-    context,\n-    owner: context.payload.repository.owner.login,\n-    repo: context.payload.repository.name,\n+\n+  const response = await askGpt(context, question);\n+  context.logger.info(`Answer: ${response.answer}`, {\n+    caller: \"_Logs.<anonymous>\",",
+    "path": "src/handlers/ask-llm.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "Keyrxng",
+      "id": 106303466,
+      "node_id": "U_kgDOBlYP6g",
+      "avatar_url": "https://avatars.githubusercontent.com/u/106303466?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Keyrxng",
+      "html_url": "https://github.com/Keyrxng",
+      "followers_url": "https://api.github.com/users/Keyrxng/followers",
+      "following_url": "https://api.github.com/users/Keyrxng/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Keyrxng/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Keyrxng/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Keyrxng/subscriptions",
+      "organizations_url": "https://api.github.com/users/Keyrxng/orgs",
+      "repos_url": "https://api.github.com/users/Keyrxng/repos",
+      "events_url": "https://api.github.com/users/Keyrxng/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Keyrxng/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "this is added via the logger you don't need `caller`",
+    "created_at": "2024-11-02T10:13:01Z",
+    "updated_at": "2024-11-02T10:13:01Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826540323",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "CONTRIBUTOR",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826540323"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826540323"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826540323/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 50,
+    "original_line": 50,
+    "side": "RIGHT",
+    "in_reply_to_id": 1826471496,
+    "original_position": 56,
+    "position": 56,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826586689",
+    "pull_request_review_id": 2411267872,
+    "id": 1826586689,
+    "node_id": "PRRC_kwDOMVbFZ85s34BB",
+    "diff_hunk": "@@ -0,0 +1,138 @@\n+import OpenAI from \"openai\";\n+\n+export class OutputFormatter {\n+  private static async _formatWithO1Mini(text: string, client: OpenAI): Promise<string> {\n+    try {\n+      const response = await client.chat.completions.create({\n+        model: \"gpt-4o\",\n+        messages: [\n+          {\n+            role: \"system\",\n+            content: `You are an authoritative technical writer. Format and rephrase the input text following these rules:\n+\n+1. Writing Style:\n+- Use direct, authoritative statements\n+- Remove phrases like \"Based on the context\", \"I think\", \"It appears\"\n+- Start sentences with action verbs when possible\n+- Be concise.\n+- Do Not Add titles to your responses.\n+- Maintain technical accuracy\n+- Keep existing citations intact\n+- Expand on technical concepts when relevant\n+- Include detailed explanations for complex topics\n+- Provide context for technical decisions\n+- Add clarifying examples where helpful\n+\n+2. Formatting:\n+For code:\n+\\`\\`\\`language\n+code here\n+\\`\\`\\`\n+\n+For lists:\n+- Main point with detailed explanation\n+  - Sub-detail with context\n+  - Sub-detail with examples\n+\n+For headings:\n+# Main Topic with Context\n+\n+## Sub-topic with Details\n+\n+For paragraphs:\n+One clear statement per paragraph with supporting details.\n+\n+Add empty line between paragraphs.\n+\n+Return only the formatted text with improved style.`,\n+          },\n+          {\n+            role: \"user\",\n+            content: `Format and improve this text:\\n\\n${text}`,\n+          },\n+        ],\n+        temperature: 0.1,\n+        max_tokens: 2000,\n+      });\n+\n+      const formattedText = response.choices[0]?.message?.content;\n+      if (!formattedText) {\n+        return this._fallbackFormatting(text);\n+      }\n+\n+      return formattedText;\n+    } catch (error) {\n+      console.error(\"Error formatting with o1-mini:\", error);\n+      return this._fallbackFormatting(text);\n+    }\n+  }\n+\n+  private static _fallbackFormatting(text: string): string {\n+    let formattedText = text;\n+\n+    // Format code blocks\n+    formattedText = formattedText.replace(/```([\\s\\S]*?)```/g, (match, code) => {\n+      const trimmedCode = code.trim();\n+      return `\\n\\n\\`\\`\\`\\n${trimmedCode}\\n\\`\\`\\`\\n\\n`;\n+    });\n+\n+    // Format inline code\n+    formattedText = formattedText.replace(/`([^`]+)`/g, (match) => `\\n${match}\\n`);\n+\n+    // Format lists\n+    formattedText = formattedText.replace(/^[-*]\\s/gm, \"\\n- \");\n+    formattedText = formattedText.replace(/^\\d+\\.\\s/gm, (match) => `\\n${match}`);\n+\n+    // Format headings\n+    formattedText = formattedText.replace(/^(#{1,6}\\s.*?)$/gm, \"\\n$1\\n\");\n+\n+    // Format paragraphs with improved spacing\n+    formattedText = formattedText\n+      .split(\"\\n\")\n+      .map((line) => line.trim())\n+      .filter((line) => line.length > 0)\n+      .join(\"\\n\\n\");\n+\n+    // Clean up multiple newlines while preserving paragraph spacing\n+    formattedText = formattedText.replace(/\\n{3,}/g, \"\\n\\n\");\n+\n+    return formattedText.trim();\n+  }\n+\n+  private static _removeWeakPhrases(text: string): string {",
+    "path": "src/adapters/openai/helpers/format-output.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "Keyrxng",
+      "id": 106303466,
+      "node_id": "U_kgDOBlYP6g",
+      "avatar_url": "https://avatars.githubusercontent.com/u/106303466?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Keyrxng",
+      "html_url": "https://github.com/Keyrxng",
+      "followers_url": "https://api.github.com/users/Keyrxng/followers",
+      "following_url": "https://api.github.com/users/Keyrxng/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Keyrxng/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Keyrxng/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Keyrxng/subscriptions",
+      "organizations_url": "https://api.github.com/users/Keyrxng/orgs",
+      "repos_url": "https://api.github.com/users/Keyrxng/repos",
+      "events_url": "https://api.github.com/users/Keyrxng/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Keyrxng/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "doesn't this remove uncertainty and caution from the statements that would follow these phrases? Isn't an LLM likely to interpret these strings as indicating subjectivity, I'd think that these would give key context that we are not 100% on the following fact.\r\n\r\nhttps://chatgpt.com/share/672642c9-0e90-8000-871c-613f8a2768b2\r\n\r\nI see it used at the end of `createCompletion` which would imply it's stripping these from final output that we receive as well as completions sent between llm calls, is that right?",
+    "created_at": "2024-11-02T15:17:38Z",
+    "updated_at": "2024-11-02T15:19:53Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826586689",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "CONTRIBUTOR",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826586689"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826586689"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826586689/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 102,
+    "original_line": 102,
+    "side": "RIGHT",
+    "in_reply_to_id": 1826471336,
+    "original_position": 102,
+    "position": 102,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826592088",
+    "pull_request_review_id": 2411273515,
+    "id": 1826592088,
+    "node_id": "PRRC_kwDOMVbFZ85s35VY",
+    "diff_hunk": "@@ -0,0 +1,138 @@\n+import OpenAI from \"openai\";\n+\n+export class OutputFormatter {\n+  private static async _formatWithO1Mini(text: string, client: OpenAI): Promise<string> {\n+    try {\n+      const response = await client.chat.completions.create({\n+        model: \"gpt-4o\",\n+        messages: [\n+          {\n+            role: \"system\",\n+            content: `You are an authoritative technical writer. Format and rephrase the input text following these rules:\n+\n+1. Writing Style:\n+- Use direct, authoritative statements\n+- Remove phrases like \"Based on the context\", \"I think\", \"It appears\"\n+- Start sentences with action verbs when possible\n+- Be concise.\n+- Do Not Add titles to your responses.\n+- Maintain technical accuracy\n+- Keep existing citations intact\n+- Expand on technical concepts when relevant\n+- Include detailed explanations for complex topics\n+- Provide context for technical decisions\n+- Add clarifying examples where helpful\n+\n+2. Formatting:\n+For code:\n+\\`\\`\\`language\n+code here\n+\\`\\`\\`\n+\n+For lists:\n+- Main point with detailed explanation\n+  - Sub-detail with context\n+  - Sub-detail with examples\n+\n+For headings:\n+# Main Topic with Context\n+\n+## Sub-topic with Details\n+\n+For paragraphs:\n+One clear statement per paragraph with supporting details.\n+\n+Add empty line between paragraphs.\n+\n+Return only the formatted text with improved style.`,\n+          },\n+          {\n+            role: \"user\",\n+            content: `Format and improve this text:\\n\\n${text}`,\n+          },\n+        ],\n+        temperature: 0.1,\n+        max_tokens: 2000,\n+      });\n+\n+      const formattedText = response.choices[0]?.message?.content;\n+      if (!formattedText) {\n+        return this._fallbackFormatting(text);\n+      }\n+\n+      return formattedText;\n+    } catch (error) {\n+      console.error(\"Error formatting with o1-mini:\", error);\n+      return this._fallbackFormatting(text);\n+    }\n+  }\n+\n+  private static _fallbackFormatting(text: string): string {\n+    let formattedText = text;\n+\n+    // Format code blocks\n+    formattedText = formattedText.replace(/```([\\s\\S]*?)```/g, (match, code) => {\n+      const trimmedCode = code.trim();\n+      return `\\n\\n\\`\\`\\`\\n${trimmedCode}\\n\\`\\`\\`\\n\\n`;\n+    });\n+\n+    // Format inline code\n+    formattedText = formattedText.replace(/`([^`]+)`/g, (match) => `\\n${match}\\n`);\n+\n+    // Format lists\n+    formattedText = formattedText.replace(/^[-*]\\s/gm, \"\\n- \");\n+    formattedText = formattedText.replace(/^\\d+\\.\\s/gm, (match) => `\\n${match}`);\n+\n+    // Format headings\n+    formattedText = formattedText.replace(/^(#{1,6}\\s.*?)$/gm, \"\\n$1\\n\");\n+\n+    // Format paragraphs with improved spacing\n+    formattedText = formattedText\n+      .split(\"\\n\")\n+      .map((line) => line.trim())\n+      .filter((line) => line.length > 0)\n+      .join(\"\\n\\n\");\n+\n+    // Clean up multiple newlines while preserving paragraph spacing\n+    formattedText = formattedText.replace(/\\n{3,}/g, \"\\n\\n\");\n+\n+    return formattedText.trim();\n+  }\n+\n+  private static _removeWeakPhrases(text: string): string {",
+    "path": "src/adapters/openai/helpers/format-output.ts",
+    "commit_id": "7a1ce62f5cd92a342daade87476fdf39886824dc",
+    "original_commit_id": "392c67be8011d90d5afb0a4ba597a3bec14da66b",
+    "user": {
+      "login": "shiv810",
+      "id": 53160903,
+      "node_id": "MDQ6VXNlcjUzMTYwOTAz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53160903?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/shiv810",
+      "html_url": "https://github.com/shiv810",
+      "followers_url": "https://api.github.com/users/shiv810/followers",
+      "following_url": "https://api.github.com/users/shiv810/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shiv810/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/shiv810/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shiv810/subscriptions",
+      "organizations_url": "https://api.github.com/users/shiv810/orgs",
+      "repos_url": "https://api.github.com/users/shiv810/repos",
+      "events_url": "https://api.github.com/users/shiv810/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/shiv810/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "While it does remove the contextual cues you mentioned, the second model, like o1-mini, offers better reasoning capabilities that can address ambiguous cases. It manages all the formatting and processing, which is beneficial. Although this isn't a perfect solution, it ensures a consistent tone across different outputs without unnecessary preambles before each message.",
+    "created_at": "2024-11-02T15:51:48Z",
+    "updated_at": "2024-11-02T15:51:48Z",
+    "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826592088",
+    "pull_request_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+    "author_association": "MEMBER",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826592088"
+      },
+      "html": {
+        "href": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31#discussion_r1826592088"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/comments/1826592088/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 102,
+    "original_line": 102,
+    "side": "RIGHT",
+    "in_reply_to_id": 1826471336,
+    "original_position": 102,
+    "position": 102,
+    "subject_type": "line"
+  }
+]

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comment Scores Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 1200px;
+            color: #333;
+        }
+        .comment {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .comment-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .user {
+            font-weight: 600;
+            font-size: 16px;
+            color: #0366d6;
+        }
+        .metrics {
+            margin-left: auto;
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+        .comment-body {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        /* Markdown styles */
+        .comment-body :first-child { margin-top: 0; }
+        .comment-body :last-child { margin-bottom: 0; }
+        .comment-body h1, .comment-body h2, .comment-body h3 {
+            margin: 1em 0 0.5em;
+            color: #24292e;
+        }
+        .comment-body blockquote {
+            margin: 0.5em 0;
+            padding: 0 1em;
+            color: #57606a;
+            border-left: 0.25em solid #d0d7de;
+        }
+        .comment-body hr {
+            height: 2px;
+            background: #e1e4e8;
+            border: 0;
+            margin: 1em 0;
+        }
+        .comment-body ul, .comment-body ol {
+            padding-left: 2em;
+            margin: 0.5em 0;
+        }
+        .comment-body li + li {
+            margin-top: 0.25em;
+        }
+        .comment-body code {
+            padding: 0.2em 0.4em;
+            background: #f6f8fa;
+            border-radius: 3px;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 85%;
+        }
+        .comment-body a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .comment-body a:hover {
+            text-decoration: underline;
+        }
+        .scores {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .score {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .score-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .score-value {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .score-value.original { color: #1a73e8; }
+        .score-value.log { color: #34a853; }
+        .score-value.exp { color: #ea4335; }
+        .totals {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .totals h3 {
+            margin-top: 0;
+            color: #1a73e8;
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 10px;
+        }
+        .contributor {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .algorithm-description {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .formula {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="algorithm-description">
+        <h3>Scoring Algorithms</h3>
+        <div>
+            <strong>Original (Blue):</strong>
+            <div class="formula">score = wordCount^0.85</div>
+        </div>
+        <div>
+            <strong>Log-Adjusted (Green):</strong>
+            <div class="formula">score = wordCount^0.85 * (1 / log2(wordCount + 2))</div>
+        </div>
+        <div>
+            <strong>Exp-Adjusted (Red):</strong>
+            <div class="formula">score = wordCount^0.85 * exp(-wordCount/100)</div>
+        </div>
+        <p>All scores shown with wordValue = 1 for comparison.</p>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Initialize marked options for GitHub-style markdown
+        marked.use({
+            gfm: true,
+            breaks: true,
+        });
+
+        const wordValue = 1; // Base value for comparison
+
+        // Scoring functions
+        const originalScore = (wordCount) =>
+            Math.pow(wordCount, 0.85) * wordValue;
+
+        const logAdjustedScore = (wordCount) =>
+            Math.pow(wordCount, 0.85) * (wordValue / Math.log2(wordCount + 2));
+
+        const expAdjustedScore = (wordCount) =>
+            Math.pow(wordCount, 0.85) * (wordValue * Math.exp(-wordCount/100));
+
+        // Function to count words excluding quoted text and code blocks
+        const countWords = (text) => {
+            // Remove code blocks (text between backticks)
+            let cleanText = text.replace(/`[^`]*`/g, '');
+            // Remove markdown links [text](url), keeping link text
+            cleanText = cleanText.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+            // Remove horizontal rules
+            cleanText = cleanText.replace(/^-{3,}$/gm, '');
+            // Remove > from blockquotes but keep the text
+            cleanText = cleanText.replace(/^>\s*/gm, '');
+            // Split by whitespace and filter out empty strings
+            const words = cleanText.split(/\s+/).filter(w => w.length > 0);
+            return words.length;
+        };
+
+        const comments = [
+            {
+                user: "shiv810",
+                body: "> Various issues found during testing\n\nQA: \n\n- [Issue with Data from Discussions](https://github.com/sshivaditya2019/test-public/issues/209#issuecomment-2452802275)\n- [Issue with PR Summary](https://github.com/sshivaditya2019/test-public/issues/209#issuecomment-2452815731)\n- [Issue with Out of Context Question](https://github.com/sshivaditya2019/test-public/issues/199#issuecomment-2452833490)\n- [Issue not being discussed in context](https://github.com/sshivaditya2019/test-public/issues/199#issuecomment-2452800668)\n- [Question from Context](https://github.com/sshivaditya2019/test-public/issues/199#issuecomment-2452790193)"
+            },
+            {
+                user: "Keyrxng",
+                body: "> Original suggestion from issue #25:\n> We should handle data collection and processing separately from the LLM to maintain control and testability.\n\nI don't think this is the right thing to do. I'm leaving my opinion early on, absorb or ignore it whatever the case may be but:\n\nRewriting the model prompt doesn't involve taking all of our functions and turning them into LLM tools and have the AI be involved in the collection of the data via parsing comments or fetching diffs or anything like that...\n\nWe should programmatically obtain all the data, the LLM should not play a part in that at all. It having these tools, in my mind, is a poor decision.\n\n\n---\n\nIf the intention is to improve the context the AI has by allowing it to custom search context against the GitHub API then clearly embeddings search is the problem as it should have _everything_ that we have on GitHub."
+            },
+            {
+                user: "shiv810",
+                body: "> Previously: Simultaneous execution of Similar Comments, Similar Issues, and Issue Search tasks\n> Now: Sequential processing with context integration between steps\n\nThe model is effectively performing the same actions: calling Similar Comments, then Similar Issues, and finally Issue Search. Previously, these tasks would have been executed simultaneously, but now the model processes the data sequentially. If I recall correctly, this was one of your concerns, as the prompt was already pulling in data from multiple tasks, which resulted in the context being cluttered with information from various sources.\n\nApart from that, this can achieve performance close to o1-mini using just GPT-4o. I believe that would provide significant cost savings."
+            },
+            {
+                user: "Keyrxng",
+                body: "From your description, search should pull in the most relevant context beyond linked issues (with an unlimited fetch depth, a key goal for 0x4007). Now we lack control over linked issue collection, embedding search, etc.\n\nPreviously, `createCompletion` was the final step, pulling context from recursively fetched linked issues and embedding search results. We then passed this to a `reranker` before feeding it to the LLM. Is the embedding search underperforming in relevance assignment?\n\nThe LLM's output depends entirely on what we input, which we can control and refine.\n\n---\n\nThis PR seems to move the plugin toward an autonomous L2 agent, which was not its intended purpose. If it's meant to act autonomously, it should be a separate plugin. This approach adds opacity to the process, which has already been problematic. While reasoning logs provide insight, this shift is a departure from the plugin's initial design and is undocumented in the spec or PR about why these changes are suddenly necessary.\n\n---\n\nIf this PR was based on this comment, it doesn't address that problem. #28 already fixes it. The root issue was missing context and hallucinations due to hashMatching being removed.\n\nThe relevant issues and fixes are documented in the PR I requested you review. Your PR's changes are a major breaking shift; ideally, we'd merge mine and test in prod first, and if issues persist, then document why handing full control to the LLM is necessary.\n\nI feel instead of solving the root issue, we've just given the LLM tools to be able pick up where we fall short in terms of A) context fetching B) embeddings search C) prompt engineering.\n\n---\n\nThat's my two cents on things but 0x4007 is the boss obviously, I'm just giving my input since I was the go-to for AI features for quite some time and have enough experience building with OpenAI to be confident in what I'm saying. \n\nI've said before, I ask questions so that I understand the software that's being written so that I can effectively work on that codebase as well as perform review on it. Not out of avg curiosity or 'to learn' per-se but to become effective at fault finding, triage, future features, etc."
+            },
+            {
+                user: "shiv810",
+                body: "We have control over what is passed and what is called. The recursive search is still in place; the main difference is in the execution order. Instead of processing everything at once, the LLM now handles it more sequentially.\n\nThe relevance assignment is functioning as intended. The final step remains `createCompletion`. I'm unclear why you believe the embedding search is problematic; that's not the case.\n\n---\n\nAs I mentioned earlier, we're aiming to integrate everything retrieved so far into the model's context window. This ensures the process occurs over multiple calls, allowing the model to prioritize what's essential in each iteration. I'm not sure what you're referring to, but every tool call is logged, allowing us to see the input given to the model, just like in the previous version.\n\n---\n\nIf context fetching or embedding search is an issue, it would be a problem regardless of the approach taken. It's not productive to place blame solely on the model. Regarding prompt engineering, if the model isn't receiving pull diffs and ground truths, then improving the prompts is futile, both of which you claim to be fixed by your PR. Then, I don't see an issue here."
+            },
+            {
+                user: "Keyrxng",
+                body: "No, now the LLM decides whenever it wants to call a tool, so the gathered data is no longer static which is going to make life much more difficult in evaluating and refining things, yes logs help you see what it thought but now we are having to optimize it's internal reasoning logic as well as the global goal. When we already know what context to fetch A) All linked issues B) relevant embeddings (as per the spec for this feature).\n\nThen we should improve our logic for obtaining context as we can easily benchmark and test that. Starting a loop and allowing the blackbox to take over is going to become a nightmare imo. \n\nThe LLM should have one job: Take this context we gathered specifically from linked issues and embeddings search, and do what the instruction tells you. It shouldn't have the job of gathering all that data or it has the very real potential to run off endlessly fetching context it thinks is relevant. The search feature and statically linked issues has all the context we could want for, if both of those features work correctly because embeddings cover every comment across the org and task participants don't link to random off-topic issues/prs/repos.\n\n1. I assume we are assuming a ubiquity DB for production rather than your own? If you are using your DB and Ubiquity is using a production DB then the embeddings won't match exactly unless you are scripting to collect the new comments/tasks etc.\n2. We have not established benchmarks or baselines for any of this, which we absolutely should, but I am not saying it's a problem. I'm saying it's a bit of a black box and we need it to be clearer and easier to evaluate.\n\nTo which I suggested using GPT to take the all the data we fetched and embeddings etc, and then create a far more succinct ctx window with the noise removed. I see you implemented a new creation call for something almost similar. I didn't think that giving the LLM full control was the solution to refining our collected context.\n\nThat's my point exactly buddy thank you and I'm not blaming anything on the model dude. I'm saying that giving the LLM more freedom to do as it wants via the ability to call tools whenever it deems fit is wrong when there's other issues at play.\n\nInstead we should refine and improve the two base methods of data collection: A) linked issues (static, never changes once an issue is complete) B) embeddings search (dynamic always as they are updated per org comment, of which Ubiquity has 4 to consider).\n\nSo before we give full control to an LLM and hope it delivers, let's establish benchmarks and baselines that we can repeat with optimizations or logic/prompt changes.\n\nI can make a pretty educated guess how we'd create these benchmarks for our use-case but maybe you have some more specific experience or learnings with that sort of thing? Wouldn't this be a much better way to triage and optimize things rather than us taking educated-stabs-in-the-dark at it?"
+            },
+            {
+                user: "shiv810",
+                body: "I am not sure why you believe it is like this, but that's not quite accurate. The model primarily uses three functions to fetch context, with recursive issue search running independently of parameters, while the other two require specific queries. If you've reviewed the logs, you'd see all three methods being called consistently in each run.\n\nI am not sure, why you keep calling this blackbox, but you can easily debug which action/word in the prompt or query is leading to a particular reasoning step and the idea behind choosing a particular tool. \n\nYeah, it does have the potentially to keep fetching context, but then there is the token limit as well. So practically, we won't run into that issue at all.\n\nIt is running, off my DB, which I periodically update with comments and issues across organizations. Is that an issue ?\n\nGood point. We should establish strong retrieval metrics or benchmarks. This will streamline evaluation.\n\nI'm not sure what you mean by this. Reasoning prompts already guide the model's function calls at the start, according to the prompt, and it's not set up to randomly invoke functions. It's designed to follow prompts precisely.\n\nYeah, it should be refined further, but they are independent of model architecture. With this PR I am trying to accomplish the following things:\n- A more modular approach between context gathering and model processing\n- Sequential data fetching\n- Reducing prompt clutter from unrelated tasks.\n\nThe other two base methods should be improved regardless of this approach, I don't think that is relevant to be mentioned here.\n\nWe should have benchmarks for embeddings and optimize them for retrieval process, but even if we do I am not sure what we are benchmarking, we are using off the self embeddings, which are top of the leaderboard (MTEB). We do not have any prompts to optimize, and any distance metric chosen would yield similar results, albeit with slight variations in thresholds.\n\n---\nI appreciate you asking questions and all. But, Please give a moment to read through the code. Tool calling operates differently; it invokes functions based on the provided prompt and any necessary context. To avoid endless function calls or the issues you've mentioned, we have limits and optimizations in place. In summary, you have two main concerns:\n\n1. Blackbox Approach : This isn't accurate. The model strictly follows prompts, calling appropriate functions initially, and logging details along the way. It also passes all current test cases.\n\n2. Improving embedding and context retrieval: Agreed. These enhancements are valuable independently of the model approach chosen.\n\nLet me know, if there are any other concerns apart from the ones raised above."
+            },
+            {
+                user: "Keyrxng",
+                body: "Feed LLM systemMessage and query > it decides: \"call a tool\" or \"respond\" > repeating until it is satisfised or the tokenLimit is hit.\n\nYour QA is just the issue the LLM responded on not a link to your runs. I just checked your runs and the last one was a week ago so your logs were inside your worker I assume?\n\nBecause the search results are not logged specifically, we have no idea their influence on responses and we haven't benchmarked or started small and built up to a stable knowledgebase nor do we know how the reranker is actually reranking in terms of input/output. But AI features in general are a blackbox the farther we stray from that the easier it is to dev.\n\nThat's a bold assumption without evidence I think.\n\nidk lol, is it? I'd think a prod DB would be best for embeddings gathering then they can actually be reviewed by reviewers and we don't have to run scripts to fill our own DB which you seem to be doing. (I still would but atleast 0x4007 and mentlegen could peep the supabase instance)\n\nHaven't the issues with things recently alone been enough to show that it doesn't always follow your prompts, that's my concern, all of this logic and realistically it would be perfect so will need optimized again but at that point we are dealing with things that are much harder to quantify and test.\n\n- If the LLM is now responsible for tool calling (data fetching), then context fetching is now embedded into the LLM which is less modular than before\n- I don't understand how it's more \"sequential\" when it's using the same fetching fns in the same way like you said. We fetched in sequence of current issue > current linked > additional linked > ..., the llm now just tells us what fns to call?\n- Imo that is a real concern that should be addressed for sure you are spot on, but as it's own task and without such a massive breaking change to things before we implement baselines and benchmarks\n\n\n\n---\n\nI wrote a spec #32 please add to it. Benchmarkings:\n\n1. Data retrieval: linked (static) & search (dynamic)\n2. Response: Test conditions where we evaluate both individually and them with combined context (maybe all we need is search and we can remove static completely? Hopefully actually)\n3. Factual accuracy: Of both the returned embeddings and of the answer to the query given the context\n\nWith our QAs, that's very unstructured and for sure not test conditions but it's a sort of benchmark isn't it? We want to break this down into repeatable and gradable steps independent of each other and then combined and if it can be automated great but probably requires marking a few problematic issues/prs and using those any time we merge a feature to get new updated benchmarks for each step in the process."
+            },
+            {
+                user: "Keyrxng",
+                body: "tldr; I'm not against giving the LLM full control but first we should effectively benchmarks our core components and then take it from there. An autonomous chatbot would be pretty cool fetching whatever it wants to but we need better foundations first."
+            },
+            {
+                user: "0x4007",
+                body: "@Keyrxng you should let shiv focus on shipping this stuff and we'll address potential future problems iteratively."
+            },
+            {
+                user: "Keyrxng",
+                body: "I apologize for intruding, I did based on the fact that #28 should resolve these issues and the review is being avoided for a massive breaking change to the plugin. It would have saved development time had that PR been reviewed and QA'd first.\n\nI'll stop providing reviews on this plugin as I seem to slow progress and to handle future problems I need to understand what's going on at a deep level so I'll do what I can if I'm asked basically."
+            }
+        ];
+
+        // Process each comment and build results
+        const results = [];
+        const totals = {};
+
+        comments.forEach(comment => {
+            const wordCount = countWords(comment.body);
+            const original = originalScore(wordCount);
+            const log = logAdjustedScore(wordCount);
+            const exp = expAdjustedScore(wordCount);
+
+            results.push({
+                user: comment.user,
+                body: comment.body,
+                wordCount,
+                original,
+                log,
+                exp
+            });
+
+            if (!totals[comment.user]) {
+                totals[comment.user] = {
+                    comments: 0,
+                    totalWords: 0,
+                    avgOriginal: 0,
+                    avgLog: 0,
+                    avgExp: 0
+                };
+            }
+            totals[comment.user].comments++;
+            totals[comment.user].totalWords += wordCount;
+            totals[comment.user].avgOriginal += original;
+            totals[comment.user].avgLog += log;
+            totals[comment.user].avgExp += exp;
+        });
+
+        // Calculate averages
+        Object.values(totals).forEach(total => {
+            total.avgOriginal /= total.comments;
+            total.avgLog /= total.comments;
+            total.avgExp /= total.comments;
+        });
+
+        // Display results
+        const resultsDiv = document.getElementById('results');
+
+        // Individual comments
+        results.forEach(r => {
+            resultsDiv.innerHTML += `
+                <div class="comment">
+                    <div class="comment-header">
+                        <div class="user">${r.user}</div>
+                        <div class="metrics">Word Count: ${r.wordCount}</div>
+                    </div>
+                    <div class="comment-body">${marked.parse(r.body)}</div>
+                    <div class="scores">
+                        <div class="score">
+                            <div class="score-label">Original Score</div>
+                            <div class="score-value original">${r.original.toFixed(2)}</div>
+                        </div>
+                        <div class="score">
+                            <div class="score-label">Log-Adjusted</div>
+                            <div class="score-value log">${r.log.toFixed(2)}</div>
+                        </div>
+                        <div class="score">
+                            <div class="score-label">Exp-Adjusted</div>
+                            <div class="score-value exp">${r.exp.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Totals
+        resultsDiv.innerHTML += `
+            <div class="totals">
+                <h3>Totals by Contributor</h3>
+                ${Object.entries(totals).map(([user, stats]) => `
+                    <div class="contributor">
+                        <div class="user">${user}</div>
+                        <div class="metrics">Comments: ${stats.comments} | Total Words: ${stats.totalWords}</div>
+                        <div class="scores">
+                            <div class="score">
+                                <div class="score-label">Avg Original</div>
+                                <div class="score-value original">${stats.avgOriginal.toFixed(2)}</div>
+                            </div>
+                            <div class="score">
+                                <div class="score-label">Avg Log-Adjusted</div>
+                                <div class="score-value log">${stats.avgLog.toFixed(2)}</div>
+                            </div>
+                            <div class="score">
+                                <div class="score-label">Avg Exp-Adjusted</div>
+                                <div class="score-value exp">${stats.avgExp.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    </script>
+</body>
+</html>
