@@ -1,70 +1,29 @@
-/* UI State Management Styles (dark-mode compatible) */
-
-.section-loading-indicator {
+.conversation-header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 30px;
-  color: var(--text-light);
-  background-color: var(--hover);
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding: 8px;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.conversation-header svg {
+  fill: currentColor;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6e7781;
+  padding: 16px;
+  border: 1px dashed #d0d7de;
   border-radius: 6px;
-  margin: 15px 0;
-  text-align: center;
-  font-style: italic;
+  margin: 16px 0;
 }
 
-.section-loading-indicator p {
-  display: inline-block;
-  position: relative;
-}
-
-.section-loading-indicator p::after {
-  content: "";
-  display: inline-block;
-  width: 20px;
-  animation: ellipsis-animation 1.2s infinite;
-  text-align: left;
-}
-
-.section-error-message {
-  background-color: var(--hover);
-  color: var(--error);
-  padding: 10px 15px;
-  border-radius: 4px;
-  margin: 10px 0;
-  border-left: 3px solid var(--error);
-}
-
-.linked-content-header {
-  /* margin-top: 15px; */
-  /* margin-bottom: 10px; */
-  /* padding-bottom: 5px; */
-  /* border-bottom: 1px solid var(--border); */
-}
-
-.linked-content-header h3 {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--text);
-}
-
-.update-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: var(--success);
-  color: var(--bg);
-  padding: 10px 20px;
-  border-radius: 4px;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* Animations */
-@keyframes ellipsis-animation {
-  0% { content: "."; }
-  33% { content: ".."; }
-  66% { content: "..."; }
+.empty-state svg {
+  fill: currentColor;
 }
