@@ -1,3 +1,4 @@
+import { CommentGroup } from "./comment-grouping";
 import { CommentScores } from "./types";
 
 /**
@@ -49,13 +50,52 @@ export function calculateExponentialScore(wordCount: number): number {
 
 /**
  * Calculates all scoring metrics for a given text
+ * Optionally accepts a commentGroup parameter for handling consecutive comments
  */
-export function calculateAllScores(text: string): CommentScores {
-  const wordCount = countWords(text);
+export function calculateAllScores(text: string, commentGroup?: CommentGroup): CommentScores {
+  // Get the word count from the text
+  const individualWordCount = countWords(text);
+
+  // If no comment group is provided, or this is a single comment, calculate normally
+  if (!commentGroup || commentGroup.commentIds.length <= 1) {
+    return {
+      wordCount: individualWordCount,
+      original: calculateOriginalScore(individualWordCount),
+      logAdjusted: calculateLogAdjustedScore(individualWordCount),
+      exponential: calculateExponentialScore(individualWordCount),
+      isGrouped: false,
+    };
+  }
+
+  // For grouped comments, calculate scores based on the total word count of the group
+  // This ensures that splitting a long comment into multiple short ones doesn't avoid penalties
+  const groupWordCount = commentGroup.totalWordCount;
+
   return {
-    wordCount,
-    original: calculateOriginalScore(wordCount),
-    logAdjusted: calculateLogAdjustedScore(wordCount),
-    exponential: calculateExponentialScore(wordCount),
+    wordCount: individualWordCount,
+    original: calculateOriginalScore(groupWordCount),
+    logAdjusted: calculateLogAdjustedScore(groupWordCount),
+    exponential: calculateExponentialScore(groupWordCount),
+    groupWordCount,
+    isGrouped: true,
   };
+}
+
+/**
+ * Calculate scores for a comment that might be part of a consecutive group
+ * @param text The text of the individual comment
+ * @param commentId The comment ID
+ * @param groupMap A map of comment IDs to their groups
+ * @returns CommentScores object with appropriate scores
+ */
+export function calculateGroupAwareScores(
+  text: string,
+  commentId: string | number,
+  groupMap: Record<string, CommentGroup>
+): CommentScores {
+  // Get the comment group if this comment is part of one
+  const group = groupMap[String(commentId)];
+
+  // Calculate scores (if part of a group, the group's word count will be used)
+  return calculateAllScores(text, group);
 }

@@ -111,6 +111,8 @@ export interface CommentScores {
   original: number;
   logAdjusted: number;
   exponential: number;
+  isGrouped?: boolean;
+  groupWordCount?: number;
 }
 
 export interface ScoringMetrics {

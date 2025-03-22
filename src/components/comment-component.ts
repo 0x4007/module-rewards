@@ -2,6 +2,8 @@
  * Comment Component - Handles rendering of GitHub comments
  * Extracted from dom-utils and analyzer.ts to improve separation of concerns
  */
+import { CommentGroupMap, detectConsecutiveComments } from "../comment-grouping";
+import { calculateGroupAwareScores } from "../scoring-utils";
 import { CommentScores, GitHubComment } from "../types";
 
 export interface CommentDisplayOptions {
@@ -31,6 +33,11 @@ export function renderComment(
   const commentElement = document.createElement("div");
   commentElement.id = `${idPrefix}-${comment.id}`;
   commentElement.className = className;
+
+  // Add special class if this is part of a group
+  if (scores?.isGrouped) {
+    commentElement.classList.add("grouped-comment");
+  }
 
   // Create header with avatar and user info if available
   if (comment.user) {
@@ -105,7 +112,8 @@ function renderScores(scores: CommentScores): HTMLElement {
   const scoreDiv = document.createElement("div");
   scoreDiv.className = "comment-scores";
 
-  scoreDiv.innerHTML = `
+  // Start with basic scores
+  let scoreHtml = `
     <div class="score-info">
       <span class="score-label">Words:</span>
       <span class="score-value">${scores.wordCount}</span>
@@ -124,6 +132,18 @@ function renderScores(scores: CommentScores): HTMLElement {
     </div>
   `;
 
+  // If this comment is part of a group, add group information
+  if (scores.isGrouped && scores.groupWordCount) {
+    scoreHtml += `
+      <div class="score-info group-info">
+        <span class="score-label">Group Words:</span>
+        <span class="score-value">${scores.groupWordCount}</span>
+        <span class="group-indicator" title="This comment is part of a sequence of consecutive comments by the same user in the same context (PR conversation, PR review, or issue). All comments in the sequence are scored as if they were a single comment to prevent gaming the system with multiple short comments.">⚠️</span>
+      </div>
+    `;
+  }
+
+  scoreDiv.innerHTML = scoreHtml;
   return scoreDiv;
 }
 
@@ -161,12 +181,31 @@ export function renderComments(
     return new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime();
   });
 
+  // Detect consecutive comments from the same user within the same context
+  const commentGroups: CommentGroupMap = detectConsecutiveComments(sortedComments, section);
+
   // Render each comment
   for (const comment of sortedComments) {
     if (!comment.body) continue;
 
-    // Calculate scores for this comment
-    const commentScores = calculateScores(comment.body);
+    // Check if this comment is part of a group
+    const groupInfo = commentGroups[String(comment.id)];
+    let showScores = true;
+    let commentScores: CommentScores | undefined;
+
+    if (groupInfo) {
+      // Only show scores on the last comment in each group
+      const isLastInGroup = groupInfo.commentIds[groupInfo.commentIds.length - 1] === comment.id;
+      showScores = isLastInGroup;
+
+      if (isLastInGroup) {
+        // For the last comment, calculate scores based on the entire group
+        commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+      }
+    } else {
+      // For comments not in a group, calculate scores normally
+      commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+    }
 
     // Render the comment
     renderComment(
@@ -174,7 +213,7 @@ export function renderComments(
       {
         containerSelector,
         className: "comment",
-        showScores: true,
+        showScores,
       },
       commentScores
     );

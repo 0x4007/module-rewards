@@ -251,6 +251,11 @@ footer {
   background: #80808010;
 }
 
+/* Styles for grouped comments (consecutive comments from the same user) */
+.grouped-comment {
+  border-left: 3px solid var(--error);
+}
+
 .comment-header .avatar {
   width: 32px;
   height: 32px;
@@ -262,7 +267,7 @@ footer {
   display: inline-block;
   vertical-align: middle;
   margin: 0 12px;
-  height: 32px;
+  height: 24px;
 }
 
 .comment-header .username {
@@ -373,29 +378,46 @@ footer {
 /* ========== SCORE DISPLAY ========== */
 
 .comment-scores {
-  padding: 10px 15px;
-  display: flex;
-  flex-wrap: wrap;
+  /* padding: 10px 15px; */
+  /* display: flex; */
+  /* flex-wrap: wrap; */
   gap: 15px;
   font-size: 12px;
   color: var(--text-light);
+  /* align-items: end; */
+  text-align: right;
+  /* display: inline-block; */
+  /* float: left; */
+}
+
+.group-info {
+  background-color: rgba(var(--primary-rgb, 0, 102, 204), 0.1);
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.group-indicator {
+  cursor: help;
+  margin-left: 4px;
 }
 
 .score-info {
-  display: flex;
+  display: inline-block;
   align-items: center;
+  margin-left: 8px;
 }
 
 .score-label {
   font-weight: 600;
-  margin-right: 5px;
+  /* margin-right: 5px; */
 }
 
 .score-value {
-  padding: 2px 6px;
+  /* padding: 2px 6px; */
   border-radius: 12px;
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Add a little flair for high scores */
