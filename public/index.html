@@ -10,6 +10,19 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@9.0.0/marked.min.js"></script>
     <!-- Load our bundled script -->
     <script type="module" src="js/main.js"></script>
+    <script>
+        // Live reload WebSocket connection
+        const ws = new WebSocket('ws://localhost:8081');
+        ws.onmessage = (event) => {
+            if (event.data === 'reload') {
+                console.log('Reloading page...');
+                window.location.reload();
+            }
+        };
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    </script>
 </head>
 <body>
     <h1>Module Rewards Viewer</h1>
@@ -25,7 +38,6 @@
     <div id="details" class="hidden">
         <h2 class="title"></h2>
         <p class="meta"></p>
-        <div class="algorithm-scores"></div>
     </div>
 
     <main id="conversation"></main>

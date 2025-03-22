@@ -198,6 +198,44 @@ blockquote {
     margin-left: 6px;
 }
 
+.linked-issue-spec {
+    margin: 0 0 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--hover);
+}
+
+.linked-issue-spec .issue-header {
+    margin-bottom: 1rem;
+}
+
+.linked-issue-spec h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.linked-issue-spec a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.linked-issue-spec a:hover {
+    text-decoration: underline;
+}
+
+.linked-issue-spec .issue-body {
+    padding: 1rem;
+    background: var(--bg);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
 .contributor-summary {
     margin: 2rem 0;
     padding: 1rem;

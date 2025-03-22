@@ -6,7 +6,7 @@ import { WebSocketServer } from 'ws';
 // Create WebSocket server for live reload
 let wss: WebSocketServer;
 try {
-  wss = new WebSocketServer({ port: 8080 });
+  wss = new WebSocketServer({ port: 8081 });
   console.log('✓ WebSocket server initialized');
 } catch (err) {
   console.error('Failed to start WebSocket server:', err);
@@ -171,6 +171,6 @@ process.on('uncaughtException', (err) => {
 if (isInitialBuildComplete && isServerRunning) {
   console.log('\n✨ Development environment ready!\n');
   console.log('- Local server: http://localhost:3001');
-  console.log('- WebSocket server: ws://localhost:8080');
+  console.log('- WebSocket server: ws://localhost:8081');
   console.log('\nPress Ctrl+C to stop');
 }

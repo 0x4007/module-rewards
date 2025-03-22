@@ -1,7 +1,7 @@
 import { marked } from "marked";
 import { fetchGitHubData, parseUrl } from "./github-api";
 import { calculateAllScores } from "./scoring-utils";
-import { CommentScores, GitHubComment, FetchedData, ScoringMetrics } from "./types";
+import { CommentScores, FetchedData, GitHubComment, ScoringMetrics } from "./types";
 
 // Make marked available globally for markdown rendering
 declare global {
@@ -18,20 +18,37 @@ let errorMessage: HTMLElement;
 let detailsElement: HTMLElement;
 let title: HTMLElement;
 let meta: HTMLElement;
-let algorithmScores: HTMLElement;
 let conversation: HTMLElement;
 let githubToken: string | null = localStorage.getItem("github_token");
 
 // Initialize when DOM is ready
-const ws = new WebSocket("ws://localhost:8080");
-ws.onmessage = (event) => {
-  if (event.data === "reload") {
-    console.log("Reloading page due to TypeScript changes...");
-    window.location.reload();
-  }
-};
-
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize WebSocket connection for live reload
+  let ws: WebSocket;
+  const connectWebSocket = () => {
+    try {
+      ws = new WebSocket("ws://localhost:8081");
+      ws.onmessage = (event) => {
+        if (event.data === "reload") {
+          console.log("Live reload: Refreshing page after TypeScript changes...");
+          window.location.reload();
+        }
+      };
+      ws.onclose = () => {
+        console.log("WebSocket connection closed. Attempting to reconnect...");
+        setTimeout(connectWebSocket, 1000);
+      };
+      ws.onerror = (error) => {
+        console.warn("WebSocket connection error:", error);
+      };
+    } catch (error) {
+      console.warn("WebSocket initialization failed:", error);
+      setTimeout(connectWebSocket, 1000);
+    }
+  };
+
+  connectWebSocket();
+
   try {
     // Initialize DOM elements
     urlInput = document.getElementById("url-input") as HTMLInputElement;
@@ -41,7 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
     detailsElement = document.getElementById("details") as HTMLElement;
     title = document.querySelector("#details .title") as HTMLElement;
     meta = document.querySelector("#details .meta") as HTMLElement;
-    algorithmScores = document.querySelector(".algorithm-scores") as HTMLElement;
     conversation = document.getElementById("conversation") as HTMLElement;
 
     // Verify all required elements are present
@@ -53,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
       !detailsElement ||
       !title ||
       !meta ||
-      !algorithmScores ||
       !conversation
     ) {
       throw new Error("Required DOM elements not found. Check HTML structure.");
@@ -145,7 +160,27 @@ async function analyze(): Promise<void> {
       // Update title and show containers
       title.textContent = `${newData.details.title} (#${newData.details.number})`;
       detailsElement.classList.remove("hidden");
-      algorithmScores.classList.remove("hidden");
+
+      // If this is a PR with a linked issue, show the issue specification at the top
+      if (newData.linkedIssue) {
+        const existingIssueSpec = document.querySelector(".linked-issue-spec");
+        if (!existingIssueSpec) {
+          const issueSpecDiv = document.createElement("div");
+          issueSpecDiv.className = "linked-issue-spec";
+          issueSpecDiv.innerHTML = `
+            <div class="issue-header">
+              <h3>📋 Linked Issue: #${newData.linkedIssue.number}</h3>
+              <a href="${newData.linkedIssue.html_url}" target="_blank" rel="noopener noreferrer">
+                ${newData.linkedIssue.title}
+              </a>
+            </div>
+            <div class="issue-body markdown">
+              ${window.marked.parse(newData.linkedIssue.body)}
+            </div>
+          `;
+          conversation.insertBefore(issueSpecDiv, conversation.firstChild);
+        }
+      }
 
       // Add the initial comment if it doesn't exist
       if (newData.details.body) {
@@ -276,7 +311,6 @@ async function analyze(): Promise<void> {
 // Clear previous results
 function clearResults(): void {
   if (conversation) conversation.innerHTML = "";
-  if (algorithmScores) algorithmScores.innerHTML = "";
   if (title) title.textContent = "Loading...";
   if (meta) meta.textContent = "";
   // Remove existing summary if present
@@ -377,7 +411,6 @@ function appendCommentToDOM(comment: GitHubComment, scores: CommentScores): void
 function updateSummary(scores: ScoringMetrics): void {
   const totalComments = scores.original.length;
   if (totalComments === 0) {
-    algorithmScores.innerHTML = "<p>No comments found.</p>";
     return;
   }
 
@@ -394,26 +427,7 @@ function updateSummary(scores: ScoringMetrics): void {
   const avgLog = scores.logAdjusted.reduce((a, b) => a + b, 0) / totalComments;
   const avgExp = scores.exponential.reduce((a, b) => a + b, 0) / totalComments;
 
-  algorithmScores.innerHTML = `
-    <div class="algorithm-score">
-      <h3>Original Score</h3>
-      <p>Average: ${avgOriginal.toFixed(2)}</p>
-    </div>
-    <div class="algorithm-score">
-      <h3>Log-Adjusted Score</h3>
-      <p>Average: ${avgLog.toFixed(2)}</p>
-    </div>
-    <div class="algorithm-score">
-      <h3>Exponential Score</h3>
-      <p>Average: ${avgExp.toFixed(2)}</p>
-    </div>
-    <div class="algorithm-score">
-      <h3>Statistics</h3>
-      <p>Total Comments: ${totalComments}</p>
-      <p>Total Words: ${totalWords}</p>
-      <p>Avg Words/Comment: ${(totalWords / totalComments).toFixed(1)}</p>
-    </div>
-  `;
+
 }
 
 function updateScoreSummary(commentScores: CommentScores, summary: ScoringMetrics): void {

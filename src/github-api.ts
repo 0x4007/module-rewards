@@ -1,4 +1,94 @@
-import { FetchedData, UrlParseResult } from "./types";
+import { FetchedData, LinkedIssue, UrlParseResult } from "./types";
+
+const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
+
+/**
+ * Execute a GraphQL query against GitHub's API
+ */
+async function executeGraphQL(query: string, variables: any, token?: string): Promise<any> {
+  if (!token) {
+    throw new Error("GitHub token is required for GraphQL queries");
+  }
+
+  const response = await fetch(GRAPHQL_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Authorization": `bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`GraphQL request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (data.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+  }
+
+  return data.data;
+}
+
+/**
+ * Fetch linked issue data for a pull request
+ */
+async function fetchLinkedIssue(owner: string, repo: string, prNumber: string, token?: string): Promise<LinkedIssue | undefined> {
+  const query = `
+    query GetLinkedIssue($owner: String!, $repo: String!, $number: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $number) {
+          id
+          closingIssuesReferences(first: 1) {
+            nodes {
+              number
+              title
+              body
+              url
+            }
+          }
+          linkedIssues(first: 1) {
+            nodes {
+              number
+              title
+              body
+              url
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await executeGraphQL(query, {
+      owner,
+      repo,
+      number: parseInt(prNumber, 10)
+    }, token);
+
+    // Check both closingIssuesReferences and linkedIssues
+    const closingIssues = data.repository.pullRequest.closingIssuesReferences.nodes || [];
+    const linkedIssues = data.repository.pullRequest.linkedIssues.nodes || [];
+
+    // Combine and take the first issue found
+    const allIssues = [...closingIssues, ...linkedIssues];
+    if (allIssues.length > 0) {
+      const issue = allIssues[0];
+      return {
+        number: issue.number,
+        title: issue.title,
+        body: issue.body,
+        html_url: issue.url
+      };
+    }
+    return undefined;
+  } catch (error) {
+    console.warn("Failed to fetch linked issue:", error);
+    return undefined;
+  }
+}
 
 /**
  * Parse a GitHub PR or Issue URL into its components
@@ -115,10 +205,17 @@ export async function fetchGitHubData(
       throw new Error(`Failed to fetch comments: ${issueCommentsResponse.status}`);
     }
 
+    // If this is a PR, try to fetch linked issue
+    let linkedIssue;
+    if (type === "pr" && token) {
+      linkedIssue = await fetchLinkedIssue(owner, repo, number, token);
+    }
+
     return {
       details,
       comments,
       type,
+      linkedIssue,
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));

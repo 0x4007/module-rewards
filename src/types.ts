@@ -63,10 +63,18 @@ export interface UrlParseResult {
   type: "pr" | "issue";
 }
 
+export interface LinkedIssue {
+  number: number;
+  title: string;
+  body: string;
+  html_url: string;
+}
+
 export interface FetchedData {
   details: GitHubPR | GitHubIssue;
   comments: GitHubComment[];
   type: "pr" | "issue";
+  linkedIssue?: LinkedIssue; // Optional linked issue data
 }
 
 export interface CommentScores {
