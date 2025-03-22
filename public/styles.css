@@ -39,13 +39,13 @@ h1 {
     margin: 0 0 1.5rem;
 }
 
-.pr-form {
+.analyze-form {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 2rem;
 }
 
-.pr-url-input {
+.url-input {
     flex: 1;
     padding: 0.5rem;
     font-size: 1rem;
@@ -161,18 +161,18 @@ h1 {
     display: none;
 }
 
-#pr-details {
+#details {
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border);
 }
 
-.pr-title {
+.title {
     font-size: 1.5rem;
     margin: 0;
 }
 
-.pr-meta {
+.meta {
     color: var(--text-light);
     font-size: 0.9rem;
 }

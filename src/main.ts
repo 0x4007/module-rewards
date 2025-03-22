@@ -1,7 +1,7 @@
 import { marked } from 'marked';
-import { fetchGitHubData, parsePrUrl } from './github-api';
+import { fetchGitHubData, parseUrl } from './github-api';
 import { calculateAllScores } from './scoring-utils';
-import { CommentScores, GitHubComment, ScoringMetrics } from './types';
+import { CommentScores, GitHubComment, FetchedData, ScoringMetrics } from './types';
 
 // Make marked available globally for markdown rendering
 declare global {
@@ -11,40 +11,60 @@ declare global {
 }
 
 // DOM elements
-let prUrlInput: HTMLInputElement;
+let urlInput: HTMLInputElement;
 let analyzeBtn: HTMLButtonElement;
 let loadingIndicator: HTMLElement;
 let errorMessage: HTMLElement;
-let prDetailsElement: HTMLElement;
-let prTitle: HTMLElement;
-let prMeta: HTMLElement;
+let detailsElement: HTMLElement;
+let title: HTMLElement;
+let meta: HTMLElement;
 let algorithmScores: HTMLElement;
 let conversation: HTMLElement;
 let githubToken: string | null = localStorage.getItem('github_token');
 
 // Initialize when DOM is ready
+// Setup WebSocket connection for live reload
+const ws = new WebSocket('ws://localhost:8080');
+ws.onmessage = (event) => {
+  if (event.data === 'reload') {
+    console.log('Reloading page due to TypeScript changes...');
+    window.location.reload();
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize DOM elements
-  prUrlInput = document.getElementById('pr-url') as HTMLInputElement;
-  analyzeBtn = document.getElementById('analyze-btn') as HTMLButtonElement;
-  loadingIndicator = document.getElementById('loading-indicator') as HTMLElement;
-  errorMessage = document.getElementById('error-message') as HTMLElement;
-  prDetailsElement = document.getElementById('pr-details') as HTMLElement;
-  prTitle = document.querySelector('.pr-title') as HTMLElement;
-  prMeta = document.querySelector('.pr-meta') as HTMLElement;
-  algorithmScores = document.querySelector('.algorithm-scores') as HTMLElement;
-  conversation = document.getElementById('conversation') as HTMLElement;
+  try {
+    // Initialize DOM elements
+    urlInput = document.getElementById('url-input') as HTMLInputElement;
+    analyzeBtn = document.getElementById('analyze-btn') as HTMLButtonElement;
+    loadingIndicator = document.getElementById('loading-indicator') as HTMLElement;
+    errorMessage = document.getElementById('error-message') as HTMLElement;
+    detailsElement = document.getElementById('details') as HTMLElement;
+    title = document.querySelector('#details .title') as HTMLElement;
+    meta = document.querySelector('#details .meta') as HTMLElement;
+    algorithmScores = document.querySelector('.algorithm-scores') as HTMLElement;
+    conversation = document.getElementById('conversation') as HTMLElement;
 
-  // Add event listeners
-  analyzeBtn.addEventListener('click', analyzePR);
-  prUrlInput.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Enter') analyzePR();
-  });
+    // Verify all required elements are present
+    if (!urlInput || !analyzeBtn || !loadingIndicator || !errorMessage ||
+        !detailsElement || !title || !meta || !algorithmScores || !conversation) {
+      throw new Error('Required DOM elements not found. Check HTML structure.');
+    }
 
-  // Restore last PR URL if exists
-  const lastPrUrl = localStorage.getItem('last_pr_url');
-  if (lastPrUrl && prUrlInput) {
-    prUrlInput.value = lastPrUrl;
+    // Add event listeners
+    analyzeBtn.addEventListener('click', analyze);
+    urlInput.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') analyze();
+    });
+
+    // Restore last PR URL if exists
+    const lastUrl = localStorage.getItem('last_url');
+    if (lastUrl && urlInput) {
+      urlInput.value = lastUrl;
+    }
+  } catch (error) {
+    console.error('Failed to initialize:', error);
+    document.body.innerHTML = `<div class="error-message">Failed to initialize application: ${error instanceof Error ? error.message : String(error)}</div>`;
   }
 });
 
@@ -65,7 +85,7 @@ function promptForGitHubToken(): boolean {
 }
 
 // Analyze PR using user input
-async function analyzePR(): Promise<void> {
+async function analyze(): Promise<void> {
   // Clear previous results
   clearResults();
 
@@ -73,36 +93,36 @@ async function analyzePR(): Promise<void> {
   loadingIndicator.classList.remove('hidden');
   errorMessage.classList.add('hidden');
 
-  // Get PR URL
-  const prUrl = prUrlInput.value.trim();
-  if (!prUrl) {
-    showError('Please enter a GitHub PR URL');
+  // Get URL
+  const url = urlInput.value.trim();
+  if (!url) {
+    showError('Please enter a GitHub PR or Issue URL');
     return;
   }
 
   // Save the URL for future use
-  localStorage.setItem('last_pr_url', prUrl);
+  localStorage.setItem('last_url', url);
 
   try {
-    // Parse PR URL
-    const { owner, repo, number } = parsePrUrl(prUrl);
+    // Parse URL
+    const { owner, repo, number, type } = parseUrl(url);
 
-    // Try to fetch data
-    let data;
-    // Check cache first
-    const cacheKey = `pr-data-${prUrl}`;
+    // Setup cache keys
+    const cacheKey = `data-${url}`;
     const cachedData = localStorage.getItem(cacheKey);
-    const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`);
-    const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+    let data;
 
-    // Check if cache exists and is not expired
-    if (cachedData && cacheTimestamp && (Date.now() - Number(cacheTimestamp)) < ONE_HOUR) {
-      data = JSON.parse(cachedData);
-    } else {
-      try {
-        data = await fetchGitHubData(owner, repo, number, githubToken || undefined);
-        // Cache the data with timestamp
-        localStorage.setItem(cacheKey, JSON.stringify(data));
+    // Function to process and display data
+    const processAndDisplayData = (newData: FetchedData, isBackground = false) => {
+      updateHeader(newData);
+      const comments = processComments(newData.comments);
+      updateSummary(comments);
+
+      // Show results
+      detailsElement.classList.remove('hidden');
+      algorithmScores.classList.remove('hidden');
+
+      // If this is background update, show a notification
         localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
       } catch (error) {
         // If auth error, prompt for token and retry
@@ -110,7 +130,7 @@ async function analyzePR(): Promise<void> {
             error.message.includes('Authentication failed') &&
             promptForGitHubToken()) {
           try {
-            data = await fetchGitHubData(owner, repo, number, githubToken || undefined);
+            data = await fetchGitHubData(owner, repo, number, type, githubToken || undefined);
             // Cache the data after successful retry
             localStorage.setItem(cacheKey, JSON.stringify(data));
             localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
@@ -124,12 +144,12 @@ async function analyzePR(): Promise<void> {
     }
 
     // Process the data
-    updatePRHeader(data.prDetails);
-    const comments = processComments([...data.prComments, ...data.issueComments]);
+    updateHeader(data);
+    const comments = processComments(data.comments);
     updateSummary(comments);
 
     // Show results
-    prDetailsElement.classList.remove('hidden');
+    detailsElement.classList.remove('hidden');
     algorithmScores.classList.remove('hidden');
 
   } catch (error) {
@@ -141,10 +161,10 @@ async function analyzePR(): Promise<void> {
 
 // Clear previous results
 function clearResults(): void {
-  conversation.innerHTML = '';
-  algorithmScores.innerHTML = '';
-  prTitle.textContent = 'Loading PR...';
-  prMeta.textContent = '';
+  if (conversation) conversation.innerHTML = '';
+  if (algorithmScores) algorithmScores.innerHTML = '';
+  if (title) title.textContent = 'Loading...';
+  if (meta) meta.textContent = '';
 }
 
 // Display error
@@ -154,9 +174,26 @@ function showError(message: string): void {
   errorMessage.textContent = message;
 }
 
-function updatePRHeader(prDetails: any): void {
-  prTitle.textContent = `${prDetails.title} (#${prDetails.number})`;
-  prMeta.textContent = `Created by ${prDetails.user.login} on ${new Date(prDetails.created_at).toLocaleDateString()}`;
+function updateHeader(data: FetchedData): void {
+  title.textContent = `${data.details.title} (#${data.details.number})`;
+
+  // Create the initial comment with the issue/PR body
+  if (data.details.body) {
+    const div = document.createElement("div");
+    div.className = "comment";
+    div.innerHTML = `
+      <div class="comment-header">
+        <a href="${data.details.user.html_url}" class="username">${data.details.user.login}</a>
+        <div class="timestamp">
+          ${new Date(data.details.created_at).toLocaleString()}
+        </div>
+      </div>
+      <div class="comment-body markdown">
+        ${window.marked.parse(data.details.body)}
+      </div>
+    `;
+    conversation.insertBefore(div, conversation.firstChild);
+  }
 }
 
 function processComments(comments: GitHubComment[]): ScoringMetrics {
@@ -205,7 +242,7 @@ function appendCommentToDOM(comment: GitHubComment, scores: CommentScores): void
 function updateSummary(scores: ScoringMetrics): void {
   const totalComments = scores.original.length;
   if (totalComments === 0) {
-    algorithmScores.innerHTML = '<p>No comments found for this PR.</p>';
+    algorithmScores.innerHTML = '<p>No comments found.</p>';
     return;
   }
 

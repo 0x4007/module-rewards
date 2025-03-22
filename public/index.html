@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PR Analysis</title>
+    <title>GitHub Conversation Analysis</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Load marked.js from CDN for markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked@9.0.0/marked.min.js"></script>
@@ -11,19 +11,19 @@
     <script type="module" src="js/main.js"></script>
 </head>
 <body>
-    <h1>PR Analysis</h1>
+    <h1>GitHub Conversation Analysis</h1>
 
-    <div class="pr-form">
-        <input type="text" id="pr-url" placeholder="Enter PR URL" class="pr-url-input">
+    <div class="analyze-form">
+        <input type="text" id="url-input" placeholder="Enter PR or Issue URL" class="url-input">
         <button id="analyze-btn" class="analyze-btn">Analyze</button>
     </div>
 
     <div id="loading-indicator" class="loading-indicator hidden">Loading...</div>
     <div id="error-message" class="error-message hidden"></div>
 
-    <div id="pr-details" class="hidden">
-        <h2 class="pr-title"></h2>
-        <p class="pr-meta"></p>
+    <div id="details" class="hidden">
+        <h2 class="title"></h2>
+        <p class="meta"></p>
     </div>
 
     <div class="algorithm-scores hidden"></div>

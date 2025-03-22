@@ -1,6 +1,17 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from 'child_process';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, watch } from 'fs';
+import { WebSocketServer } from 'ws';
+
+// Create WebSocket server for live reload
+const wss = new WebSocketServer({ port: 8080 });
+
+// Function to notify clients to reload
+function notifyReload() {
+  wss.clients.forEach(client => {
+    client.send('reload');
+  });
+}
 
 // Ensure output directory exists
 const outputDir = './public/js';
@@ -25,8 +36,23 @@ const server = spawn('bun', ['run', 'src/server.ts'], {
   stdio: 'inherit',
 });
 
-// Start file watcher
-const watcher = spawn('bun', ['--watch', 'build/build.ts'], {
+// Watch TypeScript files for changes
+const tsWatcher = watch('./src', { recursive: true }, (event, filename) => {
+  if (filename && filename.endsWith('.ts')) {
+    console.log('TypeScript file changed:', filename);
+    // Run build
+    const build = spawnSync('bun', ['run', 'build/build.ts'], {
+      stdio: 'inherit',
+    });
+    if (build.status === 0) {
+      console.log('Build successful, triggering reload...');
+      notifyReload();
+    }
+  }
+});
+
+// Also watch build.ts itself
+const buildWatcher = spawn('bun', ['--watch', 'build/build.ts'], {
   stdio: 'inherit',
 });
 
@@ -35,16 +61,20 @@ server.on('close', (code) => {
   if (code !== 0) {
     console.log(`Server process exited with code ${code}`);
   }
-  watcher.kill();
+  buildWatcher.kill();
+  tsWatcher.close();
+  wss.close();
   process.exit(code || 0);
 });
 
-// Handle watcher process exit
-watcher.on('close', (code) => {
+// Handle build watcher process exit
+buildWatcher.on('close', (code) => {
   if (code !== 0) {
-    console.log(`Watcher process exited with code ${code}`);
+    console.log(`Build watcher process exited with code ${code}`);
   }
   server.kill();
+  tsWatcher.close();
+  wss.close();
   process.exit(code || 0);
 });
 
@@ -52,7 +82,9 @@ watcher.on('close', (code) => {
 process.on('SIGINT', () => {
   console.log('\nShutting down...');
   server.kill();
-  watcher.kill();
+  buildWatcher.kill();
+  tsWatcher.close();
+  wss.close();
   process.exit(0);
 });
 
