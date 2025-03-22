@@ -1,5 +1,5 @@
 import { marked } from "marked";
-import { analyze } from "./analyze";
+import { analyze } from "./analyzer";
 
 // Make marked available globally for markdown rendering
 declare global {

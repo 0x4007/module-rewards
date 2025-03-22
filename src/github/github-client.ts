@@ -1,8 +1,8 @@
-import { ISSUES_LINKED_PRS_QUERY, LINKED_PULL_REQUESTS_QUERY } from "./queries";
+import { CloudEvent } from "../core/browser-events";
+import { normalizeGitHubEvent, validateGitHubWebhook } from "./browser-utils";
 import { LinkedPRsQueryResponse, LinkedPullRequestsResponse } from "./graphql-types";
-import { normalizeGitHubEvent, validateGitHubWebhook } from "./webhook-utils";
+import { ISSUES_LINKED_PRS_QUERY, LINKED_PULL_REQUESTS_QUERY } from "./queries";
 import { FetchedData, GraphQLResponse, LinkedIssue, LinkedPullRequest, UrlParseResult } from "./types";
-import { CloudEvent } from "../core/cloud-events";
 
 export class GitHubClient {
   private readonly baseUrl = "https://api.github.com";

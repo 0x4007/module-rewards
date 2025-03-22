@@ -17,7 +17,7 @@ const buildPromise = new Promise(async (resolve, reject) => {
     const startTime = Date.now();
 
     await Bun.build({
-      entrypoints: ['./src/main.ts'],
+      entrypoints: ['./src/main.ts', './src/analyzer.ts'],
       outdir: './public/js',
       target: 'browser',
       format: 'esm',
