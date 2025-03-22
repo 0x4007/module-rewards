@@ -5,7 +5,20 @@ import { GitHubComment, ScoringMetrics } from "./types";
 import { updateScoreSummary } from "./updateScoreSummary";
 
 // Process Issue comments and display in Issue column
-export function processIssueComments(comments: GitHubComment[]): ScoringMetrics {
+export function processIssueComments(comments: GitHubComment[]): {
+  metrics: ScoringMetrics;
+  contributors: {
+    [key: string]: {
+      avatar: string;
+      url: string;
+      totalWords: number;
+      originalScore: number;
+      logAdjustedScore: number;
+      exponentialScore: number;
+      commentCount: number;
+    };
+  };
+} {
   const scores: ScoringMetrics = {
     original: [],
     logAdjusted: [],
@@ -31,7 +44,10 @@ export function processIssueComments(comments: GitHubComment[]): ScoringMetrics 
     noCommentsDiv.className = "no-content-message";
     noCommentsDiv.innerHTML = `<p>No issue content available.</p>`;
     issueConversation.appendChild(noCommentsDiv);
-    return scores;
+    return {
+      metrics: scores,
+      contributors
+    };
   }
 
   comments
@@ -65,5 +81,8 @@ export function processIssueComments(comments: GitHubComment[]): ScoringMetrics 
       }
     });
 
-  return scores;
+  return {
+    metrics: scores,
+    contributors
+  };
 }

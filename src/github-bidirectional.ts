@@ -29,9 +29,46 @@ const LINKED_PULL_REQUESTS_QUERY = `
   }
 `;
 
+// Query for finding PRs that reference an issue
+const ISSUES_LINKED_PRS_QUERY = `
+  query FindLinkedPRs($owner: String!, $repo: String!, $issueNumber: Int!) {
+    repository(owner: $owner, name: $repo) {
+      issue(number: $issueNumber) {
+        title
+        body
+        timelineItems(first: 50, itemTypes: [CROSS_REFERENCED_EVENT]) {
+          nodes {
+            ... on CrossReferencedEvent {
+              source {
+                ... on PullRequest {
+                  number
+                  title
+                  url
+                  state
+                  body
+                  author {
+                    login
+                    url
+                    avatarUrl
+                  }
+                  repository {
+                    name
+                    owner {
+                      login
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 /**
- * Main entry point for bidirectional PR-Issue linkage
- * Uses the proven approach from text-conversation-rewards project
+ * Find a linked issue for a given PR
  */
 export async function findLinkedIssue(
   owner: string,
@@ -84,6 +121,69 @@ export async function findLinkedIssue(
   } catch (error) {
     console.error("Error in linked issue lookup:", error);
     return undefined;
+  }
+}
+
+/**
+ * Find linked pull requests for a given issue
+ */
+export async function findLinkedPullRequests(
+  owner: string,
+  repo: string,
+  issueNumber: string,
+  token: string
+): Promise<LinkedPullRequest[]> {
+  console.log(`🔎 Finding linked PRs for issue ${owner}/${repo}#${issueNumber}`);
+
+  try {
+    const data = await executeGitHubGraphQL(
+      ISSUES_LINKED_PRS_QUERY,
+      {
+        owner,
+        repo,
+        issueNumber: parseInt(issueNumber, 10),
+      },
+      token
+    );
+
+    if (!data?.repository?.issue) {
+      console.log(`No issue #${issueNumber} found in repository`);
+      return [];
+    }
+
+    // Extract PRs from cross-reference events
+    const timelineNodes = data.repository.issue.timelineItems?.nodes || [];
+
+    // Process timeline nodes to extract PR references
+    const linkedPRs = timelineNodes
+      .filter((node: any) => node.source && node.source.number)
+      .map((node: any) => {
+        const pr = node.source;
+        return {
+          number: pr.number,
+          title: pr.title || "No title",
+          url: pr.url,
+          state: pr.state?.toLowerCase() || "unknown",
+          body: pr.body || "",
+          author: {
+            login: pr.author?.login || "unknown",
+            html_url: pr.author?.url || "",
+            avatar_url: pr.author?.avatarUrl || ""
+          },
+          repository: {
+            owner: {
+              login: pr.repository?.owner?.login || owner
+            },
+            name: pr.repository?.name || repo
+          }
+        };
+      });
+
+    console.log(`Found ${linkedPRs.length} linked PRs for issue #${issueNumber}`);
+    return linkedPRs;
+  } catch (error) {
+    console.error("Error finding linked PRs:", error);
+    return [];
   }
 }
 

@@ -66,6 +66,41 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Input changed:", target.value);
     });
 
+    // Track if analysis is in progress to prevent multiple simultaneous calls
+    let analysisInProgress = false;
+
+    // Single function to trigger analysis
+    const triggerAnalyze = (inputValue?: string) => {
+      // Get the value from the input if not passed directly
+      if (!inputValue) {
+        inputValue = document.getElementById("url-input") ?
+                     (document.getElementById("url-input") as HTMLInputElement).value :
+                     "";
+      }
+
+      // Prevent multiple simultaneous calls
+      if (analysisInProgress) {
+        console.log("Analysis already in progress, ignoring duplicate call");
+        return;
+      }
+
+      console.log("Triggering analysis for:", inputValue);
+
+      if (inputValue && inputValue.includes("github.com")) {
+        analysisInProgress = true;
+
+        // Store in localStorage for diagnostic purposes
+        localStorage.setItem("last_manual_url", inputValue);
+
+        // Call analyze and reset the flag when done
+        analyze(inputValue).finally(() => {
+          analysisInProgress = false;
+        });
+      } else {
+        console.error("Invalid URL or URL not provided");
+      }
+    };
+
     // Get reference to form and add submit handler
     const form = document.getElementById("analyze-form");
     if (form) {
@@ -73,20 +108,14 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const inputValue = urlInput?.value;
         console.log("Form submit triggered, input value:", inputValue);
-
-        // Force URL validation and submission
-        if (inputValue && inputValue.includes("github.com")) {
-          // Store in localStorage for diagnostic purposes
-          localStorage.setItem("last_manual_url", inputValue);
-          analyze(inputValue);
-        }
+        triggerAnalyze(inputValue);
       });
 
       // Listen for manual submit events
       form.addEventListener("manualSubmit", () => {
         const inputValue = urlInput?.value;
         if (inputValue) {
-          analyze(inputValue);
+          triggerAnalyze(inputValue);
         }
       });
     }
@@ -106,18 +135,20 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error("Required DOM elements not found. Check HTML structure.");
     }
 
-    // Create direct event listeners that access the DOM directly
-    document.getElementById("analyze-btn")?.addEventListener("click", () => {
+    // Create a single click handler for the analyze button
+    document.getElementById("analyze-btn")?.addEventListener("click", (e) => {
+      e.preventDefault(); // Prevent default form submission
       const inputElement = document.getElementById("url-input") as HTMLInputElement;
       console.log("Clicked Analyze button, input value:", inputElement.value);
-      analyze(inputElement.value);
+      triggerAnalyze(inputElement.value);
     });
 
     document.getElementById("url-input")?.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Enter") {
+        e.preventDefault(); // Prevent default form submission
         const inputElement = e.target as HTMLInputElement;
         console.log("Pressed Enter, input value:", inputElement.value);
-        analyze(inputElement.value);
+        triggerAnalyze(inputElement.value);
       }
     });
 
@@ -125,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const lastUrl = localStorage.getItem("last_url");
     if (lastUrl && urlInput) {
       urlInput.value = lastUrl;
-      analyze();
+      triggerAnalyze(lastUrl);
     }
   } catch (error) {
     console.error("Failed to initialize:", error);

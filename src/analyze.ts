@@ -6,6 +6,7 @@ import { processPRComments } from "./processPRComments";
 import { promptForGitHubToken } from "./promptForGitHubToken";
 import { showError } from "./showError";
 import { FetchedData, GitHubComment, ScoringMetrics } from "./types";
+import { updateContributorSummary } from "./updateContributorSummary";
 import { updateSummary } from "./updateSummary";
 
 // Analyze PR using user input
@@ -93,9 +94,9 @@ export async function analyze(inputUrl?: string): Promise<void> {
     };
 
     // Function to process and display data
-    const processAndDisplayData = (newData: FetchedData, oldData?: FetchedData) => {
+    const processAndDisplayData = (newData: FetchedData, oldData?: FetchedData, isBackgroundUpdate = false) => {
       // Only clear results if this is not a background update
-      if (!oldData) {
+      if (!isBackgroundUpdate) {
         clearResults();
       }
 
@@ -244,20 +245,65 @@ export async function analyze(inputUrl?: string): Promise<void> {
       }
 
       // Process PR comments
-      const prScores = processPRComments(prComments);
+      const prResults = processPRComments(prComments);
 
       // Process Issue comments
-      const issueScores = processIssueComments(issueComments);
+      const issueResults = processIssueComments(issueComments);
 
       // Combine all scores for summary
       const combinedScores: ScoringMetrics = {
-        original: [...prScores.original, ...issueScores.original],
-        logAdjusted: [...prScores.logAdjusted, ...issueScores.logAdjusted],
-        exponential: [...prScores.exponential, ...issueScores.exponential]
+        original: [...prResults.metrics.original, ...issueResults.metrics.original],
+        logAdjusted: [...prResults.metrics.logAdjusted, ...issueResults.metrics.logAdjusted],
+        exponential: [...prResults.metrics.exponential, ...issueResults.metrics.exponential]
       };
 
-      // Update contributor summary with combined metrics
+      // Update summary with combined metrics
       updateSummary(combinedScores);
+
+      // Merge contributor data from both sources
+      const combinedContributors: {
+        [key: string]: {
+          avatar: string;
+          url: string;
+          totalWords: number;
+          originalScore: number;
+          logAdjustedScore: number;
+          exponentialScore: number;
+          commentCount: number;
+        };
+      } = {};
+
+      // Helper function to merge contributor data
+      const mergeContributorData = (source: typeof prResults.contributors) => {
+        Object.entries(source).forEach(([login, stats]) => {
+          if (!combinedContributors[login]) {
+            // Initialize if this contributor isn't in the combined data yet
+            combinedContributors[login] = {
+              avatar: stats.avatar,
+              url: stats.url,
+              totalWords: 0,
+              originalScore: 0,
+              logAdjustedScore: 0,
+              exponentialScore: 0,
+              commentCount: 0
+            };
+          }
+
+          // Add the stats
+          combinedContributors[login].totalWords += stats.totalWords;
+          combinedContributors[login].originalScore += stats.originalScore;
+          combinedContributors[login].logAdjustedScore += stats.logAdjustedScore;
+          combinedContributors[login].exponentialScore += stats.exponentialScore;
+          combinedContributors[login].commentCount += stats.commentCount;
+        });
+      };
+
+      // Merge data from both PR and Issue comments
+      mergeContributorData(prResults.contributors);
+      mergeContributorData(issueResults.contributors);
+
+      // Update the contributor summary display
+      updateContributorSummary(combinedContributors);
 
       // If this is a background update and data has changed, show notification
       if (oldData && hashData(newData) !== hashData(oldData)) {
@@ -292,13 +338,13 @@ export async function analyze(inputUrl?: string): Promise<void> {
     // Function to fetch fresh data
     const fetchFreshData = async () => {
       try {
-        const freshData = await fetchGitHubData(owner, repo, number, type, localStorage.getItem("github_token") || undefined);
-        const currentData = cachedData ? JSON.parse(cachedData) : undefined;
-        // Cache the fresh data
-        localStorage.setItem(cacheKey, JSON.stringify(freshData));
-        localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
-        // Update UI with fresh data only if changed
-        processAndDisplayData(freshData, currentData);
+            const freshData = await fetchGitHubData(owner, repo, number, type, localStorage.getItem("github_token") || undefined);
+            const currentData = cachedData ? JSON.parse(cachedData) : undefined;
+            // Cache the fresh data
+            localStorage.setItem(cacheKey, JSON.stringify(freshData));
+            localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
+            // Update UI with fresh data only if changed
+            processAndDisplayData(freshData, currentData, true);
       } catch (error) {
         // Only handle auth errors in background fetch
         if (error instanceof Error && error.message.includes("Authentication failed") && promptForGitHubToken()) {
@@ -307,7 +353,7 @@ export async function analyze(inputUrl?: string): Promise<void> {
             const currentData = cachedData ? JSON.parse(cachedData) : undefined;
             localStorage.setItem(cacheKey, JSON.stringify(freshData));
             localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
-            processAndDisplayData(freshData, currentData);
+            processAndDisplayData(freshData, currentData, true);
           } catch (retryError) {
             console.error("Background fetch failed after token retry:", retryError);
           }
@@ -320,7 +366,7 @@ export async function analyze(inputUrl?: string): Promise<void> {
     // If we have cached data, use it immediately
     if (cachedData) {
       data = JSON.parse(cachedData);
-      processAndDisplayData(data, undefined);
+      processAndDisplayData(data, undefined, false);
 
       // Start background fetch if cache is older than 5 minutes
       const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`);
@@ -334,7 +380,7 @@ export async function analyze(inputUrl?: string): Promise<void> {
         data = await fetchGitHubData(owner, repo, number, type, localStorage.getItem("github_token") || undefined);
         localStorage.setItem(cacheKey, JSON.stringify(data));
         localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString());
-        processAndDisplayData(data, undefined);
+        processAndDisplayData(data, undefined, false);
       } catch (error) {
         if (error instanceof Error && error.message.includes("Authentication failed") && promptForGitHubToken()) {
           try {

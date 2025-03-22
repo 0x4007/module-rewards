@@ -1,4 +1,4 @@
-function updateContributorSummary(contributors: {
+export function updateContributorSummary(contributors: {
   [key: string]: {
     avatar: string;
     url: string;
@@ -9,10 +9,19 @@ function updateContributorSummary(contributors: {
     commentCount: number;
   };
 }): void {
+  console.log("Updating contributor summary with data for", Object.keys(contributors).length, "contributors");
+
   // Remove any existing summary before creating a new one
   const existingSummary = document.querySelector(".contributor-summary");
   if (existingSummary) {
+    console.log("Removing existing contributor summary");
     existingSummary.remove();
+  }
+
+  // Skip if no contributors
+  if (Object.keys(contributors).length === 0) {
+    console.log("No contributors to display");
+    return;
   }
 
   const summaryContainer = document.createElement("div");
@@ -57,6 +66,10 @@ function updateContributorSummary(contributors: {
   // Place summary before the content columns
   const contentColumns = document.getElementById("content-columns");
   if (contentColumns) {
+    console.log("Placing contributor summary before content columns");
     contentColumns.insertAdjacentElement("beforebegin", summaryContainer);
+  } else {
+    console.warn("Content columns element not found, appending summary to body");
+    document.body.appendChild(summaryContainer);
   }
 }

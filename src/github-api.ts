@@ -1,4 +1,4 @@
-import { findLinkedIssue } from "./github-bidirectional";
+import { findLinkedIssue, findLinkedPullRequests } from "./github-bidirectional";
 import { FetchedData, LinkedIssue, LinkedPullRequest, UrlParseResult } from "./types";
 
 const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
@@ -152,6 +152,7 @@ export async function fetchGitHubData(
 
     if (token) {
       if (type === "pr") {
+        // For PRs, find the linked issue
         linkedIssue = await findLinkedIssue(owner, repo, number, token);
         if (linkedIssue) {
           try {
@@ -168,9 +169,52 @@ export async function fetchGitHubData(
           }
         }
       } else if (type === "issue") {
-        // No need to search - use the bidirectional API to find linked PRs
-        // This uses the same GraphQL query under the hood
-        linkedIssue = await findLinkedIssue(owner, repo, number, token);
+        // For issues, find linked pull requests
+        console.log(`Finding linked PRs for issue #${number}`);
+        const foundLinkedPRs = await findLinkedPullRequests(owner, repo, number, token);
+
+        if (foundLinkedPRs && foundLinkedPRs.length > 0) {
+          console.log(`Found ${foundLinkedPRs.length} linked PRs for issue #${number}`);
+          linkedPullRequests = foundLinkedPRs;
+
+          // For the first PR, try to fetch its comments too
+          if (linkedPullRequests.length > 0) {
+            try {
+              const mainPR = linkedPullRequests[0];
+              // Make sure we have repository information
+              const prOwner = mainPR.repository?.owner?.login || owner;
+              const prRepo = mainPR.repository?.name || repo;
+
+              const prCommentsUrl = `${baseUrl}/repos/${prOwner}/${prRepo}/pulls/${mainPR.number}/comments`;
+              const prReviewCommentsResponse = await fetch(prCommentsUrl, { headers });
+
+              // For issue comments on the PR
+              const prIssueCommentsUrl = `${baseUrl}/repos/${prOwner}/${prRepo}/issues/${mainPR.number}/comments`;
+              const prIssueCommentsResponse = await fetch(prIssueCommentsUrl, { headers });
+
+              const allComments = [];
+
+              if (prReviewCommentsResponse.ok) {
+                const reviewComments = await prReviewCommentsResponse.json();
+                allComments.push(...reviewComments);
+              }
+
+              if (prIssueCommentsResponse.ok) {
+                const issueComments = await prIssueCommentsResponse.json();
+                allComments.push(...issueComments);
+              }
+
+              // Add the comments to the PR
+              mainPR.comments = allComments;
+
+              console.log(`Fetched ${allComments.length} comments for linked PR #${mainPR.number}`);
+            } catch (error) {
+              console.error("Error fetching linked PR comments:", error);
+            }
+          }
+        } else {
+          console.log(`No linked PRs found for issue #${number}`);
+        }
       }
     }
 
