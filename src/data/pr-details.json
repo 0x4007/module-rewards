@@ -1,0 +1,24 @@
+{
+  "url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/pulls/31",
+  "id": 2158999260,
+  "node_id": "PR_kwDOMVbFZ86Ar7bc",
+  "html_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31",
+  "diff_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31.diff",
+  "patch_url": "https://github.com/ubiquity-os-marketplace/command-ask/pull/31.patch",
+  "issue_url": "https://api.github.com/repos/ubiquity-os-marketplace/command-ask/issues/31",
+  "number": 31,
+  "state": "closed",
+  "locked": false,
+  "title": "Model Prompt rewrite",
+  "user": {
+    "login": "shiv810",
+    "id": 53160903,
+    "avatar_url": "https://avatars.githubusercontent.com/u/53160903?v=4",
+    "html_url": "https://github.com/shiv810"
+  },
+  "body": "Resolves #30\r\n\r\n- The reasoning is reorganized with a more modular approach to context.\r\n- The model receives a list of tools that it utilizes to gather additional context and information.\r\n- Context is integrated based on the tool calls performed by the LLM.\r\n- The LLM employs a multi-step Chain of Thought prompt focusing on reasoning between each step.",
+  "created_at": "2024-11-02T03:50:07Z",
+  "updated_at": "2025-01-16T04:49:35Z",
+  "closed_at": "2025-01-16T04:49:35Z",
+  "merged_at": null
+}

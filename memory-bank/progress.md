@@ -3,28 +3,28 @@
 ## Completed Features
 
 ### Core Functionality
-- [x] Basic word counting implementation
-- [x] Three scoring algorithms
-  - [x] Original (power-law)
-  - [x] Log-adjusted
-  - [x] Exponential-adjusted
-- [x] GitHub-style markdown rendering
-- [x] Individual comment analysis
-- [x] User statistics aggregation
+- [x] GitHub API integration
+- [x] PR data fetching
+  - [x] PR details
+  - [x] Review comments
+  - [x] Issue comments
+- [x] TypeScript setup
+- [x] Error handling
+- [ ] Score calculation implementation
 
-### Visualization
-- [x] Comment display with markdown
-- [x] Score comparison views
-- [x] User contribution totals
-- [x] Algorithm explanation section
-- [x] Responsive layout
+### Infrastructure
+- [x] TypeScript configuration
+- [x] Bun runtime setup
+- [x] Environment management
+- [x] Data storage structure
+- [x] Project organization
 
 ### Data Processing
-- [x] Code block handling
-- [x] Link text processing
-- [x] Blockquote support
-- [x] Horizontal rule handling
-- [x] Word counting logic
+- [x] JSON data structure
+- [x] PR comment organization
+- [x] Issue comment collection
+- [ ] Word count implementation
+- [ ] Score calculation
 
 ### Documentation
 - [x] Project structure
@@ -36,16 +36,17 @@
 ## In Progress
 
 ### Active Development
-- [ ] Enhanced blockquote styling
-- [ ] Score comparison improvements
-- [ ] Interactive features
-- [ ] Performance optimization
+- [ ] Data processing pipeline
+- [ ] Scoring algorithm implementation
+- [ ] Visualization development
+- [ ] Testing suite creation
 
-### Documentation Updates
+### Documentation
+- [x] Memory bank setup
+- [x] Project context
+- [x] Technical documentation
+- [x] System patterns
 - [ ] API documentation
-- [ ] Usage examples
-- [ ] Contributing guidelines
-- [ ] Testing procedures
 
 ### Testing
 - [ ] Cross-browser testing

@@ -54,12 +54,12 @@ async function fetchPRData() {
         const issueComments = await issueCommentsResponse.json();
 
         // Ensure data directory exists
-        await ensureDir('data');
+        await ensureDir('./src/data');
 
         // Write files
-        await writeJSON(join('data', 'pr-details.json'), prDetails);
-        await writeJSON(join('data', 'pr-comments.json'), prComments);
-        await writeJSON(join('data', 'issue-comments.json'), issueComments);
+        await writeJSON(join('./src/data', 'pr-details.json'), prDetails);
+        await writeJSON(join('./src/data', 'pr-comments.json'), prComments);
+        await writeJSON(join('./src/data', 'issue-comments.json'), issueComments);
 
         console.log('Successfully downloaded PR conversation history');
 

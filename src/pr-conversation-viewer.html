@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR #31 Conversation Analysis</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .pr-header {
+            border-bottom: 1px solid #e1e4e8;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+        }
+
+        .pr-title {
+            font-size: 2em;
+            margin: 0;
+            color: #24292e;
+        }
+
+        .pr-meta {
+            color: #586069;
+            font-size: 0.9em;
+        }
+
+        .comment {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 1rem;
+        }
+
+        .comment-meta {
+            flex-grow: 1;
+        }
+
+        .username {
+            font-weight: 600;
+            color: #24292e;
+            text-decoration: none;
+        }
+
+        .timestamp {
+            color: #586069;
+            font-size: 0.9em;
+        }
+
+        .comment-body {
+            color: #24292e;
+        }
+
+        .score-info {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e1e4e8;
+            font-size: 0.9em;
+            color: #586069;
+        }
+
+        .markdown code {
+            background-color: #f6f8fa;
+            border-radius: 3px;
+            padding: 0.2em 0.4em;
+            font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+        }
+
+        .markdown pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+        }
+
+        .markdown blockquote {
+            border-left: 0.25em solid #dfe2e5;
+            color: #6a737d;
+            padding: 0 1em;
+            margin: 0;
+        }
+
+        #score-summary {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .algorithm-scores {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .algorithm-score {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="pr-header">
+            <h1 class="pr-title">Loading PR data...</h1>
+            <div class="pr-meta"></div>
+        </div>
+        <div id="score-summary">
+            <h2>Conversation Analysis</h2>
+            <div class="algorithm-scores"></div>
+        </div>
+        <div id="conversation"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Scoring algorithms
+        function calculateOriginalScore(wordCount) {
+            return Math.pow(wordCount, 0.85);
+        }
+
+        function calculateLogAdjustedScore(wordCount) {
+            return Math.pow(wordCount, 0.85) * (1/Math.log2(wordCount + 2));
+        }
+
+        function calculateExponentialScore(wordCount) {
+            return Math.pow(wordCount, 0.85) * Math.exp(-wordCount/100);
+        }
+
+        function countWords(text) {
+            // Remove code blocks
+            text = text.replace(/```[\s\S]*?```/g, '');
+            // Remove inline code
+            text = text.replace(/`[^`]+`/g, '');
+            // Remove URLs
+            text = text.replace(/https?:\/\/\S+/g, '');
+            // Split into words and count
+            return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+        }
+
+        async function loadData() {
+            try {
+                const [prDetails, prComments, issueComments] = await Promise.all([
+                    fetch('../data/pr_details.json').then(r => r.json()),
+                    fetch('../data/pr_comments.json').then(r => r.json()),
+                    fetch('../data/issue_comments.json').then(r => r.json())
+                ]);
+
+                // Update PR header
+                document.querySelector('.pr-title').textContent = `${prDetails.title} (#${prDetails.number})`;
+                document.querySelector('.pr-meta').textContent =
+                    `Created by ${prDetails.user.login} on ${new Date(prDetails.created_at).toLocaleDateString()}`;
+
+                // Process comments
+                const conversation = document.getElementById('conversation');
+                const comments = [...prComments, ...issueComments].sort((a, b) =>
+                    new Date(a.created_at) - new Date(b.created_at)
+                );
+
+                let totalWords = 0;
+                let commentCount = 0;
+                const scores = {
+                    original: [],
+                    logAdjusted: [],
+                    exponential: []
+                };
+
+                comments.forEach(comment => {
+                    const wordCount = countWords(comment.body);
+                    totalWords += wordCount;
+                    commentCount++;
+
+                    // Calculate scores
+                    const originalScore = calculateOriginalScore(wordCount);
+                    const logScore = calculateLogAdjustedScore(wordCount);
+                    const expScore = calculateExponentialScore(wordCount);
+
+                    scores.original.push(originalScore);
+                    scores.logAdjusted.push(logScore);
+                    scores.exponential.push(expScore);
+
+                    // Create comment element
+                    const div = document.createElement('div');
+                    div.className = 'comment';
+                    div.innerHTML = `
+                        <div class="comment-header">
+                            <img class="avatar" src="${comment.user.avatar_url}" alt="${comment.user.login}">
+                            <div class="comment-meta">
+                                <a href="${comment.user.html_url}" class="username">${comment.user.login}</a>
+                                <div class="timestamp">
+                                    commented on ${new Date(comment.created_at).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="comment-body markdown">
+                            ${marked.parse(comment.body)}
+                        </div>
+                        <div class="score-info">
+                            <div>Words: ${wordCount}</div>
+                            <div>Original Score: ${originalScore.toFixed(2)}</div>
+                            <div>Log-Adjusted Score: ${logScore.toFixed(2)}</div>
+                            <div>Exponential Score: ${expScore.toFixed(2)}</div>
+                        </div>
+                    `;
+                    conversation.appendChild(div);
+                });
+
+                // Update summary
+                const summaryDiv = document.querySelector('.algorithm-scores');
+                const avgOriginal = scores.original.reduce((a, b) => a + b, 0) / commentCount;
+                const avgLog = scores.logAdjusted.reduce((a, b) => a + b, 0) / commentCount;
+                const avgExp = scores.exponential.reduce((a, b) => a + b, 0) / commentCount;
+
+                summaryDiv.innerHTML = `
+                    <div class="algorithm-score">
+                        <h3>Original Score</h3>
+                        <p>Average: ${avgOriginal.toFixed(2)}</p>
+                    </div>
+                    <div class="algorithm-score">
+                        <h3>Log-Adjusted Score</h3>
+                        <p>Average: ${avgLog.toFixed(2)}</p>
+                    </div>
+                    <div class="algorithm-score">
+                        <h3>Exponential Score</h3>
+                        <p>Average: ${avgExp.toFixed(2)}</p>
+                    </div>
+                    <div class="algorithm-score">
+                        <h3>Statistics</h3>
+                        <p>Total Comments: ${commentCount}</p>
+                        <p>Total Words: ${totalWords}</p>
+                        <p>Avg Words/Comment: ${(totalWords/commentCount).toFixed(1)}</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.body.innerHTML = `<div style="color: red; padding: 2rem;">
+                    Error loading PR data. Please check the console for details.
+                </div>`;
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

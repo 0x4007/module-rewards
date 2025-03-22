@@ -4,9 +4,11 @@
 
 ```mermaid
 flowchart TB
-    subgraph Input
-        MD[Markdown Comments]
-        JSON[JSON Data]
+    subgraph Data Collection
+        GH[GitHub API]
+        PR[PR Details]
+        RC[Review Comments]
+        IC[Issue Comments]
     end
 
     subgraph Processing
@@ -20,26 +22,35 @@ flowchart TB
         Stats[Statistics]
     end
 
-    MD --> WC
-    JSON --> WC
+    GH --> PR
+    GH --> RC
+    GH --> IC
+
+    PR --> Processing
+    RC --> Processing
+    IC --> Processing
+
     WC --> SA
     SA --> VI
-    MD --> MR
     MR --> VI
     SA --> Stats
 ```
 
 ## Core Components
 
-### 1. Word Counter
+### 1. Data Collection
 ```mermaid
 flowchart LR
-    Input[Raw Text] --> Remove[Remove Code Blocks]
-    Remove --> Links[Process Links]
-    Links --> Rules[Remove HR Rules]
-    Rules --> Quotes[Process Blockquotes]
-    Quotes --> Split[Split & Filter]
-    Split --> Count[Word Count]
+    Token[GitHub Token] --> Auth[Authentication]
+    Auth --> API[GitHub API]
+    API --> PR[PR Details]
+    API --> Comments[Comments]
+    Comments --> Review[Review Comments]
+    Comments --> Issue[Issue Comments]
+
+    PR --> Store[JSON Storage]
+    Review --> Store
+    Issue --> Store
 ```
 
 ### 2. Scoring System
