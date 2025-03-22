@@ -13,20 +13,21 @@
   display: flex;
   align-items: center;
   padding: 10px 15px;
-  background-color: var(--hover);
-  border-bottom: 1px solid var(--border);
+  /* background-color: var(--hover); */
+  /* border-bottom: 1px solid var(--border); */
 }
 
 .comment-header .avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  margin-right: 10px;
+  margin-left: 10px;
 }
 
 .comment-header .user-info {
   display: flex;
   flex-direction: column;
+  /* text-align: right; */
 }
 
 .comment-header .username {

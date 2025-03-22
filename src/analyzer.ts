@@ -254,10 +254,25 @@ function displayComments(section: "pr" | "issue", comments: GitHubComment[]): vo
     return;
   }
 
-  // Sort comments by creation date
-  const sortedComments = [...comments].sort(
-    (a, b) => new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime()
-  );
+  // Sort comments - ensure PR/issue body (with special IDs like 0, -3) always comes first,
+  // then sort remaining comments by creation date
+  const sortedComments = [...comments].sort((a, b) => {
+    // Special IDs for PR/issue body comments
+    const bodyCommentIds = [0, -3];
+
+    // If a is a body comment and b is not, a comes first
+    if (bodyCommentIds.includes(a.id) && !bodyCommentIds.includes(b.id)) {
+      return -1;
+    }
+
+    // If b is a body comment and a is not, b comes first
+    if (bodyCommentIds.includes(b.id) && !bodyCommentIds.includes(a.id)) {
+      return 1;
+    }
+
+    // Otherwise sort by creation date
+    return new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime();
+  });
 
   // Calculate scores and render each comment
   for (const comment of sortedComments) {
