@@ -52,10 +52,7 @@ export abstract class BaseCommentProcessor implements Module<CommentData, Proces
     }
 
     // Skip excluded users
-    if (
-      comment.user?.login &&
-      this.config.excludeUsers.includes(comment.user.login)
-    ) {
+    if (comment.user?.login && this.config.excludeUsers.includes(comment.user.login)) {
       processed.isValid = false;
       processed.invalidReason = `User ${comment.user.login} is excluded`;
       return processed;

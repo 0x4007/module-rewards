@@ -8,7 +8,7 @@ export class PRCommentProcessor extends BaseCommentProcessor {
       [
         "github.pull_request_review.submitted",
         "github.pull_request_review_comment.created",
-        "github.pull_request_review_comment.edited"
+        "github.pull_request_review_comment.edited",
       ],
       config
     );

@@ -73,9 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const triggerAnalyze = (inputValue?: string) => {
       // Get the value from the input if not passed directly
       if (!inputValue) {
-        inputValue = document.getElementById("url-input") ?
-                     (document.getElementById("url-input") as HTMLInputElement).value :
-                     "";
+        inputValue = document.getElementById("url-input")
+          ? (document.getElementById("url-input") as HTMLInputElement).value
+          : "";
       }
 
       // Prevent multiple simultaneous calls

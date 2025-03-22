@@ -1,11 +1,7 @@
 import { CloudEvent, createCloudEvent } from "../core/cloud-events";
 import crypto from "crypto";
 
-export function validateGitHubWebhook(
-  headers: Record<string, string>,
-  payload: any,
-  webhookSecret?: string
-): boolean {
+export function validateGitHubWebhook(headers: Record<string, string>, payload: any, webhookSecret?: string): boolean {
   if (!webhookSecret) {
     return true; // Skip validation if no secret provided
   }
@@ -16,18 +12,11 @@ export function validateGitHubWebhook(
   }
 
   const hmac = crypto.createHmac("sha256", webhookSecret);
-  const computedSignature =
-    "sha256=" + hmac.update(JSON.stringify(payload)).digest("hex");
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(computedSignature)
-  );
+  const computedSignature = "sha256=" + hmac.update(JSON.stringify(payload)).digest("hex");
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature));
 }
 
-export function normalizeGitHubEvent(
-  eventType: string,
-  payload: any
-): CloudEvent<any> {
+export function normalizeGitHubEvent(eventType: string, payload: any): CloudEvent<any> {
   const source = payload.repository?.html_url || "github";
   const normalizedType = `github.${eventType.replace(".", "_")}`;
 

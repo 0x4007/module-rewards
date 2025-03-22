@@ -38,10 +38,7 @@ export function clearResults(containerSelector: string): void {
 /**
  * Show an error message to the user
  */
-export function showError(
-  message: string,
-  options: ErrorDisplayOptions = {}
-): void {
+export function showError(message: string, options: ErrorDisplayOptions = {}): void {
   const { duration = 5000, className = "error-message" } = options;
 
   const errorDiv = document.createElement("div");
@@ -62,7 +59,7 @@ export function showError(
     boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
     zIndex: "1000",
     opacity: "1",
-    transition: "opacity 0.3s ease-in-out"
+    transition: "opacity 0.3s ease-in-out",
   });
 
   // Remove the error message after the specified duration

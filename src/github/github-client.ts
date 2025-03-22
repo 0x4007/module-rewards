@@ -1,13 +1,7 @@
 import { ISSUES_LINKED_PRS_QUERY, LINKED_PULL_REQUESTS_QUERY } from "./queries";
 import { LinkedPRsQueryResponse, LinkedPullRequestsResponse } from "./graphql-types";
 import { normalizeGitHubEvent, validateGitHubWebhook } from "./webhook-utils";
-import {
-  FetchedData,
-  GraphQLResponse,
-  LinkedIssue,
-  LinkedPullRequest,
-  UrlParseResult,
-} from "./types";
+import { FetchedData, GraphQLResponse, LinkedIssue, LinkedPullRequest, UrlParseResult } from "./types";
 import { CloudEvent } from "../core/cloud-events";
 
 export class GitHubClient {
@@ -59,9 +53,7 @@ export class GitHubClient {
         type: type.toLowerCase().startsWith("pull") ? "pr" : "issue",
       };
     } catch (error) {
-      throw new Error(
-        `Could not parse GitHub URL: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw new Error(`Could not parse GitHub URL: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -83,14 +75,8 @@ export class GitHubClient {
 
       if (result.errors) {
         console.error("GraphQL errors:", result.errors);
-        if (
-          result.errors.some(
-            (e) => e.type === "NOT_FOUND" && e.path?.includes("repository")
-          )
-        ) {
-          console.log(
-            `Repository not found: ${variables.owner}/${variables.repo}`
-          );
+        if (result.errors.some((e) => e.type === "NOT_FOUND" && e.path?.includes("repository"))) {
+          console.log(`Repository not found: ${variables.owner}/${variables.repo}`);
           return null;
         }
         return null;
@@ -103,11 +89,7 @@ export class GitHubClient {
     }
   }
 
-  public async findLinkedIssue(
-    owner: string,
-    repo: string,
-    prNumber: string
-  ): Promise<LinkedIssue | undefined> {
+  public async findLinkedIssue(owner: string, repo: string, prNumber: string): Promise<LinkedIssue | undefined> {
     console.log(`🔎 Finding linked issue for PR ${owner}/${repo}#${prNumber}`);
 
     try {
@@ -124,9 +106,7 @@ export class GitHubClient {
       }
 
       const linkedPRs = data.repository.issue.closedByPullRequestsReferences?.nodes || [];
-      const matchingPR = linkedPRs.find(
-        pr => pr.number === parseInt(prNumber, 10)
-      );
+      const matchingPR = linkedPRs.find((pr) => pr.number === parseInt(prNumber, 10));
 
       if (matchingPR) {
         console.log(`Found issue #${issueNumber} is closed by PR #${prNumber}`);
@@ -149,11 +129,7 @@ export class GitHubClient {
     }
   }
 
-  public async findLinkedPullRequests(
-    owner: string,
-    repo: string,
-    issueNumber: string
-  ): Promise<LinkedPullRequest[]> {
+  public async findLinkedPullRequests(owner: string, repo: string, issueNumber: string): Promise<LinkedPullRequest[]> {
     console.log(`🔎 Finding linked PRs for issue ${owner}/${repo}#${issueNumber}`);
 
     try {
@@ -201,18 +177,11 @@ export class GitHubClient {
     }
   }
 
-  public async fetchData(
-    owner: string,
-    repo: string,
-    number: string,
-    type: "pr" | "issue"
-  ): Promise<FetchedData> {
+  public async fetchData(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<FetchedData> {
     try {
       // Fetch details (PR or Issue)
       const detailsResponse = await fetch(
-        `${this.baseUrl}/repos/${owner}/${repo}/${
-          type === "pr" ? "pulls" : "issues"
-        }/${number}`,
+        `${this.baseUrl}/repos/${owner}/${repo}/${type === "pr" ? "pulls" : "issues"}/${number}`,
         { headers: this.headers }
       );
 
@@ -220,9 +189,7 @@ export class GitHubClient {
         if (detailsResponse.status === 401 || detailsResponse.status === 403) {
           throw new Error("Authentication failed. Please provide a valid GitHub token.");
         } else if (detailsResponse.status === 404) {
-          throw new Error(
-            `${type.toUpperCase()} not found. Check the URL or your access permissions.`
-          );
+          throw new Error(`${type.toUpperCase()} not found. Check the URL or your access permissions.`);
         } else {
           throw new Error(`GitHub API error: ${detailsResponse.status}`);
         }
@@ -285,9 +252,7 @@ export class GitHubClient {
             try {
               const issueCommentsUrl = `${this.baseUrl}/repos/${
                 linkedIssue.repository?.owner || owner
-              }/${linkedIssue.repository?.name || repo}/issues/${
-                linkedIssue.number
-              }/comments`;
+              }/${linkedIssue.repository?.name || repo}/issues/${linkedIssue.number}/comments`;
               const issueCommentsResponse = await fetch(issueCommentsUrl, {
                 headers: this.headers,
               });
@@ -300,11 +265,7 @@ export class GitHubClient {
             }
           }
         } else if (type === "issue") {
-          const foundLinkedPRs = await this.findLinkedPullRequests(
-            owner,
-            repo,
-            number
-          );
+          const foundLinkedPRs = await this.findLinkedPullRequests(owner, repo, number);
 
           if (foundLinkedPRs && foundLinkedPRs.length > 0) {
             linkedPullRequests = foundLinkedPRs;
