@@ -57,10 +57,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === 'Enter') analyze();
     });
 
-    // Restore last PR URL if exists
+    // Restore and analyze last PR URL if exists
     const lastUrl = localStorage.getItem('last_url');
     if (lastUrl && urlInput) {
       urlInput.value = lastUrl;
+      analyze(); // Automatically analyze the restored URL
     }
   } catch (error) {
     console.error('Failed to initialize:', error);

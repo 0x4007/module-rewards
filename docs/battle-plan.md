@@ -125,6 +125,106 @@ Current names can be improved for clarity:
 | PermitGenerationModule | RewardTokenizer | Better describes generating reward tokens |
 | GithubCommentModule | FeedbackPublisher | Indicates it publishes feedback to repos |
 
+## Enhanced Vision: Platform-Agnostic, Event-Driven Architecture
+
+Our enhanced architecture vision expands beyond just GitHub to support multiple platforms (Google Docs, Telegram, etc.) using a standardized event format and a flexible, declarative configuration system.
+
+### Key Architectural Principles
+
+1. **Platform Agnosticism**: All modules should work with any source of data
+2. **Standardized Event Format**: Using CloudEvents for cross-platform consistency
+3. **Declarative Configuration**: GitHub Actions-style YAML for defining module chains
+4. **Event-Driven Processing**: Any webhook event can trigger specific module chains
+
+### CloudEvents Standard
+
+We'll use the [CloudEvents](https://cloudevents.io/) specification (a CNCF standard) as our normalized event format:
+
+```json
+{
+  "specversion": "1.0",
+  "type": "com.github.issue.comment.created",
+  "source": "https://github.com/orgname/repo",
+  "id": "A234-1234-1234",
+  "time": "2025-03-22T14:30:00Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "issue": {
+      "id": 123,
+      "title": "Issue title"
+    },
+    "comment": {
+      "id": 456,
+      "author": "username",
+      "content": "Comment text",
+      "contentFormat": "markdown"
+    }
+  }
+}
+```
+
+### GitHub Actions-Style Configuration
+
+Configurations will use a familiar, declarative YAML format:
+
+```yaml
+name: "Comment Quality Rewards"
+description: "Rewards quality comments on issues with tokens"
+
+# Events that trigger this workflow
+on:
+  github:
+    issue_comment:
+      - created
+      - edited
+
+  google_docs:
+    document:
+      - edited
+
+# Global configuration
+config:
+  reward_threshold: 0.7
+  openai_model: "gpt-4o"
+
+# Module chain definitions
+modules:
+  # Define the sequence of modules to run
+  - uses: contributor-identifier
+    id: users
+
+  - uses: content-filter
+    id: filter
+    with:
+      exclude_bots: true
+      min_length: 10
+
+  - uses: document-quality-scorer
+    id: quality
+    with:
+      calculate_readability: true
+      word_count_exponent: 0.85
+
+  - uses: ai-relevance-scorer
+    id: relevance
+    with:
+      model: ${{ config.openai_model }}
+
+  - uses: reward-tokenizer
+    id: rewards
+    with:
+      threshold: ${{ config.reward_threshold }}
+      min_quality_score: 0.5
+      use_relevance_from: ${{ steps.relevance.outputs.scores }}
+      use_quality_from: ${{ steps.quality.outputs.scores }}
+
+  - uses: feedback-publisher
+    if: ${{ github.event_name == 'issue_comment.created' }}
+    with:
+      comment_template: "reward-summary.md"
+      include_scores: true
+```
+
 ## Proposed File Structure
 
 The new file structure will organize code by responsibility, following modern TypeScript best practices:
@@ -137,14 +237,26 @@ src/
 │   ├── ai-relevance-config.ts      # AI relevance scoring config
 │   ├── document-quality-config.ts  # Document quality scoring config
 │   ├── code-review-config.ts       # Code review scoring config
-│   ├── activity-tracking-config.ts # Activity tracking config
 │   └── environment.ts              # Environment variable schema
 │
 ├── core/                           # Core framework code
 │   ├── processor.ts                # Main scoring processor
 │   ├── module-base.ts              # Base module interface/class
-│   ├── issue-activity.ts           # Issue activity data collection
+│   ├── event-router.ts             # Routes events to module chains
+│   ├── module-chain-registry.ts    # Manages module chains
 │   └── types.ts                    # Core type definitions
+│
+├── platforms/                      # Platform-specific adapters
+│   ├── base-platform.ts            # Base platform interface
+│   ├── github/                     # GitHub adapter
+│   │   ├── adapter.ts              # Converts GitHub webhooks to CloudEvents
+│   │   └── event-mapper.ts         # Maps GitHub events to standard format
+│   ├── google-docs/                # Google Docs adapter
+│   │   ├── adapter.ts              # Converts Google Docs events to CloudEvents
+│   │   └── event-mapper.ts         # Maps Google Docs events to standard format
+│   └── telegram/                   # Telegram adapter
+│       ├── adapter.ts              # Converts Telegram events to CloudEvents
+│       └── event-mapper.ts         # Maps Telegram events to standard format
 │
 ├── scorers/                        # All scoring strategies
 │   ├── ai-relevance/               # AI-based relevance scoring
@@ -160,9 +272,9 @@ src/
 │   │   ├── index.ts
 │   │   ├── diff-analyzer.ts        # Analyzes code diffs
 │   │   └── types.ts
-│   ├── activity-tracking/          # GitHub activity tracking
+│   ├── activity-tracking/          # Activity tracking across platforms
 │   │   ├── index.ts
-│   │   ├── event-processor.ts      # Processes GitHub events
+│   │   ├── event-processor.ts      # Processes normalized events
 │   │   ├── reaction-processor.ts   # Processes reactions
 │   │   └── types.ts
 │   ├── contributor-identifier/
@@ -175,18 +287,22 @@ src/
 │   ├── reward-tokenizer/
 │   │   └── index.ts                # Generates reward tokens
 │   ├── feedback-publisher/
-│   │   └── index.ts                # Posts feedback comments
+│   │   └── index.ts                # Posts feedback to various platforms
 │   └── index.ts                    # Exports all reward modules
 │
+├── config-parser/                  # YAML configuration parsing
+│   ├── parser.ts                   # Parses YAML configurations
+│   ├── schema.ts                   # JSON Schema for validation
+│   └── expression-evaluator.ts     # Evaluates ${{ expressions }}
+│
 ├── utils/                          # Shared utilities
-│   ├── github.ts                   # GitHub API helpers
+│   ├── cloud-events.ts             # CloudEvents utilities
 │   ├── retry.ts                    # Retry mechanism
-│   ├── url.ts                      # URL processing utilities
 │   ├── markdown.ts                 # Markdown utilities
 │   └── permissions.ts              # Permission checking
 │
 ├── types/                          # Shared type definitions
-│   ├── github-types.ts             # GitHub API type definitions
+│   ├── cloud-event.ts              # CloudEvents type definitions
 │   ├── module-types.ts             # Module interface definitions
 │   ├── results.ts                  # Result type definitions
 │   └── index.ts                    # Exports all types
@@ -198,29 +314,28 @@ src/
 
 ```mermaid
 graph TD
-    Start([GitHub Event]) --> Core
+    Webhook[Webhook Event] --> PlatformAdapter
+    PlatformAdapter --> CloudEvent[CloudEvents Format]
 
-    subgraph Core
-        Processor --> ModuleRegistry
-        ModuleRegistry --> Scorer
-        ModuleRegistry --> RewardModules
+    subgraph "Configuration Loading"
+        YAMLConfig[YAML Configuration] --> ConfigParser
+        ConfigParser --> EventMatcher
     end
 
-    subgraph Scorers
-        Scorer --> AIRelevance
-        Scorer --> DocQuality
-        Scorer --> CodeReview
-        Scorer --> ActivityTracker
-        Scorer --> ContributorID
-        Scorer --> ContentFilter
+    CloudEvent --> EventRouter
+    EventMatcher --> EventRouter
+
+    EventRouter --> ModuleChain
+
+    subgraph "Module Chain Execution"
+        ModuleChain --> Module1
+        Module1 --> Module2
+        Module2 --> Module3
+        Module3 --> Result
     end
 
-    subgraph "Reward Handling"
-        RewardModules --> RewardTokenizer
-        RewardModules --> FeedbackPublisher
-    end
-
-    Core --> End([Result])
+    Result --> Feedback[Feedback Publisher]
+    Result --> Rewards[Reward Tokenizer]
 ```
 
 ## Implementation Plan
@@ -229,193 +344,250 @@ graph TD
 
 1. **Setup Project Structure**
    - Create folder hierarchy
-   - Move shared utilities to new locations
-   - Establish module interfaces
+   - Implement CloudEvents type definitions
+   - Establish base module interfaces
 
-2. **Implement Core Types**
-   - Define shared type interfaces
-   - Create base module classes
-   - Set up configuration schema structure
+2. **Platform Adapter Framework**
+   - Create base platform adapter interface
+   - Implement GitHub adapter (initial focus)
+   - Set up event normalization system
 
-3. **Migration Planning**
-   - Identify dependencies between modules
-   - Plan migration sequence
-   - Create module stubs
+3. **Configuration Parser**
+   - Implement YAML configuration parser
+   - Create JSON schema validation
+   - Build expression evaluation engine
 
-### Phase 2: Scorer Migration (Weeks 2-3)
+### Phase 2: Module Framework & First Modules (Weeks 2-3)
 
-1. **ContributorIdentifier** (former UserExtractorModule)
-   - Move core functionality with minimal changes
-   - Update interfaces and types
-   - Add unit tests
+1. **Event Router & Module Chain Registry**
+   - Implement event routing system
+   - Create module chain registry
+   - Build execution pipeline
 
-2. **ContentFilterer** (former DataPurgeModule)
-   - Isolate filtering logic
-   - Create clean interface
-   - Add unit tests
+2. **Adapt Core Modules to CloudEvents**
+   - Refactor modules to process CloudEvents
+   - Make modules platform-agnostic
+   - Add unit tests for each module
 
-3. **DocumentQualityScorer** (former FormattingEvaluatorModule)
-   - Split into readability and formatting sub-modules
-   - Clean up HTML/markdown processing
-   - Add unit tests
+3. **Implement Platform-Independent Modules**
+   - Migrate DocumentQualityScorer and AIRelevanceScorer first
+   - Make them work with normalized content from any source
+   - Ensure they correctly handle various content formats
 
-4. **AIRelevanceScorer** (former ContentEvaluatorModule)
-   - Isolate AI prompt management
-   - Improve error handling
-   - Add unit tests
+4. **GitHub-Specific Module Adaption**
+   - Adapt ReviewIncentivizerModule to CodeReviewRewarder
+   - Convert UserExtractorModule to ContributorIdentifier
+   - Adapt other GitHub-specific modules
 
-5. **CodeReviewRewarder** (former ReviewIncentivizerModule)
-   - Clean up diff analysis
-   - Extract file exclusion logic
-   - Add unit tests
+### Phase 3: Multi-Platform Support (Week 4)
 
-6. **GithubActivityTracker** (former EventIncentivesModule)
-   - Separate event and reaction processing
-   - Create event categorization
-   - Add unit tests
+1. **Additional Platform Adapters**
+   - Implement Google Docs adapter
+   - Implement Telegram adapter (if needed)
+   - Create platform-specific normalizers
 
-### Phase 3: Reward Modules Migration (Week 4)
+2. **Platform-Agnostic Reward System**
+   - Refactor RewardTokenizer to work with any platform
+   - Make FeedbackPublisher support multiple platforms
+   - Create platform-specific feedback formatters
 
-1. **RewardTokenizer** (former PermitGenerationModule)
-   - Isolate token generation logic
-   - Improve interfaces
-   - Add unit tests
+### Phase 4: Configuration & Chain System (Week 5)
 
-2. **FeedbackPublisher** (former GithubCommentModule)
-   - Extract template management
-   - Improve formatting
-   - Add unit tests
+1. **YAML Configuration System**
+   - Implement full GitHub Actions-style configuration parsing
+   - Create configuration templating system
+   - Add support for variables and expressions
 
-### Phase 4: Core Processor Refactoring (Week 5)
-
-1. **ModuleRegistry**
-   - Create pluggable module system
-   - Implement module dependency resolution
-   - Add dynamic enabling/disabling
-
-2. **New Processor**
-   - Implement pipeline processing
-   - Add hooks for module interaction
-   - Create cleaner result management
+2. **Module Chain Building**
+   - Build dynamic module chain assembly
+   - Implement conditional execution based on event types
+   - Add support for sharing data between modules
 
 3. **Integration Tests**
-   - Test full pipeline
-   - Verify backward compatibility
-   - Create regression tests
+   - Test cross-platform event handling
+   - Verify configuration system with real-world examples
+   - Test backward compatibility with existing configurations
 
-### Phase 5: Configuration and Docs (Week 6)
+### Phase 5: Polish & Documentation (Week 6)
 
-1. **Configuration System**
-   - Implement configuration validation
-   - Create sensible defaults
-   - Add schema documentation
+1. **Configuration Templates & Examples**
+   - Create templates for common use cases
+   - Provide example configurations for each platform
+   - Add comprehensive configuration documentation
 
-2. **Documentation**
-   - Create module documentation
-   - Document extension points
-   - Add examples
+2. **Module Documentation**
+   - Document each module's capabilities
+   - Provide examples of chain configurations
+   - Create developer guide for extending the system
 
-3. **Final Integration**
-   - End-to-end testing
-   - Performance testing
-   - Deployment planning
+3. **Final Integration & Testing**
+   - End-to-end testing across platforms
+   - Performance optimization
+   - Deployment and migration planning
 
 ## Architectural Improvements
 
-### 1. Dependency Injection
+### 1. Platform-Agnostic Module Interface
 
-The new architecture will use dependency injection to:
-- Make testing easier by allowing mock dependencies
-- Remove direct instantiation within modules
-- Allow runtime configuration of dependencies
+The new architecture uses CloudEvents and a platform-agnostic interface:
 
-Example interface:
 ```typescript
-interface ModuleContext {
-  logger: Logger;
-  config: ConfigService;
-  octokit: Octokit;
-  // Other shared services
+interface Module {
+  // Each module declares what event types it can handle
+  supportedEventTypes: string[] | RegExp;
+
+  // Process a CloudEvents document
+  transform(event: CloudEvent, result: any): Promise<any>;
 }
 
-abstract class BaseModule<TConfig, TResult> {
+// Base implementation all modules can extend
+abstract class BaseModule implements Module {
   constructor(protected context: ModuleContext) {}
-  abstract transform(data: IssueActivity, result: TResult): Promise<TResult>;
+
+  // Default implementation that can be overridden
+  canProcess(event: CloudEvent): boolean {
+    if (Array.isArray(this.supportedEventTypes)) {
+      return this.supportedEventTypes.includes(event.type);
+    }
+    return this.supportedEventTypes.test(event.type);
+  }
+
+  // Must be implemented by each module
+  abstract transform(event: CloudEvent, result: any): Promise<any>;
 }
 ```
 
-### 2. Enhanced Configuration
+### 2. GitHub Actions-Style Configuration
 
-Configuration will be improved with:
-- Runtime validation for all config
-- Better error messages
-- Default configurations
-- Schema documentation
-- Typed configuration
+The system uses a familiar, declarative YAML configuration:
 
-Example:
 ```typescript
-export const aiRelevanceConfigSchema = Type.Object({
-  enabled: Type.Boolean(),
-  openAi: Type.Object({
-    model: Type.String(),
-    tokenCountLimit: Type.Number(),
-    maxRetries: Type.Number(),
-    endpoint: Type.Optional(Type.String()),
-  }),
-  multipliers: Type.Optional(Type.Array(
-    Type.Object({
-      role: Type.Array(Type.String()),
-      relevance: Type.Number(),
-    })
-  )),
-});
-
-export type AIRelevanceConfig = Static<typeof aiRelevanceConfigSchema>;
+// Configuration schema with JSON Schema validation
+export const workflowConfigSchema = {
+  type: 'object',
+  required: ['name', 'on', 'modules'],
+  properties: {
+    name: { type: 'string' },
+    description: { type: 'string' },
+    on: {
+      type: 'object',
+      additionalProperties: {
+        type: 'object',
+        additionalProperties: {
+          type: 'array',
+          items: { type: 'string' }
+        }
+      }
+    },
+    config: { type: 'object' },
+    modules: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['uses'],
+        properties: {
+          uses: { type: 'string' },
+          id: { type: 'string' },
+          if: { type: 'string' },
+          with: { type: 'object' }
+        }
+      }
+    }
+  }
+};
 ```
 
-### 3. Modular Architecture
+### 3. Event-Driven Architecture with CloudEvents
 
-The new architecture will:
-- Allow enabling/disabling modules at runtime
-- Make it easier to add new scoring strategies
-- Provide extension points for custom scoring
-- Support different module combinations
+The system processes standardized CloudEvents:
 
-Example:
 ```typescript
-class ModuleRegistry {
-  private modules: Map<string, BaseModule<any, any>> = new Map();
+interface CloudEvent {
+  // Required CloudEvents attributes
+  specversion: string;  // CloudEvents spec version
+  id: string;           // Unique event identifier
+  source: string;       // URI identifying the event producer
+  type: string;         // Event type (e.g., "com.github.issue.comment.created")
 
-  register(name: string, module: BaseModule<any, any>): void {
-    this.modules.set(name, module);
+  // Optional CloudEvents attributes
+  datacontenttype?: string;  // Content type of data (e.g., "application/json")
+  dataschema?: string;       // URI to the schema of the data
+  subject?: string;          // Subject of the event
+  time?: string;             // Timestamp of when the event occurred
+
+  // The actual event data
+  data: any;
+}
+
+class EventRouter {
+  constructor(private moduleChainRegistry: ModuleChainRegistry) {}
+
+  async routeEvent(event: CloudEvent): Promise<any> {
+    // Find matching chains for this event type
+    const chains = this.moduleChainRegistry.getMatchingChains(event.type);
+
+    // Execute each matching chain in parallel
+    const results = await Promise.all(
+      chains.map(chain => this.executeChain(chain, event))
+    );
+
+    return results;
   }
 
-  getEnabledModules(): BaseModule<any, any>[] {
-    return Array.from(this.modules.values())
-      .filter(module => module.enabled);
+  private async executeChain(chain: ModuleChain, event: CloudEvent): Promise<any> {
+    let result = {};
+
+    for (const module of chain.modules) {
+      // Skip modules that don't apply to this event
+      if (!module.canProcess(event)) continue;
+
+      // Apply module transformation
+      result = await module.transform(event, result);
+    }
+
+    return result;
   }
 }
 ```
 
-### 4. Error Handling
+### 4. Declarative Module Chains
 
-Improvements to error handling:
-- Standardized error types
-- Consistent error logging
-- Better recovery mechanisms
-- Detailed error reporting
+The system uses a declarative approach to configure module chains:
 
-Example:
 ```typescript
-export class ModuleError extends Error {
-  constructor(
-    message: string,
-    readonly moduleName: string,
-    readonly code: ErrorCode,
-    readonly context?: Record<string, unknown>
-  ) {
-    super(`[${moduleName}] ${message}`);
+class ModuleChainBuilder {
+  private registry: Map<string, ModuleFactory> = new Map();
+
+  // Register module factories
+  register(name: string, factory: ModuleFactory): void {
+    this.registry.set(name, factory);
+  }
+
+  // Build a chain from YAML configuration
+  buildChain(config: WorkflowConfig): ModuleChain {
+    const modules: Module[] = [];
+
+    for (const moduleConfig of config.modules) {
+      // Get the module factory
+      const factory = this.registry.get(moduleConfig.uses);
+      if (!factory) throw new Error(`Unknown module: ${moduleConfig.uses}`);
+
+      // Create module instance with configuration
+      const module = factory.create(moduleConfig.with || {});
+
+      // Add conditional execution if specified
+      if (moduleConfig.if) {
+        const originalCanProcess = module.canProcess.bind(module);
+        module.canProcess = (event: CloudEvent) => {
+          // Evaluate the condition expression
+          return evaluateCondition(moduleConfig.if, event) && originalCanProcess(event);
+        };
+      }
+
+      modules.push(module);
+    }
+
+    return new ModuleChain(modules);
   }
 }
 ```
@@ -443,8 +615,33 @@ The new architecture will improve testability with:
    - Measure processing time
    - Identify bottlenecks
 
+## Additional Platform-Specific Considerations
+
+### GitHub
+
+- Implement webhook signature validation
+- Handle GitHub-specific rate limiting
+- Map GitHub's event types to CloudEvents format
+
+### Google Docs
+
+- Implement Google OAuth for authentication
+- Handle Google Docs revision history mapping
+- Extract text content from various Google document formats
+
+### Telegram
+
+- Process Telegram Bot API webhooks
+- Handle message formats and attachments
+- Map chat structures to standard event format
+
 ## Conclusion
 
-This refactoring plan provides a clear path to transform the current monolithic module architecture into a more maintainable, testable, and extensible system. By reorganizing code around responsibilities, improving naming, and implementing modern architectural patterns, we will create a system that is easier to understand, extend, and maintain.
+This enhanced refactoring plan transforms the current GitHub-focused architecture into a versatile, platform-agnostic system for processing and rewarding content across multiple platforms. By adopting CloudEvents as our standardized format and GitHub Actions-style YAML for configuration, we create a system that is:
 
-The implementation will be phased to ensure each component is properly migrated and tested before moving to the next, minimizing the risk of introducing bugs or regressions. The end result will be a more robust system that can easily accommodate new scoring strategies and rewards mechanisms.
+1. **Easily Extensible** - Add new platforms by just creating adapters
+2. **Highly Configurable** - Create custom workflows for different event types
+3. **Developer Friendly** - Use familiar GitHub Actions-style configuration
+4. **Standards Compliant** - Built on established industry standards
+
+The implementation will be phased to ensure each component is properly migrated and tested, with an initial focus on GitHub compatibility while building the foundation for multi-platform support. The end result will be a powerful system that can process and reward content from any webhook-capable platform using consistent scoring strategies.
