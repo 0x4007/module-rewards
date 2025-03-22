@@ -121,11 +121,13 @@ footer {
 .content-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-top: 2rem;
+  /* margin-top: 2rem; */
+  /* width: 100%; */
 }
 
 .column {
   border-radius: 4px;
+  /* max-width: 50%; */
 }
 
 .column h2 {
@@ -137,8 +139,8 @@ footer {
 }
 
 .conversation {
-  overflow-y: auto;
-  padding-right: 0.5rem;
+  /* overflow-y: auto; */
+  /* padding-right: 0.5rem; */
 }
 
 #details {
@@ -403,6 +405,8 @@ footer {
   border: 1px dashed var(--border);
   border-radius: 6px;
   margin: 16px 0;
+  min-width: 160px;
+  /* text-align: center; */
 }
 
 .empty-state svg {

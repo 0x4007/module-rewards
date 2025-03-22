@@ -96,11 +96,16 @@ export function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-  // Add scores if provided and showScores is true
-  if (scores && showScores) {
-    const scoresElement = renderScores(scores);
-    commentElement.appendChild(scoresElement);
-  }
+    // Add scores if provided and showScores is true (and not a slash command with 0 score)
+    if (scores && showScores) {
+      // Add a special class if this is a slash command
+      if (scores.wordCount === 0 && comment.body.trim().startsWith('/')) {
+        commentElement.classList.add('slash-command');
+      }
+
+      const scoresElement = renderScores(scores);
+      commentElement.appendChild(scoresElement);
+    }
 
   // Add the comment to the container
   container.appendChild(commentElement);
@@ -238,8 +243,10 @@ export function renderComments(
         }
       }
     } else {
-      // For comments not in a group, calculate scores normally
-      commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+    // For comments not in a group, calculate scores normally
+    // Check if this is a slash command
+    const isSlashCommand = comment.body.trim().startsWith('/');
+    commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand);
 
       // Store scores in the map
       if (commentScores) {
