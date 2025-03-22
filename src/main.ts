@@ -245,10 +245,10 @@ function clearResults(): void {
   if (algorithmScores) algorithmScores.innerHTML = '';
   if (title) title.textContent = 'Loading...';
   if (meta) meta.textContent = '';
-  // Remove existing leaderboard if present
-  const existingLeaderboard = document.querySelector('.leaderboard');
-  if (existingLeaderboard) {
-    existingLeaderboard.remove();
+  // Remove existing summary if present
+  const existingSummary = document.querySelector('.contributor-summary');
+  if (existingSummary) {
+    existingSummary.remove();
   }
 }
 
@@ -331,8 +331,8 @@ function processComments(comments: GitHubComment[]): ScoringMetrics {
         contributors[login].commentCount++;
       });
 
-    // Update leaderboard
-    updateLeaderboard(contributors);
+    // Update summary
+    updateContributorSummary(contributors);
 
     return scores;
 }
@@ -411,7 +411,7 @@ function updateScoreSummary(commentScores: CommentScores, summary: ScoringMetric
   summary.exponential.push(commentScores.exponential);
 }
 
-function updateLeaderboard(contributors: { [key: string]: {
+function updateContributorSummary(contributors: { [key: string]: {
   avatar: string,
   url: string,
   totalWords: number,
@@ -420,19 +420,25 @@ function updateLeaderboard(contributors: { [key: string]: {
   exponentialScore: number,
   commentCount: number
 }}): void {
-  const leaderboardContainer = document.createElement('div');
-  leaderboardContainer.className = 'leaderboard';
-  leaderboardContainer.innerHTML = '<h3>Contributor Leaderboard</h3>';
+  // Remove any existing summary before creating a new one
+  const existingSummary = document.querySelector('.contributor-summary');
+  if (existingSummary) {
+    existingSummary.remove();
+  }
+
+  const summaryContainer = document.createElement('div');
+  summaryContainer.className = 'contributor-summary';
+  summaryContainer.innerHTML = '<h3>Contributor Summary</h3>';
 
   const sortedContributors = Object.entries(contributors)
     .sort(([, a], [, b]) => b.exponentialScore - a.exponentialScore);
 
-  const leaderboardList = document.createElement('div');
-  leaderboardList.className = 'leaderboard-list';
+  const summaryList = document.createElement('div');
+  summaryList.className = 'contributor-list';
 
   sortedContributors.forEach(([login, stats]) => {
     const contributorEl = document.createElement('div');
-    contributorEl.className = 'leaderboard-item';
+    contributorEl.className = 'contributor-item';
     contributorEl.innerHTML = `
       <div class="user-info">
         <img src="${stats.avatar}" alt="${login}" class="avatar" />
@@ -453,14 +459,14 @@ function updateLeaderboard(contributors: { [key: string]: {
         </div>
       </div>
     `;
-    leaderboardList.appendChild(contributorEl);
+    summaryList.appendChild(contributorEl);
   });
 
-  leaderboardContainer.appendChild(leaderboardList);
+  summaryContainer.appendChild(summaryList);
 
-  // Place leaderboard before the conversation
+  // Place summary before the conversation
   const conversation = document.getElementById('conversation');
   if (conversation) {
-    conversation.insertAdjacentElement('beforebegin', leaderboardContainer);
+    conversation.insertAdjacentElement('beforebegin', summaryContainer);
   }
 }
