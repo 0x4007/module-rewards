@@ -198,7 +198,7 @@ blockquote {
     margin-left: 6px;
 }
 
-.linked-issue-spec {
+.linked-issue-spec, .linked-prs-list {
     margin: 0 0 2rem;
     padding: 1.5rem;
     border: 1px solid var(--border);
@@ -206,11 +206,14 @@ blockquote {
     background: var(--hover);
 }
 
-.linked-issue-spec .issue-header {
+.linked-issue-spec .issue-header, .linked-prs-list .prs-header {
     margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.linked-issue-spec h3 {
+.linked-issue-spec h3, .linked-prs-list h3 {
     margin: 0 0 0.5rem;
     font-size: 1.2rem;
     color: var(--text);
@@ -219,13 +222,13 @@ blockquote {
     gap: 0.5rem;
 }
 
-.linked-issue-spec a {
+.linked-issue-spec a, .linked-prs-list a {
     color: var(--primary);
     text-decoration: none;
     font-weight: 600;
 }
 
-.linked-issue-spec a:hover {
+.linked-issue-spec a:hover, .linked-prs-list a:hover {
     text-decoration: underline;
 }
 
@@ -234,6 +237,80 @@ blockquote {
     background: var(--bg);
     border-radius: 4px;
     border: 1px solid var(--border);
+}
+
+/* Styles for linked PRs list */
+.linked-prs-list .pr-count {
+    background: var(--primary);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.linked-prs-list .prs-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    overflow: hidden;
+}
+
+.linked-prs-list .pr-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.linked-prs-list .pr-item:last-child {
+    border-bottom: none;
+}
+
+.linked-prs-list .pr-status {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.linked-prs-list .pr-link {
+    flex-grow: 1;
+}
+
+.linked-prs-list .pr-author {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.linked-prs-list .state-open {
+    border-left: 4px solid #2cbe4e;
+}
+
+.linked-prs-list .state-closed {
+    border-left: 4px solid #cb2431;
+}
+
+.linked-prs-list .state-merged {
+    border-left: 4px solid #6f42c1;
+}
+
+/* Style for comments separator */
+.comments-separator {
+    margin: 2rem 0 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--hover);
+    border-radius: 4px;
+    border-left: 4px solid var(--primary);
+}
+
+.comments-separator h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text);
 }
 
 .contributor-summary {

@@ -1,3 +1,4 @@
+import { findLinkedIssue } from "./github-bidirectional";
 import { FetchedData, LinkedIssue, UrlParseResult } from "./types";
 
 const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
@@ -10,82 +11,46 @@ async function executeGraphQL(query: string, variables: any, token?: string): Pr
     throw new Error("GitHub token is required for GraphQL queries");
   }
 
+  console.log('Executing GraphQL query with variables:', JSON.stringify(variables));
+
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: "POST",
     headers: {
-      "Authorization": `bearer ${token}`,
+      "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ query, variables }),
   });
 
   if (!response.ok) {
+    console.error(`GraphQL request failed with status: ${response.status}`);
     throw new Error(`GraphQL request failed: ${response.status}`);
   }
 
   const data = await response.json();
   if (data.errors) {
+    console.error('GraphQL response returned errors:', data.errors);
     throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   }
 
+  console.log('GraphQL response received successfully');
   return data.data;
 }
 
 /**
- * Fetch linked issue data for a pull request
+ * Fetch linked issue data for a pull request using the reliable bidirectional approach
  */
 async function fetchLinkedIssue(owner: string, repo: string, prNumber: string, token?: string): Promise<LinkedIssue | undefined> {
-  const query = `
-    query GetLinkedIssue($owner: String!, $repo: String!, $number: Int!) {
-      repository(owner: $owner, name: $repo) {
-        pullRequest(number: $number) {
-          id
-          closingIssuesReferences(first: 1) {
-            nodes {
-              number
-              title
-              body
-              url
-            }
-          }
-          linkedIssues(first: 1) {
-            nodes {
-              number
-              title
-              body
-              url
-            }
-          }
-        }
-      }
-    }
-  `;
+  if (!token) {
+    console.log('No token provided, cannot fetch linked issues');
+    return undefined;
+  }
 
   try {
-    const data = await executeGraphQL(query, {
-      owner,
-      repo,
-      number: parseInt(prNumber, 10)
-    }, token);
-
-    // Check both closingIssuesReferences and linkedIssues
-    const closingIssues = data.repository.pullRequest.closingIssuesReferences.nodes || [];
-    const linkedIssues = data.repository.pullRequest.linkedIssues.nodes || [];
-
-    // Combine and take the first issue found
-    const allIssues = [...closingIssues, ...linkedIssues];
-    if (allIssues.length > 0) {
-      const issue = allIssues[0];
-      return {
-        number: issue.number,
-        title: issue.title,
-        body: issue.body,
-        html_url: issue.url
-      };
-    }
-    return undefined;
+    console.log(`Fetching linked issue for PR ${owner}/${repo}#${prNumber} using bidirectional approach`);
+    return await findLinkedIssue(owner, repo, prNumber, token);
   } catch (error) {
-    console.warn("Failed to fetch linked issue:", error);
+    console.error('Error in bidirectional issue lookup:', error);
     return undefined;
   }
 }
@@ -138,7 +103,7 @@ export async function fetchGitHubData(
 
   // Add authorization header if token exists
   if (token) {
-    headers["Authorization"] = `token ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   // Base GitHub API URL
@@ -205,10 +170,71 @@ export async function fetchGitHubData(
       throw new Error(`Failed to fetch comments: ${issueCommentsResponse.status}`);
     }
 
-    // If this is a PR, try to fetch linked issue
+    // Handle bidirectional linking (PR → Issue and Issue → PR)
     let linkedIssue;
-    if (type === "pr" && token) {
-      linkedIssue = await fetchLinkedIssue(owner, repo, number, token);
+    let linkedPullRequests = [];
+
+    if (token) {
+      if (type === "pr") {
+        // PR → Issue direction: Find linked issue for this PR
+        console.log(`Attempting to find linked issue for PR ${owner}/${repo}#${number}`);
+        linkedIssue = await fetchLinkedIssue(owner, repo, number, token);
+
+        // If we found a linked issue, fetch its comments too
+        if (linkedIssue) {
+          console.log(`Found linked issue #${linkedIssue.number}, fetching its comments...`);
+
+          try {
+            // Fetch comments for the linked issue
+            const issueCommentsUrl = `${baseUrl}/repos/${owner}/${repo}/issues/${linkedIssue.number}/comments`;
+            const issueCommentsResponse = await fetch(issueCommentsUrl, { headers });
+
+            if (issueCommentsResponse.ok) {
+              const issueComments = await issueCommentsResponse.json();
+              console.log(`Retrieved ${issueComments.length} comments from linked issue #${linkedIssue.number}`);
+
+              // Add comments to the linkedIssue object
+              linkedIssue.comments = issueComments;
+            } else {
+              console.error(`Failed to fetch linked issue comments: ${issueCommentsResponse.status}`);
+            }
+          } catch (error) {
+            console.error("Error fetching linked issue comments:", error);
+            // Continue even if comments fetching fails - we'll still have the issue itself
+          }
+        }
+      } else if (type === "issue") {
+        // Issue → PR direction: Find PRs that reference this issue
+        console.log(`Attempting to find PRs that reference issue ${owner}/${repo}#${number}`);
+
+        // Skip GraphQL for issue→PR direction since it's unreliable
+        // Go directly to REST API search which is more effective based on testing
+        console.log("Using REST API search to find PRs that mention this issue...");
+        try {
+          // Look for PRs that mention issue #number
+          const searchUrl = `${baseUrl}/search/issues?q=repo:${owner}/${repo}+is:pr+${number}+in:body`;
+          const searchResponse = await fetch(searchUrl, { headers });
+
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+
+            // Convert search results to match our expected format
+            linkedPullRequests = searchData.items
+              .filter((item: any) => item.pull_request) // Ensure it's a PR
+              .map((item: any) => ({
+                number: item.number,
+                title: item.title,
+                url: item.html_url,
+                state: item.state,
+                author: { login: item.user.login }
+              }));
+
+            console.log(`Found ${linkedPullRequests.length} PRs from search that mention issue #${number}`);
+          }
+        } catch (error) {
+          console.error("Error in REST API search:", error);
+        }
+      }
     }
 
     return {
@@ -216,6 +242,7 @@ export async function fetchGitHubData(
       comments,
       type,
       linkedIssue,
+      linkedPullRequests: linkedPullRequests.length > 0 ? linkedPullRequests : undefined
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));

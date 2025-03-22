@@ -68,6 +68,17 @@ export interface LinkedIssue {
   title: string;
   body: string;
   html_url: string;
+  comments?: GitHubComment[]; // Comments from the linked issue
+}
+
+export interface LinkedPullRequest {
+  number: number;
+  title: string;
+  url: string;
+  state: string;
+  author: {
+    login: string;
+  };
 }
 
 export interface FetchedData {
@@ -75,6 +86,7 @@ export interface FetchedData {
   comments: GitHubComment[];
   type: "pr" | "issue";
   linkedIssue?: LinkedIssue; // Optional linked issue data
+  linkedPullRequests?: LinkedPullRequest[]; // Optional linked PRs data (for issues)
 }
 
 export interface CommentScores {

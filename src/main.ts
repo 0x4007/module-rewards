@@ -74,10 +74,19 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error("Required DOM elements not found. Check HTML structure.");
     }
 
-    // Add event listeners
-    analyzeBtn.addEventListener("click", analyze);
-    urlInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") analyze();
+    // Create direct event listeners that access the DOM directly
+    document.getElementById("analyze-btn")?.addEventListener("click", () => {
+      const inputElement = document.getElementById("url-input") as HTMLInputElement;
+      console.log("Clicked Analyze button, input value:", inputElement.value);
+      analyze(inputElement.value);
+    });
+
+    document.getElementById("url-input")?.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        const inputElement = e.target as HTMLInputElement;
+        console.log("Pressed Enter, input value:", inputElement.value);
+        analyze(inputElement.value);
+      }
     });
 
     // Restore and analyze last PR URL if exists
@@ -109,7 +118,7 @@ function promptForGitHubToken(): boolean {
 }
 
 // Analyze PR using user input
-async function analyze(): Promise<void> {
+async function analyze(inputUrl?: string): Promise<void> {
   // Clear previous results
   clearResults();
 
@@ -117,10 +126,52 @@ async function analyze(): Promise<void> {
   loadingIndicator.classList.remove("hidden");
   errorMessage.classList.add("hidden");
 
-  // Get URL
-  const url = urlInput.value.trim();
+  // Get URL - Try multiple methods to get the input value
+  let url = '';
+
+  // Start with the direct parameter if provided
+  if (inputUrl) {
+    url = inputUrl.trim();
+    console.log("Method 0 - Got URL from direct parameter:", url);
+  }
+
+  // Method 1: Direct from the element reference (if no input parameter)
+  if (!url && urlInput && urlInput.value) {
+    url = urlInput.value.trim();
+    console.log("Method 1 - Got URL from urlInput reference:", url);
+  }
+
+  // Method 2: Query the DOM directly (if still no URL)
+  if (!url) {
+    const directInput = document.getElementById('url-input') as HTMLInputElement;
+    if (directInput && directInput.value) {
+      url = directInput.value.trim();
+      console.log("Method 2 - Got URL from direct DOM query:", url);
+    }
+  }
+
+  // Method 3: Try localStorage backup from manual handler (as last resort)
+  if (!url) {
+    const backupUrl = localStorage.getItem('last_manual_url');
+    if (backupUrl) {
+      url = backupUrl;
+      console.log("Method 3 - Got URL from localStorage backup:", url);
+      // Clear it after using
+      localStorage.removeItem('last_manual_url');
+    }
+  }
+
+  console.log("Final URL to analyze:", url);
+
   if (!url) {
     showError("Please enter a GitHub PR or Issue URL");
+    return;
+  }
+
+  // Basic validation for URL format
+  if (!url.match(/github\.com\/[^\/]+\/[^\/]+\/(pull|pulls|issue|issues)\/\d+/i)) {
+    console.error("Invalid URL format:", url);
+    showError("Invalid URL format. Please enter a valid GitHub PR or Issue URL.");
     return;
   }
 
@@ -161,24 +212,120 @@ async function analyze(): Promise<void> {
       title.textContent = `${newData.details.title} (#${newData.details.number})`;
       detailsElement.classList.remove("hidden");
 
-      // If this is a PR with a linked issue, show the issue specification at the top
+      // Enhanced debugging for issue linkage
+      console.log('PR data loaded:', {
+        hasPRBody: !!newData.details.body,
+        hasLinkedIssue: !!newData.linkedIssue,
+        linkedIssueNumber: newData.linkedIssue?.number,
+        type: newData.type,
+        owner: newData.details.user?.login,
+        detailsNumber: newData.details.number
+      });
+
+      // Log full linked issue data if present
       if (newData.linkedIssue) {
-        const existingIssueSpec = document.querySelector(".linked-issue-spec");
-        if (!existingIssueSpec) {
-          const issueSpecDiv = document.createElement("div");
-          issueSpecDiv.className = "linked-issue-spec";
-          issueSpecDiv.innerHTML = `
-            <div class="issue-header">
-              <h3>📋 Linked Issue: #${newData.linkedIssue.number}</h3>
-              <a href="${newData.linkedIssue.html_url}" target="_blank" rel="noopener noreferrer">
-                ${newData.linkedIssue.title}
-              </a>
-            </div>
-            <div class="issue-body markdown">
-              ${window.marked.parse(newData.linkedIssue.body)}
-            </div>
+        console.log('LINKED ISSUE DETAILS:', {
+          number: newData.linkedIssue.number,
+          title: newData.linkedIssue.title,
+          bodyExcerpt: newData.linkedIssue.body?.substring(0, 50) + '...',
+          hasComments: !!newData.linkedIssue.comments && newData.linkedIssue.comments.length > 0,
+          commentCount: newData.linkedIssue.comments?.length || 0
+        });
+      }
+
+      // Handle bidirectional PR-Issue linking in the UI
+      if (newData.type === "pr") {
+        if (newData.linkedIssue) {
+          // PR with a linked issue - show the issue specification at the top
+          console.log('Displaying linked issue:', newData.linkedIssue.number);
+          const existingIssueSpec = document.querySelector(".linked-issue-spec");
+          if (!existingIssueSpec) {
+            const issueSpecDiv = document.createElement("div");
+            issueSpecDiv.className = "linked-issue-spec";
+            issueSpecDiv.innerHTML = `
+              <div class="issue-header">
+                <h3>📋 Linked Issue: #${newData.linkedIssue.number}</h3>
+                <a href="${newData.linkedIssue.html_url}" target="_blank" rel="noopener noreferrer">
+                  ${newData.linkedIssue.title}
+                </a>
+              </div>
+              <div class="issue-body markdown">
+                ${window.marked.parse(newData.linkedIssue.body || 'No description provided.')}
+              </div>
+            `;
+            conversation.insertBefore(issueSpecDiv, conversation.firstChild);
+          }
+        } else {
+          // PR without linked issues
+          console.log('PR does not have linked issues');
+          const diagnosticInfo = document.createElement("div");
+          diagnosticInfo.className = "comment"
+          diagnosticInfo.innerHTML = `
+            <details>
+              <summary>No linked issues found. Click for troubleshooting info.</summary>
+              <p>This PR doesn't have any linked issues detected. Possible reasons:</p>
+              <ul>
+                <li>There are no issues linked to this PR on GitHub</li>
+                <li>The GitHub token might not have sufficient permissions</li>
+                <li>The PR description doesn't use keywords like "Fixes #123" or "Closes #123"</li>
+              </ul>
+              <p>Try refreshing the page or using a different GitHub token with higher permissions.</p>
+            </details>
           `;
-          conversation.insertBefore(issueSpecDiv, conversation.firstChild);
+          conversation.insertBefore(diagnosticInfo, conversation.firstChild);
+        }
+      } else if (newData.type === "issue") {
+        // When viewing an issue, show linked PRs if any exist
+        if (newData.linkedPullRequests && newData.linkedPullRequests.length > 0) {
+          console.log(`Displaying ${newData.linkedPullRequests.length} linked PRs for issue #${newData.details.number}`);
+
+          const existingPRList = document.querySelector(".linked-prs-list");
+          if (!existingPRList) {
+            const prListDiv = document.createElement("div");
+            prListDiv.className = "linked-prs-list";
+
+            // Create header section
+            let prListHTML = `
+              <div class="prs-header">
+                <h3>🔗 Pull Requests referencing this Issue</h3>
+                <div class="pr-count">${newData.linkedPullRequests.length} linked PR${newData.linkedPullRequests.length !== 1 ? 's' : ''}</div>
+              </div>
+              <ul class="prs-list">
+            `;
+
+            // Add each PR to the list
+            newData.linkedPullRequests.forEach(pr => {
+              // Determine status icon based on PR state
+              let statusIcon = '⏳'; // Default for open
+              let statusClass = 'state-open';
+
+              if (pr.state === 'closed') {
+                statusIcon = '❌';
+                statusClass = 'state-closed';
+              } else if (pr.state === 'merged') {
+                statusIcon = '✅';
+                statusClass = 'state-merged';
+              }
+
+              prListHTML += `
+                <li class="pr-item ${statusClass}">
+                  <span class="pr-status">${statusIcon}</span>
+                  <a href="${pr.url}" target="_blank" class="pr-link">
+                    #${pr.number}: ${pr.title}
+                  </a>
+                  <span class="pr-author">by ${pr.author.login}</span>
+                </li>
+              `;
+            });
+
+            prListHTML += `</ul>`;
+            prListDiv.innerHTML = prListHTML;
+
+            // Add to the DOM before the conversation
+            conversation.insertBefore(prListDiv, conversation.firstChild);
+          }
+        } else {
+          console.log('Issue does not have linked PRs');
         }
       }
 
@@ -206,8 +353,25 @@ async function analyze(): Promise<void> {
         }
       }
 
-      // Process comments
-      const comments = processComments(newData.comments);
+      // Process all comments - from PR and linked issue if present
+      let allComments = [...newData.comments];
+
+      // If we have a linked issue and we're looking at a PR, also include linked issue comments
+      if (newData.type === "pr" && newData.linkedIssue && newData.linkedIssue.comments) {
+        console.log(`Including ${newData.linkedIssue.comments.length} comments from linked issue #${newData.linkedIssue.number} (looking at PR ${owner}/${repo}#${number})`);
+
+        // Add a visual separator between PR and issue comments
+        const separator = document.createElement("div");
+        separator.className = "comments-separator";
+        separator.innerHTML = `<h3>Comments from linked Issue #${newData.linkedIssue.number}</h3>`;
+        conversation.appendChild(separator);
+
+        // Add the linked issue comments to the total set for processing
+        allComments = [...allComments, ...newData.linkedIssue.comments];
+      }
+
+      // Process all comments together for unified scoring
+      const comments = processComments(allComments);
       updateSummary(comments);
 
       // If this is a background update and data has changed, show notification
