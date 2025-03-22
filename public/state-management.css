@@ -36,10 +36,10 @@
 }
 
 .linked-content-header {
-  margin-top: 15px;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid var(--border);
+  /* margin-top: 15px; */
+  /* margin-bottom: 10px; */
+  /* padding-bottom: 5px; */
+  /* border-bottom: 1px solid var(--border); */
 }
 
 .linked-content-header h3 {

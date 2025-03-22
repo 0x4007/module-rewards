@@ -96,7 +96,7 @@ h1 {
 }
 
 .comment-header {
-    margin-bottom: 1rem;
+    /* margin-bottom: 1rem; */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -384,24 +384,24 @@ blockquote {
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 1.5rem;
-    background: var(--hover);
+    /* background: var(--hover); */
 }
 
 .column h2 {
     margin-top: 0;
     margin-bottom: 1.5rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border);
+    /* border-bottom: 1px solid var(--border); */
     font-size: 1.3rem;
     color: var(--text);
 }
 
 .issue-column {
-    border-left: 4px solid #2cbe4e; /* Green for issues */
+    /* border-left: 4px solid #2cbe4e; */ /* Green for issues */
 }
 
 .pr-column {
-    border-left: 4px solid #6f42c1; /* Purple for PRs */
+    /* border-left: 4px solid #6f42c1; */ /* Purple for PRs */
 }
 
 .conversation {

@@ -5,14 +5,14 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
-  background-color: var(--bg);
+  /* background-color: var(--bg); */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .comment-header {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
+  /* display: flex; */
+  /* align-items: center; */
+  /* padding: 10px 15px; */
   /* background-color: var(--hover); */
   /* border-bottom: 1px solid var(--border); */
 }
@@ -21,7 +21,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  margin-left: 10px;
+  /* margin-left: 10px; */
 }
 
 .comment-header .user-info {
@@ -49,7 +49,7 @@
 }
 
 .comment-body {
-  padding: 15px;
+  /* padding: 15px; */
   overflow-wrap: break-word;
   line-height: 1.5;
   color: var(--text);

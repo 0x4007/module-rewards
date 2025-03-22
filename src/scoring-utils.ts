@@ -7,8 +7,11 @@ export function countWords(text: string): number {
   // Skip if text is empty
   if (!text || typeof text !== "string") return 0;
 
+  // Remove block quotes (lines starting with >)
+  let cleanedText = text.replace(/^>.*(?:\r?\n|$)/gm, "");
+
   // Remove code blocks
-  let cleanedText = text.replace(/```[\s\S]*?```/g, "");
+  cleanedText = cleanedText.replace(/```[\s\S]*?```/g, "");
 
   // Remove inline code
   cleanedText = cleanedText.replace(/`[^`]+`/g, "");
