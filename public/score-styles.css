@@ -1,0 +1,99 @@
+/* Score display styles (dark-mode compatible) */
+
+.comment-scores {
+  /* background-color: var(--hover); */
+  /* border-top: 1px solid var(--border); */
+  /* padding: 10px 15px; */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  font-size: 12px;
+  color: var(--text-light);
+  /* overflow: scroll; */
+  /* height: 16px; */
+}
+
+.score-info {
+  display: flex;
+  align-items: center;
+  /* float: left; */
+}
+
+.score-label {
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.score-value {
+  /* background-color: var(--bg); */
+  padding: 2px 6px;
+  border-radius: 12px;
+  color: var(--primary);
+  /* border: 1px solid var(--border); */
+  font-weight: 500;
+}
+
+/* Add a little flair for high scores */
+.score-value[data-high-score="true"] {
+  background-color: var(--success);
+  color: var(--bg);
+  border-color: var(--primary);
+}
+
+/* Add summary information */
+.score-summary {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: var(--hover);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.score-summary h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.score-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.contributor-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.contributor-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.contributor-info {
+  flex-grow: 1;
+}
+
+.contributor-name {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text);
+}
+
+.contributor-stats {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.contributor-stat {
+  margin-right: 8px;
+}

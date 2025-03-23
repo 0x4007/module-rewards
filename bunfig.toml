@@ -1,0 +1,28 @@
+# Bun configuration file
+
+[test]
+# Configure the test runner
+# By default, load the setup file before running tests
+preload = ["./src/__tests__/setup.ts"]
+
+# Test file patterns
+include = ["**/*.test.ts"]
+
+# Whether to use colors in test output
+colors = true
+
+# Set timeout for tests in milliseconds (5 seconds)
+timeout = 5000
+
+# Enable coverage
+coverage = true
+coverageDir = "coverage"
+
+[install]
+# Specify exact versions in lockfile
+exact = true
+
+[debug]
+# Allow connecting a debugger
+# Connect via: bun --inspect-wait
+wait = false

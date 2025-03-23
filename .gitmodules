@@ -1,0 +1,3 @@
+[submodule "text-conversation-rewards"]
+	path = text-conversation-rewards
+	url = https://github.com/ubiquity-os-marketplace/text-conversation-rewards.git

@@ -1,0 +1,169 @@
+/* Comment and conversation styling (dark-mode compatible) */
+
+.comment {
+  /* margin: 20px 0; */
+  /* border: 1px solid var(--border); */
+  /* border-radius: 6px; */
+  /* overflow: hidden; */
+  /* background-color: var(--bg); */
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */
+}
+
+.comment-header {
+  /* display: flex; */
+  /* align-items: center; */
+  /* padding: 10px 15px; */
+  /* background-color: var(--hover); */
+  /* border-bottom: 1px solid var(--border); */
+}
+
+.comment-header .avatar {
+  width: 32px;
+  height: 32px;
+  /* border-radius: 50%; */
+  /* margin-left: 10px; */
+  /* float: right; */
+  vertical-align: middle;
+}
+
+.comment-header .user-info {
+  /* display: flex; */
+  /* flex-direction: column; */
+  /* text-align: left; */
+  /* margin: 0 12px; */
+  /* line-height: 1; */
+  /* height: 32px; */
+  /* vertical-align: middle; */
+}
+
+.comment-header .username {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  margin-right: 10px;
+}
+
+.comment-header .username:hover {
+  text-decoration: underline;
+  color: var(--primary);
+}
+
+.comment-header .timestamp {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 2px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.comment-header .timestamp:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.comment-body {
+  /* padding: 15px; */
+  overflow-wrap: break-word;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* Markdown styling */
+.comment-body h1 {
+  font-size: 1.6em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 5px;
+  margin-bottom: 15px;
+}
+
+.comment-body h2 {
+  font-size: 1.4em;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.comment-body h3 {
+  font-size: 1.2em;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.comment-body pre {
+  background-color: var(--hover);
+  border-radius: 3px;
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.comment-body code {
+  background-color: var(--hover);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.comment-body blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 15px;
+  margin-left: 0;
+  color: var(--text-light);
+}
+
+.comment-body img {
+  max-width: 100%;
+  height: auto;
+}
+
+.comment-body a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.comment-body a:hover {
+  text-decoration: underline;
+}
+
+.comment-body ul,
+.comment-body ol {
+  padding-left: 25px;
+}
+
+.comment-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 15px 0;
+}
+
+.comment-body table th,
+.comment-body table td {
+  border: 1px solid var(--border);
+  padding: 6px 13px;
+}
+
+.comment-body table th {
+  background-color: var(--hover);
+}
+
+.comment-body table tr:nth-child(even) {
+  background-color: var(--hover);
+}
+
+/* System reference comment styling */
+.system-reference-comment {
+  background-color: rgba(36, 41, 47, 0.04);
+  border-left: 4px solid #0366d6;
+}
+
+.system-reference-comment .comment-header {
+  background-color: rgba(36, 41, 47, 0.03);
+}
+
+.system-reference-comment .username {
+  color: #0366d6;
+}
+
+/* Add a small icon next to the GitHub References username */
+.system-reference-comment .username::before {
+  content: "🔗";
+  margin-right: 5px;
+}

@@ -14,6 +14,7 @@ export interface GitHubUser {
   login: string;
   html_url: string;
   avatar_url: string;
+  type?: string;  // 'User' or 'Bot' or 'Organization'
 }
 
 export interface GitHubComment {
@@ -23,9 +24,9 @@ export interface GitHubComment {
   created_at: string;
   updated_at: string;
   html_url: string;
-  path?: string;           // For PR review comments
-  position?: number;       // For PR review comments
-  commit_id?: string;      // For PR review comments
+  path?: string; // For PR review comments
+  position?: number; // For PR review comments
+  commit_id?: string; // For PR review comments
   pull_request_url?: string; // For PR comments
 }
 
@@ -60,13 +61,50 @@ export interface UrlParseResult {
   owner: string;
   repo: string;
   number: string;
-  type: 'pr' | 'issue';
+  type: "pr" | "issue";
+}
+
+export interface LinkedIssue {
+  number: number;
+  title: string;
+  body: string;
+  html_url: string;
+  comments?: any[];
+  repository?: {
+    owner: string;
+    name: string;
+  };
+}
+
+export interface LinkedPullRequest {
+  id?: string;
+  number: number;
+  title: string;
+  url: string;
+  state: string;
+  author: {
+    login: string;
+    html_url?: string;
+    avatar_url?: string;
+  };
+  repository?: {
+    owner: {
+      login: string;
+    };
+    name: string;
+  };
+  // These properties are added for PR conversations
+  body?: string;
+  details?: GitHubPR;
+  comments?: GitHubComment[];
 }
 
 export interface FetchedData {
   details: GitHubPR | GitHubIssue;
   comments: GitHubComment[];
-  type: 'pr' | 'issue';
+  type: "pr" | "issue";
+  linkedIssue?: LinkedIssue; // Optional linked issue data
+  linkedPullRequests?: LinkedPullRequest[]; // Optional linked PRs data (for issues)
 }
 
 export interface CommentScores {
@@ -74,6 +112,8 @@ export interface CommentScores {
   original: number;
   logAdjusted: number;
   exponential: number;
+  isGrouped?: boolean;
+  groupWordCount?: number;
 }
 
 export interface ScoringMetrics {

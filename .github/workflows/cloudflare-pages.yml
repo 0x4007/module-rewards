@@ -1,0 +1,132 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    types: [opened, synchronize]
+
+# Prevent concurrent deployments on same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      url: ${{ env.DEPLOYMENT_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tests
+        run: bun test
+
+      - name: Build project
+        env:
+          NODE_ENV: production
+        run: bun run build
+
+      - name: Debug build output
+        run: |
+          echo "Listing contents of public directory:"
+          ls -la public/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.10.0'
+
+      - name: Install wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Extract branch name
+        shell: bash
+        run: |
+          # For pull requests
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            # For pushes
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          fi
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+          # Sanitize repository name for Cloudflare
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2 | tr '.' '-')
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Check if project exists, create if it doesn't
+          PROJECT_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$REPO_NAME" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+
+          if [ "$PROJECT_EXISTS" != "200" ]; then
+            echo "Creating new Cloudflare Pages project..."
+            curl -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{\"name\":\"$REPO_NAME\",\"production_branch\":\"main\"}"
+          fi
+
+          # Deploy using wrangler
+          echo "Deploying to Cloudflare Pages..."
+          DEPLOY_OUTPUT=$(wrangler pages deploy public \
+            --project-name="$REPO_NAME" \
+            --branch="$BRANCH_NAME" \
+            --commit-dirty=true)
+
+          echo "$DEPLOY_OUTPUT"
+
+          # Extract deployment URL and save it
+          DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o 'https://[^ ]*' | head -n 1)
+          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting for deployment to propagate..."
+          sleep 15
+
+          if [ -z "${{ env.DEPLOYMENT_URL }}" ]; then
+            echo "::error::No deployment URL found"
+            exit 1
+          fi
+
+          echo "Verifying deployment at ${{ env.DEPLOYMENT_URL }}"
+          curl -sSf "${{ env.DEPLOYMENT_URL }}" > /dev/null
+
+          if [ $? -eq 0 ]; then
+            echo "::notice::Deployment verified successfully at ${{ env.DEPLOYMENT_URL }}"
+          else
+            echo "::error::Deployment verification failed"
+            exit 1
+          fi
+
+      - name: Create deployment status
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployType = context.ref === 'refs/heads/main' ? 'Production' : 'Preview'
+            const url = process.env.DEPLOYMENT_URL
+
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment ? context.payload.deployment.id : null,
+              state: 'success',
+              environment_url: url,
+              description: `${deployType} deployment completed`
+            })

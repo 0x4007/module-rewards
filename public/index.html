@@ -1,34 +1,59 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Conversation Analysis</title>
-    <link rel="icon" href="ubiquity-os-logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UbiquityOS GitHub Comment Scoring</title>
+    <link rel="icon" href="ubiquity-os-logo.svg" type="image/svg+xml" />
+    <!-- Consolidated CSS files into a single main.css file -->
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/grid.css" />
     <!-- Load marked.js from CDN for markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked@9.0.0/marked.min.js"></script>
     <!-- Load our bundled script -->
     <script type="module" src="js/main.js"></script>
-</head>
-<body>
-    <h1>GitHub Conversation Analysis</h1>
+  </head>
+  <body>
+    <background>
+      <div class="gradient"></div>
+      <div class="gradient"></div>
+      <div id="grid"></div>
+    </background>
+    <header>
+      <h1>UbiquityOS GitHub Comment Scoring</h1>
 
-    <div class="analyze-form">
-        <input type="text" id="url-input" placeholder="Enter PR or Issue URL" class="url-input">
-        <button id="analyze-btn" class="analyze-btn">Analyze</button>
-    </div>
+      <form id="analyze-form" class="analyze-form">
+        <input type="text" id="url-input" placeholder="Enter PR or Issue URL" class="url-input" />
+        <button type="submit" id="analyze-btn" class="analyze-btn">Analyze</button>
+      </form>
+    </header>
 
+    <!-- Status indicators -->
     <div id="loading-indicator" class="loading-indicator hidden">Loading...</div>
     <div id="error-message" class="error-message hidden"></div>
 
-    <div id="details" class="hidden">
-        <h2 class="title"></h2>
-        <p class="meta"></p>
-    </div>
+    <!-- Content details -->
+    <section id="details" class="hidden">
+      <h2 class="title"></h2>
+      <p class="meta"></p>
 
-    <div class="algorithm-scores hidden"></div>
+      <!-- Score summary section (restored feature) -->
+      <div id="score-summary" class="score-summary hidden">
+        <div id="score-summary-content" class="score-summary-content"></div>
+      </div>
+    </section>
 
-    <main id="conversation"></main>
-</body>
+    <main id="content-columns" class="content-columns">
+      <section class="column issue-column">
+        <div id="issue-conversation" class="conversation"></div>
+      </section>
+      <section class="column pr-column">
+        <div id="pr-conversation" class="conversation"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Ubiquity Research Ltd.</p>
+    </footer>
+  </body>
 </html>

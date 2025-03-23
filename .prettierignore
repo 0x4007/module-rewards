@@ -1,0 +1,21 @@
+# Dependencies
+node_modules
+bun.lockb
+
+# Build output
+build
+dist
+coverage
+
+# Environment and config files
+.env*
+.vscode
+.idea
+
+# Generated files
+*.generated.*
+*.d.ts
+
+# Other
+.DS_Store
+*.log
