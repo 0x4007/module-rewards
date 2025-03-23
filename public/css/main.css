@@ -149,7 +149,7 @@ footer {
   padding: 0;
   gap: 0;
   box-sizing: border-box;
-  justify-content: center;
+  justify-content: flex-start;
   position: relative; /* Ensure proper stacking context */
   left: 0; /* Ensure left alignment doesn't get cut off */
 }

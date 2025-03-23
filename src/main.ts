@@ -6,6 +6,7 @@ import { marked } from "marked";
 import { domManager } from "./dom-manager";
 import { initAuthHandler } from "./dom-utils";
 import { eventManager } from "./event-manager";
+import "./utils/token-button-helper"; // Setup token button observer
 import "./utils/token-test"; // Register token test functions to window
 
 // Make marked available globally for markdown rendering

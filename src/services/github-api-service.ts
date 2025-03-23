@@ -11,7 +11,8 @@ import { FetchedData, UrlParseResult } from "../github/types";
 class GitHubApiService {
   private client: GitHubClientWithFallback;
   private readonly CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
-  private readonly token?: string;
+  // Changed from private to public readonly to allow access from refreshGitHubToken
+  public readonly token?: string;
 
   constructor(token: string | null | undefined = null) {
     this.token = token || undefined;
