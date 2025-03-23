@@ -343,10 +343,10 @@ footer {
 }
 
 .comment-header .username {
-  font-weight: 600;
-  color: var(--text);
+  /* font-weight: 900; */
+  color: #fff;
   text-decoration: none;
-  margin-right: 5px;
+  /* margin-right: 5px; */
 }
 
 .comment-header .username:hover {
@@ -356,11 +356,12 @@ footer {
 
 .comment-header .timestamp {
   font-size: 12px;
-  color: var(--text-light);
+  /* color: var(--text-light); */
   margin-left: 4px;
   text-decoration: none;
   position: absolute;
-  right: 24px;
+  right: 16px;
+  color: #808080;
 }
 
 .comment-body {
@@ -724,4 +725,17 @@ pre {
 
 div#score-summary-content {
   vertical-align: middle;
+}
+
+
+.score-info:last-child {
+    padding-right: 0;
+}
+
+a.timestamp:hover {
+    text-decoration: underline;
+}
+
+hr {
+    border: 1px solid #ffffff10;
 }
