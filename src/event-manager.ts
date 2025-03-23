@@ -97,48 +97,67 @@ class EventManager {
    * Set up WebSocket connection for live reload
    */
   private setupWebSocket(): void {
-    // In production mode, don't do anything related to hot reload
-    // This ensures no WebSocket connection attempts are made
-    if (typeof process !== 'undefined' &&
-        process.env &&
-        process.env.NODE_ENV === 'production') {
-      console.log('Hot reload disabled in production mode');
+    // Check if we're in a production build
+    const inProduction = window.location.hostname !== "localhost" &&
+                        window.location.hostname !== "127.0.0.1";
+
+    // Skip WebSocket entirely in production environments
+    if (inProduction) {
+      console.log('[PROD] Hot reload disabled in production environment');
       return;
     }
 
     // Only in development: Try to connect to WebSocket server
-    try {
-      const connectWebSocket = () => {
-        try {
-          const ws = new WebSocket("ws://localhost:8081");
+    console.log('[DEV] Setting up development hot reload');
 
-          ws.onmessage = (event) => {
-            if (event.data === "reload") {
-              console.log("Live reload: Refreshing page...");
-              window.location.reload();
-            }
-          };
+    let reconnectTimeout: number | null = null;
+    const connectWebSocket = () => {
+      try {
+        console.log('[DEV] Attempting to connect to WebSocket server...');
+        const ws = new WebSocket("ws://localhost:8081");
 
-          ws.onclose = () => {
-            console.log("WebSocket connection closed. Attempting to reconnect...");
-            setTimeout(connectWebSocket, 1000);
-          };
-
-          ws.onerror = () => {
-            // Silently fail in production or when server is not available
-          };
-        } catch (error) {
-          // Silently fail when WebSocket server is not available
-          setTimeout(connectWebSocket, 1000);
+        // Clear any pending reconnect timers when we connect
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = null;
         }
-      };
 
-      // Only try to connect if we're in a browser environment
-      if (typeof window !== 'undefined') {
-        connectWebSocket();
+        ws.onmessage = (event) => {
+          if (event.data === "reload") {
+            console.log("[DEV] Hot reload triggered, refreshing page...");
+            window.location.reload();
+          }
+        };
+
+        ws.onopen = () => {
+          console.log('[DEV] WebSocket connection established');
+        };
+
+        ws.onclose = () => {
+          if (!reconnectTimeout) {
+            console.log("[DEV] WebSocket connection closed, will attempt to reconnect once");
+            // Only try reconnecting once to avoid flood of reconnection attempts
+            reconnectTimeout = window.setTimeout(connectWebSocket, 2000) as unknown as number;
+          }
+        };
+
+        ws.onerror = () => {
+          console.log('[DEV] WebSocket connection error, development server may not be running');
+          // Don't try to reconnect on error
+          if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+          }
+        };
+      } catch (error) {
+        console.log('[DEV] Failed to initialize WebSocket connection');
       }
-    } catch (err) {
-      // Ignore errors in production
+    };
+
+    // Only try to connect on localhost
+    if (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1") {
+      connectWebSocket();
     }
   }
 

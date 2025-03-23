@@ -8,9 +8,11 @@ import { FetchedData, UrlParseResult } from "../github/types";
 class GitHubApiService {
   private client: GitHubClient;
   private readonly CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+  private readonly token?: string;
 
   constructor(token: string | null | undefined = null) {
-    this.client = new GitHubClient(token || undefined);
+    this.token = token || undefined;
+    this.client = new GitHubClient(this.token);
   }
 
   /**
@@ -24,6 +26,18 @@ class GitHubApiService {
    * Fetch data from GitHub API with caching
    */
   public async fetchData(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<FetchedData> {
+    // Detect environment
+    const inProduction = typeof window !== 'undefined' &&
+                        window.location.hostname !== "localhost" &&
+                        window.location.hostname !== "127.0.0.1";
+    const debugPrefix = inProduction ? '[PROD]' : '[DEV]';
+
+    // Check for GH token in production
+    if (inProduction && !this.token) {
+      console.warn(`${debugPrefix} No GitHub token available for API requests in production.`);
+      console.log(`${debugPrefix} Some features may be limited due to GitHub API rate limits.`);
+    }
+
     // Set up cache keys
     const cacheKey = `data-${owner}-${repo}-${type}-${number}`;
     const cachedTimestampKey = `${cacheKey}-timestamp`;
@@ -37,27 +51,61 @@ class GitHubApiService {
 
     // Use cached data if available and fresh
     if (cachedData && !cacheExpired) {
+      console.log(`${debugPrefix} Using cached data for ${owner}/${repo}/${type}/${number}`);
       data = JSON.parse(cachedData) as FetchedData;
       return data;
     }
 
     try {
+      console.log(`${debugPrefix} Fetching fresh data for ${owner}/${repo}/${type}/${number}`);
       // Fetch fresh data
       const freshData = await this.client.fetchData(owner, repo, number, type);
 
       // Cache the fresh data
+      console.log(`${debugPrefix} Caching successful API response`);
       localStorage.setItem(cacheKey, JSON.stringify(freshData));
       localStorage.setItem(cachedTimestampKey, Date.now().toString());
 
       return freshData;
     } catch (error) {
+      // Special handling for auth errors
+      if (error instanceof Error && error.message.includes('Authentication failed')) {
+        console.error(`${debugPrefix} Authentication error: ${error.message}`);
+        localStorage.removeItem('github_token'); // Remove invalid token
+
+        if (inProduction) {
+          // In production, create a minimal response with error information
+          // This prevents the UI from breaking completely
+          const errorData: FetchedData = {
+            details: {
+              title: `${type.toUpperCase()} #${number}`,
+              body: "Unable to load content - GitHub API authentication required.",
+              number: parseInt(number),
+              html_url: `https://github.com/${owner}/${repo}/${type === 'pr' ? 'pull' : 'issue'}/${number}`,
+              user: {
+                login: "anonymous",
+                html_url: "",
+                avatar_url: ""
+              }
+            },
+            comments: [],
+            type,
+            linkedIssue: undefined,
+            linkedPullRequests: []
+          };
+
+          return errorData;
+        }
+      }
+
       // If we have expired cached data, still use that in case of error
       if (cachedData) {
-        console.warn("Using expired cache due to API error:", error);
+        console.warn(`${debugPrefix} Using expired cache due to API error:`, error);
         return JSON.parse(cachedData);
       }
 
       // Otherwise, propagate the error
+      console.error(`${debugPrefix} API request failed with no fallback cache:`, error);
       throw error instanceof Error ? error : new Error(String(error));
     }
   }
