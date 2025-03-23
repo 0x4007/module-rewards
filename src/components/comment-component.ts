@@ -118,8 +118,13 @@ function renderComment(
     userInfoElement.appendChild(usernameElement);
 
     if (comment.created_at) {
-      const timestampElement = document.createElement("span");
+      const timestampElement = document.createElement("a");
       timestampElement.className = "timestamp";
+      // Ensure we link directly to the comment by adding the comment ID as a fragment
+      const commentUrl = comment.html_url || `${comment.user.html_url}#issuecomment-${comment.id}`;
+      timestampElement.href = commentUrl;
+      timestampElement.target = "_blank";
+      timestampElement.rel = "noopener noreferrer";
       const dateObject = new Date(comment.created_at);
       timestampElement.textContent = dateObject.toLocaleString();
       userInfoElement.appendChild(timestampElement);

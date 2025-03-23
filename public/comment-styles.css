@@ -52,6 +52,13 @@
   font-size: 12px;
   color: var(--text-light);
   margin-top: 2px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.comment-header .timestamp:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .comment-body {
