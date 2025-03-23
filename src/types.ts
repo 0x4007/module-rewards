@@ -110,7 +110,6 @@ export interface FetchedData {
 export interface CommentScores {
   wordCount: number;
   original: number;
-  logAdjusted: number;
   exponential: number;
   isGrouped?: boolean;
   groupWordCount?: number;
@@ -118,6 +117,5 @@ export interface CommentScores {
 
 export interface ScoringMetrics {
   original: number[];
-  logAdjusted: number[];
   exponential: number[];
 }

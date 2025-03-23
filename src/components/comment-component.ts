@@ -153,10 +153,6 @@ function renderScores(scores: CommentScores): HTMLElement {
       <span class="score-value">${scores.original.toFixed(2)}</span>
     </div>
     <div class="score-info">
-      <span class="score-label">Log-Adjusted:</span>
-      <span class="score-value">${scores.logAdjusted.toFixed(2)}</span>
-    </div>
-    <div class="score-info">
       <span class="score-label">Exponential:</span>
       <span class="score-value">${scores.exponential.toFixed(2)}</span>
     </div>

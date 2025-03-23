@@ -1,4 +1,4 @@
-import { CommentScores, ScoringMetrics, ContributorStats, ContributorSummary } from "./types";
+import { CommentScores, ContributorSummary, ScoringMetrics } from "./types";
 
 // DOM Elements
 let metaElement: HTMLElement | null = null;
@@ -9,7 +9,6 @@ export function initializeSummary(metaEl: HTMLElement) {
 
 export function updateScoreSummary(commentScores: CommentScores, summary: ScoringMetrics): void {
   summary.original.push(commentScores.original);
-  summary.logAdjusted.push(commentScores.logAdjusted);
   summary.exponential.push(commentScores.exponential);
 
   // Update the overall summary display

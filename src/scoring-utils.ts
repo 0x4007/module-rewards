@@ -39,13 +39,6 @@ function calculateOriginalScore(wordCount: number): number {
 }
 
 /**
- * Calculates the log-adjusted score which balances length
- */
-function calculateLogAdjustedScore(wordCount: number): number {
-  return Math.pow(wordCount, 0.85) * (1 / Math.log2(wordCount + 2));
-}
-
-/**
  * Calculates the exponential score which penalizes verbosity
  */
 function calculateExponentialScore(wordCount: number): number {
@@ -71,7 +64,6 @@ export function calculateAllScores(
     return {
       wordCount: individualWordCount,
       original: calculateOriginalScore(individualWordCount),
-      logAdjusted: calculateLogAdjustedScore(individualWordCount),
       exponential: calculateExponentialScore(individualWordCount),
       isGrouped: false,
     };
@@ -84,7 +76,6 @@ export function calculateAllScores(
   return {
     wordCount: individualWordCount,
     original: calculateOriginalScore(groupWordCount),
-    logAdjusted: calculateLogAdjustedScore(groupWordCount),
     exponential: calculateExponentialScore(groupWordCount),
     groupWordCount,
     isGrouped: true,

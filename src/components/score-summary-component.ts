@@ -8,7 +8,6 @@ import { CommentScores, GitHubComment, GitHubUser } from "../types";
 interface ContributorScores {
   user: GitHubUser;
   totalOriginal: number;
-  totalLogAdjusted: number;
   totalExponential: number;
   commentCount: number;
 }
@@ -40,7 +39,6 @@ function aggregateScoresByContributor(
       contributorsMap.set(username, {
         user: comment.user,
         totalOriginal: 0,
-        totalLogAdjusted: 0,
         totalExponential: 0,
         commentCount: 0,
       });
@@ -49,7 +47,6 @@ function aggregateScoresByContributor(
     // Update contributor totals
     const contributor = contributorsMap.get(username)!;
     contributor.totalOriginal += scores.original;
-    contributor.totalLogAdjusted += scores.logAdjusted;
     contributor.totalExponential += scores.exponential;
     contributor.commentCount++;
   });
@@ -88,7 +85,6 @@ export function renderScoreSummary(
     headerRow.innerHTML = `
       <th class="contributor-col">Contributor Score Summary</th>
       <th class="score-col">Original</th>
-      <th class="score-col">Log-Adjusted</th>
       <th class="score-col sort-column">Exponential</th>
       <th class="score-col">Comments</th>
     `;
@@ -124,10 +120,6 @@ export function renderScoreSummary(
       const originalCell = document.createElement("td");
       originalCell.textContent = contributor.totalOriginal.toFixed(2);
       row.appendChild(originalCell);
-
-      const logAdjustedCell = document.createElement("td");
-      logAdjustedCell.textContent = contributor.totalLogAdjusted.toFixed(2);
-      row.appendChild(logAdjustedCell);
 
       const exponentialCell = document.createElement("td");
       exponentialCell.className = "sort-column-cell";

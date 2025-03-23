@@ -1,12 +1,10 @@
 export interface CommentScores {
   original: number;
-  logAdjusted: number;
   exponential: number;
 }
 
 export interface ScoringMetrics {
   original: number[];
-  logAdjusted: number[];
   exponential: number[];
 }
 
@@ -15,7 +13,6 @@ export interface ContributorStats {
   url: string;
   totalWords: number;
   originalScore: number;
-  logAdjustedScore: number;
   exponentialScore: number;
   commentCount: number;
 }
