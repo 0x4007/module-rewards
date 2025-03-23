@@ -22,7 +22,48 @@ class EventManager {
     this.setupInputMonitoring();
     this.setupWebSocket();
 
+    // Process URL query parameters (must come before loading last URL)
+    this.processQueryParameters();
+
     this.initialized = true;
+  }
+
+  // Flag to track if we've already processed a query parameter
+  private queryParameterProcessed = false;
+
+  /**
+   * Process URL query parameters
+   * Checks for a 'q' parameter to populate and trigger the search
+   * @returns boolean - true if a query parameter was processed
+   */
+  private processQueryParameters(): boolean {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryParam = urlParams.get('q');
+
+      if (queryParam) {
+        console.log("Found query parameter 'q':", queryParam);
+        this.queryParameterProcessed = true;
+
+        // Populate search input
+        domManager.withElement("urlInput", (input) => {
+          input.value = queryParam;
+
+          // Trigger the analysis with the parameter value
+          void this.triggerAnalyze(queryParam);
+        });
+
+        // Clean up the URL by removing the query parameter
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+
+        return true;
+      }
+    } catch (error) {
+      console.error("Error processing query parameters:", error);
+    }
+
+    return false;
   }
 
   /**
@@ -211,11 +252,19 @@ class EventManager {
 
   /**
    * Load and analyze last URL if available
+   * Will skip if we already processed a query parameter
    */
   public async loadLastUrl(): Promise<void> {
+    // Skip if we already processed a query parameter
+    if (this.queryParameterProcessed) {
+      console.log("Query parameter was processed, skipping last URL load");
+      return;
+    }
+
     const lastUrl = localStorage.getItem("last_url");
 
     if (lastUrl) {
+      console.log("Loading last URL from localStorage:", lastUrl);
       domManager.withElement("urlInput", (input) => {
         input.value = lastUrl;
         void this.triggerAnalyze(lastUrl);

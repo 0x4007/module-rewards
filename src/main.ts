@@ -24,9 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Initialize event handling system
+    // This now includes URL query parameter processing
     eventManager.initialize();
 
-    // Load last URL if available
+    // Load last URL if available and no query parameter was processed
+    // Note: processQueryParameters() is now called within initialize()
     eventManager.loadLastUrl();
 
     console.log("Application initialized successfully");
