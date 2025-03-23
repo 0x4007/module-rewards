@@ -88,6 +88,11 @@ function renderComment(
     commentElement.classList.add("grouped-comment");
   }
 
+  // Add special class for GitHub References comments
+  if (comment.user?.login === "GitHub References") {
+    commentElement.classList.add("system-reference-comment");
+  }
+
   // Create header with avatar and user info if available
   if (comment.user) {
     const headerElement = document.createElement("div");

@@ -140,3 +140,23 @@
 .comment-body table tr:nth-child(even) {
   background-color: var(--hover);
 }
+
+/* System reference comment styling */
+.system-reference-comment {
+  background-color: rgba(36, 41, 47, 0.04);
+  border-left: 4px solid #0366d6;
+}
+
+.system-reference-comment .comment-header {
+  background-color: rgba(36, 41, 47, 0.03);
+}
+
+.system-reference-comment .username {
+  color: #0366d6;
+}
+
+/* Add a small icon next to the GitHub References username */
+.system-reference-comment .username::before {
+  content: "🔗";
+  margin-right: 5px;
+}

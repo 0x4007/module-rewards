@@ -139,7 +139,11 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       const prListComment: GitHubComment = {
         id: -2,
         body: prListHTML,
-        user: { login: "system", html_url: "", avatar_url: "" },
+        user: {
+          login: "GitHub References",
+          html_url: "",
+          avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         html_url: "",
