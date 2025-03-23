@@ -146,6 +146,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           mode: upsert
           create_if_not_exists: true
+          reactions: false
 
   # This job will always succeed, ensuring GitHub shows a green checkmark
   report_success:
