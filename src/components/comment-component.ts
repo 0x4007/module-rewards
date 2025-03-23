@@ -85,7 +85,7 @@ function renderComment(
 
   // Add special class if this is part of a group
   if (scores?.isGrouped) {
-    commentElement.classList.add("grouped-comment");
+    commentElement.classList.add("grouped-comment", "badge-base");
   }
 
   // Add special class for GitHub References comments
@@ -152,18 +152,18 @@ function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-  // Add scores if provided and showScores is true
+    // Add scores if provided and showScores is true
   if (scores && showScores) {
     // Add special classes for identified comment types
     if (scores.wordCount === 0) {
       // Add slash command styling
       if (comment.body.trim().startsWith("/")) {
-        commentElement.classList.add("slash-command");
+        commentElement.classList.add("slash-command", "badge-base");
       }
 
       // Add bot comment styling (check for bot indicators in username)
       if (comment.user?.login?.endsWith("[bot]") || isBotUsername(comment.user?.login)) {
-        commentElement.classList.add("bot-comment");
+        commentElement.classList.add("bot-comment", "badge-base");
       }
     }
 

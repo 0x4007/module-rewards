@@ -146,6 +146,9 @@ footer {
 
 #details {
   margin-bottom: 1.5rem;
+  backdrop-filter: blur(24px);
+  background-color: #80808010;
+  padding: 16px;
 }
 
 .title {
@@ -154,8 +157,9 @@ footer {
 }
 
 .meta {
-  color: var(--text-light);
-  font-size: 0.9rem;
+  /* color: var(--text-light); */
+  /* font-size: 0.9rem; */
+  color: #808080;
 }
 
 .meta-separator {
@@ -172,9 +176,11 @@ footer {
 
 .loading-indicator {
   padding: 0.5rem 1rem;
-  background: var(--hover);
+  /* background: var(--hover); */
   border-radius: 4px;
   margin: 1rem 0;
+  backdrop-filter: blur(24px);
+  background-color: #80808010;
 }
 
 .error-message {
@@ -196,26 +202,24 @@ footer {
   align-items: center;
   padding: 30px;
   color: var(--text-light);
-  /* background-color: var(--hover); */
   border-radius: 6px;
   margin: 15px 0;
-  text-align: center;
-  font-style: italic;
   backdrop-filter: blur(24px);
   background-color: #80808010;
 }
 
-.section-loading-indicator p {
-  display: inline-block;
-  position: relative;
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.section-loading-indicator p::after {
-  content: "";
-  display: inline-block;
-  width: 20px;
-  animation: ellipsis-animation 1.2s infinite;
-  text-align: left;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .section-error-message {
@@ -269,21 +273,42 @@ footer {
   opacity: 0.8;
 }
 
-.grouped-comment::before {
-  content: "Double Post";
+/* Shared badge styles */
+.badge-base::after {
   display: inline-block;
   font-size: 11px;
-  background-color: var(--error);
   color: white;
   padding: 0px 8px;
   border-radius: 3px;
   position: absolute;
-  right: 8px;
-  top: 8px;
-  margin: 8px 16px;
+  /* right: 8px; */
+  /* top: 24px; */
+  /* margin: 8px 16px; */
+  /* opacity: 0.75; */
+  bottom: 12px;
 }
 
-/* Styles for slash command comments */
+/* Grouped comment styles */
+.grouped-comment::after {
+  content: "Double Post";
+  background-color: var(--error);
+}
+
+.grouped-comment {
+  border-left: 3px solid var(--error);
+  background-color: rgba(255, 68, 68, 0.05);
+}
+
+.grouped-comment .comment-scores {
+  opacity: 0.5;
+}
+
+/* Slash command styles */
+.slash-command::after {
+  content: "Slash Command";
+  background-color: var(--primary);
+}
+
 .slash-command {
   border-left: 3px solid var(--primary);
   background-color: rgba(0, 102, 204, 0.05);
@@ -293,22 +318,12 @@ footer {
   opacity: 0.5;
 }
 
-.slash-command::before {
-  content: "Slash Command";
-  display: inline-block;
-  font-size: 11px;
-  background-color: var(--primary);
-  color: white;
-  padding: 0px 8px;
-  border-radius: 3px;
-  margin-bottom: 8px;
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  margin: 8px 16px;
+/* Bot comment styles */
+.bot-comment::after {
+  content: "Bot";
+  background-color: var(--success);
 }
 
-/* Styles for bot comments */
 .bot-comment {
   border-left: 3px solid var(--success);
   background-color: rgba(0, 170, 85, 0.05);
@@ -318,28 +333,12 @@ footer {
   opacity: 0.5;
 }
 
-.bot-comment::before {
-  content: "Bot";
-  display: inline-block;
-  font-size: 11px;
-  background-color: var(--success);
-  color: white;
-  padding: 0px 8px;
-  border-radius: 3px;
-  margin-bottom: 8px;
-  position: absolute;
-  /* top: 0; */
-  /* right: 0; */
-  right: 8px;
-  top: 8px;
-  margin: 8px 16px;
-}
-
 .comment-header .avatar {
   width: 32px;
   height: 32px;
   border-radius: 4px;
   vertical-align: middle;
+  /* float: left; */
 }
 
 .comment-header .user-info {
@@ -366,6 +365,9 @@ footer {
   color: var(--text-light);
   margin-left: 4px;
   /* float: right; */
+  text-decoration: none;
+  position: absolute;
+  right: 24px;
 }
 
 .comment-body {
@@ -464,8 +466,11 @@ footer {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 16px;
-  padding: 8px;
+  padding: 16px;
   /* border-bottom: 1px solid var(--border); */
+  background-color: #80808010;
+  backdrop-filter: blur(24px);
+  justify-content: center;
 }
 
 .conversation-header svg {
@@ -478,11 +483,15 @@ footer {
   gap: 8px;
   color: var(--text-light);
   padding: 16px;
-  border: 1px dashed var(--border);
+  /* border: 1px dashed var(--border); */
   border-radius: 6px;
-  margin: 16px 0;
+  /* margin: 16px 0; */
   min-width: 160px;
   /* text-align: center; */
+  /* text-align: center; */
+  backdrop-filter: blur(24px);
+  background-color: #80808010;
+  justify-content: center;
 }
 
 .empty-state svg {
@@ -566,6 +575,8 @@ footer {
   /* padding-bottom: 0.5rem; */
   font-size: 1.1rem;
   font-weight: 600;
+  display: inline-block;
+  /* vertical-align: middle; */
 }
 
 .score-summary-table {
@@ -575,15 +586,20 @@ footer {
   background-color: #80808010;
   border-radius: 4px;
   padding: 8px 16px;
-  backdrop-filter: blur(24px);
+  /* backdrop-filter: blur(24px); */
+  /* float: right; */
+  /* display: inline-table; */
+  /* border: none; */
 }
 
 .score-summary-table th,
 .score-summary-table td {
   text-align: left;
-  padding: 8px;
+  /* padding: 8px; */
   /* border-bottom: 1px solid var(--border); */
   text-align: right;
+  padding: 4px 12px;
+  /* border: none; */
 }
 
 .score-summary-table th {
@@ -597,6 +613,7 @@ footer {
   /* background-color: var(--primary); */
   color: white;
   position: relative;
+  background-color: #80808010;
 }
 
 .score-summary-table th.sort-column::after {
@@ -609,6 +626,7 @@ footer {
   font-weight: bold;
   /* background-color: rgba(var(--primary-rgb, 0, 102, 204), 0.1); */
   /* color: var(--primary); */
+  background-color: #80808010;
 }
 
 .score-summary-table tr:nth-child(even) {
@@ -721,11 +739,13 @@ footer {
 
 .comment-header {
     margin-bottom: 24px;
+    /* text-align: right; */
 }
 
 
 tr {
     /* text-align: right; */
+    /* border: none; */
 }
 
 pre {
@@ -758,4 +778,10 @@ pre {
     z-index: 1000;
     opacity: 1;
     transition: opacity 0.3s ease-in-out;
+}
+
+
+div#score-summary-content {
+    /* display: inline-block; */
+    vertical-align: middle;
 }

@@ -86,7 +86,7 @@ export function renderScoreSummary(
     // Create header row
     const headerRow = document.createElement("tr");
     headerRow.innerHTML = `
-      <th class="contributor-col">Contributor</th>
+      <th class="contributor-col">Contributor Score Summary</th>
       <th class="score-col">Original</th>
       <th class="score-col">Log-Adjusted</th>
       <th class="score-col sort-column">Exponential</th>

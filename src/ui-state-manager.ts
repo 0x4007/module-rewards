@@ -29,7 +29,7 @@ class UIStateManager {
     if (!this.loadingElements[section]) {
       const loadingEl = document.createElement("div");
       loadingEl.className = "section-loading-indicator";
-      loadingEl.innerHTML = `<p>Loading ${section === "pr" ? "pull request" : "issue"} content...</p>`;
+      loadingEl.innerHTML = '<div class="spinner"></div>';
       loadingEl.classList.add("display-none");
       container.appendChild(loadingEl);
       this.loadingElements[section] = loadingEl;
