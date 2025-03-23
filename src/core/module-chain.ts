@@ -4,7 +4,7 @@ import { Module } from "./module-base";
 /**
  * Configuration for a module in a chain
  */
-export interface ModuleConfig {
+ interface ModuleConfig {
   name: string;
   id?: string;
   condition?: (event: CloudEvent) => boolean;
@@ -14,7 +14,7 @@ export interface ModuleConfig {
 /**
  * Result from a module execution
  */
-export interface ModuleResult<T = any> {
+ interface ModuleResult<T = any> {
   moduleId: string;
   success: boolean;
   data: T;

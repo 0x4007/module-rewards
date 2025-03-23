@@ -727,3 +727,31 @@ tr {
 pre {
     font-size: 12px;
 }
+
+/* Dynamic state classes */
+.hidden-element {
+    opacity: 0;
+}
+
+.display-none {
+    display: none;
+}
+
+.display-block {
+    display: block;
+}
+
+/* Error message overlay */
+.error-message-overlay {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px;
+    background-color: var(--error);
+    color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}

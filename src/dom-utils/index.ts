@@ -144,19 +144,7 @@ export function showError(message: string, options: ErrorDisplayOptions = {}): v
   document.body.appendChild(errorDiv);
 
   // Position the error message
-  Object.assign(errorDiv.style, {
-    position: "fixed",
-    top: "20px",
-    right: "20px",
-    padding: "15px",
-    backgroundColor: "#ff4444",
-    color: "white",
-    borderRadius: "4px",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-    zIndex: "1000",
-    opacity: "1",
-    transition: "opacity 0.3s ease-in-out",
-  });
+  errorDiv.className = "error-message-overlay";
 
   // Remove the error message after the specified duration
   setTimeout(() => {

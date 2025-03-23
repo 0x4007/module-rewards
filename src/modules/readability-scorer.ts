@@ -7,7 +7,7 @@ import * as textReadability from "text-readability";
 /**
  * Configuration options for the ReadabilityScorer module
  */
-export interface ReadabilityScorerConfig {
+ interface ReadabilityScorerConfig {
   /**
    * Target readability score - scores closer to this value will be normalized higher
    * Default: 60 (standard readable text)
@@ -34,7 +34,7 @@ export interface ReadabilityScorerConfig {
 /**
  * Result of a readability analysis
  */
-export interface ReadabilityResult {
+ interface ReadabilityResult {
   /**
    * Flesch Reading Ease score (0-100)
    * Higher scores indicate easier readability

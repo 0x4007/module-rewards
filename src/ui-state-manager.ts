@@ -30,7 +30,7 @@ class UIStateManager {
       const loadingEl = document.createElement("div");
       loadingEl.className = "section-loading-indicator";
       loadingEl.innerHTML = `<p>Loading ${section === "pr" ? "pull request" : "issue"} content...</p>`;
-      loadingEl.style.display = "none";
+      loadingEl.classList.add("display-none");
       container.appendChild(loadingEl);
       this.loadingElements[section] = loadingEl;
     }
@@ -89,7 +89,8 @@ class UIStateManager {
     const state = this.states[section];
 
     // Show loading indicator only when loading and no content yet
-    loadingEl.style.display = state.isLoading ? "block" : "none";
+    loadingEl.classList.toggle("display-none", !state.isLoading);
+    loadingEl.classList.toggle("display-block", state.isLoading);
 
     // If there's an error, show it
     if (state.error && !state.hasContent) {

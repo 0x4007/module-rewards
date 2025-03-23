@@ -170,19 +170,6 @@ export function notifyContentUpdated(): void {
   const notification = document.createElement("div");
   notification.className = "update-notification";
   notification.textContent = "Content updated with latest data";
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 4px;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-  `;
-
   document.body.appendChild(notification);
 
   // Fade in

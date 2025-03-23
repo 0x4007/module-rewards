@@ -55,7 +55,7 @@ function isBotUser(user?: { login?: string; type?: string }): boolean {
   return false;
 }
 
-export interface CommentDisplayOptions {
+ interface CommentDisplayOptions {
   containerSelector: string;
   idPrefix?: string;
   className?: string;

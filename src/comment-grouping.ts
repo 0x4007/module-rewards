@@ -7,7 +7,7 @@ import { GitHubComment } from "./types";
 /**
  * Configuration options for comment grouping
  */
-export interface CommentGroupingOptions {
+ interface CommentGroupingOptions {
   /** Whether to enable comment grouping (default: true) */
   enabled?: boolean;
 }

@@ -12,10 +12,12 @@
     "test:coverage": "bun test --coverage",
     "example:readability": "bun src/examples/readability-test.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "knip": "knip"
   },
   "devDependencies": {
     "bun-types": "latest",
+    "knip": "5.46.0",
     "prettier": "3.5.3",
     "typescript": "^5.0.0"
   },
