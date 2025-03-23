@@ -6,6 +6,19 @@ import { GitHubComment } from "./types";
 import { isGitHubBot } from "./utils/github-utils";
 
 /**
+ * Checks if a comment is a slash command (starts with /)
+ * @param comment The comment to check
+ * @returns True if the comment is a slash command
+ */
+function isSlashCommand(comment: GitHubComment): boolean {
+  if (!comment.body) return false;
+
+  // Trim the content and check if it starts with a slash
+  const trimmedContent = comment.body.trimStart();
+  return trimmedContent.startsWith('/');
+}
+
+/**
  * Configuration options for comment grouping
  */
 interface CommentGroupingOptions {
@@ -106,9 +119,11 @@ export function detectConsecutiveComments(
     const isSameUser = currentGroup && currentGroup.user === currentUser;
     const isSameSource = currentGroup && currentGroup.source === commentSource;
     const isCurrentOrNextBot = isGitHubBot(comment.user);
+    const isCurrentOrNextSlashCommand = isSlashCommand(comment);
 
-    // Never group PR/issue body comments with other comments, even from the same author
-    if (!isPROrIssueBody && isSameUser && isSameSource && currentGroup && !isCurrentOrNextBot) {
+    // Never group PR/issue body comments, slash commands, or bot comments with other comments, even from the same author
+    if (!isPROrIssueBody && isSameUser && isSameSource && currentGroup &&
+        !isCurrentOrNextBot && !isCurrentOrNextSlashCommand) {
       // Continue the current group
       currentGroup.commentIds.push(comment.id);
       currentGroup.combinedText += "\n\n" + comment.body;
@@ -128,16 +143,23 @@ export function detectConsecutiveComments(
     // No need to track comment time anymore
   }
 
-  // Map each comment ID to its group
-  for (const group of groups) {
-    // Only create group entries for comments that are part of multi-comment groups
-    // and where the user is not a bot
-    if (group.commentIds.length > 1 && !isGitHubBot({ login: group.user } as GitHubComment["user"])) {
-      for (const id of group.commentIds) {
-        groupMap[String(id)] = group;
+    // Map each comment ID to its group
+    for (const group of groups) {
+      // Only create group entries for comments that are part of multi-comment groups
+      // and where the user is not a bot and none of the comments are slash commands
+      const noSlashCommands = !group.commentIds.some(id => {
+        const comment = sortedComments.find(c => c.id === id);
+        return comment && isSlashCommand(comment);
+      });
+
+      if (group.commentIds.length > 1 &&
+          !isGitHubBot({ login: group.user } as GitHubComment["user"]) &&
+          noSlashCommands) {
+        for (const id of group.commentIds) {
+          groupMap[String(id)] = group;
+        }
       }
     }
-  }
 
   return groupMap;
 }
