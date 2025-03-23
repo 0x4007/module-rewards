@@ -397,14 +397,14 @@ footer {
 }
 
 .comment-body pre {
-  background-color: var(--hover);
+  background-color: #000;
   border-radius: 3px;
-  padding: 10px;
+  padding: 12px;
   overflow-x: auto;
 }
 
 .comment-body code {
-  background-color: var(--hover);
+  background-color: #000;
   padding: 2px 4px;
   border-radius: 3px;
   font-family: monospace;
@@ -702,7 +702,7 @@ footer {
 
 /* ========== RESPONSIVE DESIGN ========== */
 
-@media (max-width: 900px) {
+@media (max-width: 1280px) {
   body {
     /* padding: 1rem; */
   }
