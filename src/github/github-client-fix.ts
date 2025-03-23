@@ -43,7 +43,34 @@ export class GitHubClientWithFallback {
 
   public async fetchData(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<FetchedData> {
     try {
-      return await this.githubClient.fetchData(owner, repo, number, type);
+      // Detect environment for consistent logging
+      const inProduction =
+        typeof window !== "undefined" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1";
+      const envPrefix = inProduction ? "[PROD]" : "[DEV]";
+
+      // Get the fetch result from the standard client
+      const result = await this.githubClient.fetchData(owner, repo, number, type);
+
+      // For issues, ensure we have linked pull requests - even if GraphQL failed
+      if (type === "issue" && (!result.linkedPullRequests || result.linkedPullRequests.length === 0)) {
+        console.log(`${envPrefix} No linked PRs found from GraphQL, attempting REST fallback...`);
+        try {
+          // Try the REST fallback regardless of GraphQL outcome
+          const linkedPRs = await this.findLinkedPullRequestsWithREST(owner, repo, number);
+          if (linkedPRs && linkedPRs.length > 0) {
+            console.log(`${envPrefix} REST fallback found ${linkedPRs.length} linked PRs`);
+            result.linkedPullRequests = linkedPRs;
+          } else {
+            console.log(`${envPrefix} No linked PRs found via REST fallback either`);
+          }
+        } catch (fallbackError) {
+          console.error(`${envPrefix} Error in REST fallback for linked PRs:`, fallbackError);
+        }
+      }
+
+      return result;
     } catch (error) {
       // Handle authentication errors specifically to show token input
       // For authentication errors, we'll pass through but enhance the error message
@@ -61,6 +88,21 @@ export class GitHubClientWithFallback {
         // Enhance the error with our customized auth message
         const errorDetails = error.message;
         error = new Error("Authentication failed. Please provide a valid GitHub token.");
+      }
+
+      // For 404 errors, we may need to try a different endpoint
+      if (error instanceof Error && error.message.includes("404")) {
+        console.warn(`404 error detected. Type requested: ${type}`);
+
+        // If we were looking for a PR but got 404, try as an issue
+        if (type === "pr") {
+          try {
+            console.log("PR not found, attempting to fetch as an issue instead");
+            return await this.fetchData(owner, repo, number, "issue");
+          } catch (retryError) {
+            console.error("Also failed to fetch as an issue:", retryError);
+          }
+        }
       }
 
       // Re-throw the error for upstream handling

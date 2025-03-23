@@ -38,7 +38,10 @@ export class GitHubClient {
   public parseUrl(url: string): UrlParseResult {
     try {
       const cleanUrl = url.trim().replace(/\/$/, "");
-      const regex = /(?:https?:\/\/)?github\.com\/([^\/]+)\/([^\/]+)\/(?:(issues|pulls?))\/(\d+)/i;
+
+      // More robust regex to handle both issue and PR URLs
+      // This now explicitly handles pull and pulls as well as issues
+      const regex = /(?:https?:\/\/)?github\.com\/([^\/]+)\/([^\/]+)\/(?:(issues|pull(?:s)?))\/(\d+)/i;
       const match = cleanUrl.match(regex);
 
       if (!match) {
@@ -46,11 +49,24 @@ export class GitHubClient {
       }
 
       const [, owner, repo, type, number] = match;
+
+      // Better type detection logging
+      const inProduction =
+        typeof window !== "undefined" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1";
+      const envPrefix = inProduction ? "[PROD]" : "[DEV]";
+
+      // Determine type more explicitly
+      const isPR = type.toLowerCase().startsWith("pull");
+      const detectedType = isPR ? "pr" : "issue";
+      console.log(`${envPrefix} URL parsing: detected ${detectedType} from URL path "${type}"`);
+
       return {
         owner,
         repo,
         number,
-        type: type.toLowerCase().startsWith("pull") ? "pr" : "issue",
+        type: detectedType,
       };
     } catch (error) {
       throw new Error(`Could not parse GitHub URL: ${error instanceof Error ? error.message : String(error)}`);

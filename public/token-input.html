@@ -133,31 +133,109 @@
   </div>
 
   <script>
-    document.getElementById('save-token').addEventListener('click', function() {
-      const tokenInput = document.getElementById('github-token');
-      const errorElement = document.getElementById('error-message');
-      const token = tokenInput.value.trim();
-
-      // Basic validation
-      if (!token || !token.match(/^(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,}$/)) {
-        errorElement.style.display = 'block';
-        return;
-      }
-
-      // Hide error if previously shown
-      errorElement.style.display = 'none';
-
+    // Save token function
+    function saveToken(token) {
       // Save token to localStorage
       localStorage.setItem('github_token', token);
+      console.log('GitHub token saved to localStorage');
 
-      // Close window if opened as popup, otherwise redirect
-      if (window.opener) {
-        window.opener.location.reload();
-        window.close();
-      } else {
-        window.location.href = window.location.origin;
+      // Test the token by making a simple API request
+      validateToken(token)
+        .then(isValid => {
+          if (isValid) {
+            // Token is valid, show success
+            console.log('Token validation successful');
+
+            // Close window if opened as popup, otherwise redirect
+            if (window.opener) {
+              // Try to tell the opener window that a new token is available
+              try {
+                if (window.opener.notifyTokenUpdated) {
+                  window.opener.notifyTokenUpdated(token);
+                }
+              } catch (err) {
+                console.log('Could not call window.opener method:', err);
+              }
+
+              window.opener.location.reload();
+              window.close();
+            } else {
+              window.location.href = window.location.origin;
+            }
+          } else {
+            // Invalid token, show error
+            const errorElement = document.getElementById('error-message');
+            errorElement.innerHTML = 'Token validation failed. Make sure your token has the "repo" scope.';
+            errorElement.style.display = 'block';
+          }
+        })
+        .catch(error => {
+          // Error validating token
+          const errorElement = document.getElementById('error-message');
+          errorElement.innerHTML = `Error validating token: ${error.message}`;
+          errorElement.style.display = 'block';
+        });
+    }
+
+    // Validate token function
+    async function validateToken(token) {
+      try {
+        // Make a simple API request to check token validity
+        const response = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        return response.ok;
+      } catch (error) {
+        console.error('Error validating token:', error);
+        return false;
       }
+    }
+
+    // Add event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      const saveButton = document.getElementById('save-token');
+      const tokenInput = document.getElementById('github-token');
+
+      // Save when button is clicked
+      saveButton.addEventListener('click', function() {
+        const errorElement = document.getElementById('error-message');
+        const token = tokenInput.value.trim();
+
+        // Basic validation
+        if (!token || !token.match(/^(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,}$/)) {
+          errorElement.innerHTML = 'Invalid token format. Please check your token and try again.';
+          errorElement.style.display = 'block';
+          return;
+        }
+
+        // Hide error if previously shown
+        errorElement.style.display = 'none';
+
+        // Save and validate the token
+        saveToken(token);
+      });
+
+      // Also save when Enter key is pressed
+      tokenInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          saveButton.click();
+        }
+      });
+
+      // Focus the input field automatically
+      tokenInput.focus();
     });
+
+    // Helper function for the parent window
+    window.notifyTokenUpdated = function(token) {
+      // Directly available to parent window if needed
+      console.log('Token updated notification received');
+      return true;
+    };
   </script>
 </body>
 </html>
