@@ -58,12 +58,15 @@ export class GitHubClient {
   }
 
   private async executeGraphQL<T>(query: string, variables: any): Promise<T | null> {
-    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    // Safely check for environment variables
+    const safeProcessEnv = typeof process !== 'undefined' && process.env ? process.env : {};
+    const isProduction = safeProcessEnv.NODE_ENV === 'production';
     const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
 
     try {
       // Show token debugging info
-      console.log(`${debugPrefix} 🔑 Token debug: GITHUB_TOKEN env var present:`, process.env.GITHUB_TOKEN ? "YES" : "NO");
+      const githubTokenPresent = typeof process !== 'undefined' && process.env && process.env.GITHUB_TOKEN ? "YES" : "NO";
+      console.log(`${debugPrefix} 🔑 Token debug: GITHUB_TOKEN env var present:`, githubTokenPresent);
       console.log(`${debugPrefix} 🔑 Token debug: Client using token:`, this.token ? "YES" : "NO");
       if (this.token) {
         console.log(`${debugPrefix} 🔑 Token debug: Token length:`, this.token.length);
@@ -208,7 +211,9 @@ export class GitHubClient {
   }
 
   public async findLinkedPullRequests(owner: string, repo: string, issueNumber: string): Promise<LinkedPullRequest[]> {
-    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    // Safely check for environment variables
+    const safeProcessEnv = typeof process !== 'undefined' && process.env ? process.env : {};
+    const isProduction = safeProcessEnv.NODE_ENV === 'production';
     const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
 
     console.log(`${debugPrefix} 🔎 Finding linked PRs for issue ${owner}/${repo}#${issueNumber}`);
