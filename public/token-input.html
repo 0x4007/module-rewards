@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Token Input</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #24292e;
+      background-color: #f6f8fa;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 550px;
+      width: 90%;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      color: #24292e;
+    }
+    p {
+      color: #586069;
+      line-height: 1.5;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid #d1d5da;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #0366d6;
+      box-shadow: 0 0 0 3px rgba(3,102,214,0.3);
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: white;
+      background-color: #2ea44f;
+      border: 1px solid rgba(27,31,35,0.15);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background-color: #22863a;
+    }
+    button:active {
+      background-color: #1b7430;
+    }
+    .info {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: #f6f8fa;
+      border-radius: 4px;
+      border-left: 4px solid #0366d6;
+    }
+    .info-title {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    .steps {
+      margin-left: 1.5rem;
+      padding-left: 0;
+    }
+    .steps li {
+      margin-bottom: 0.5rem;
+    }
+    .error {
+      display: none;
+      color: #cb2431;
+      background-color: #ffeef0;
+      border-radius: 4px;
+      border-left: 4px solid #cb2431;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GitHub Authentication Required</h1>
+    <p>To view GitHub content, please provide a personal access token with 'repo' scope access.</p>
+
+    <div class="form-group">
+      <label for="github-token">GitHub Personal Access Token</label>
+      <input type="text" id="github-token" placeholder="ghp_..." autocomplete="off">
+    </div>
+
+    <button id="save-token">Save Token</button>
+
+    <div id="error-message" class="error">
+      Invalid token format. Please check your token and try again.
+    </div>
+
+    <div class="info">
+      <h3 class="info-title">How to create a token:</h3>
+      <ol class="steps">
+        <li>Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Token Settings</a></li>
+        <li>Click "Generate new token" > "Generate new token (classic)"</li>
+        <li>Add a note like "GitHub Content Viewer"</li>
+        <li>Select the "repo" scope</li>
+        <li>Click "Generate token"</li>
+        <li>Copy the generated token and paste it above</li>
+      </ol>
+      <p><strong>Note:</strong> Your token is stored only in your browser's local storage and is never sent to our servers.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('save-token').addEventListener('click', function() {
+      const tokenInput = document.getElementById('github-token');
+      const errorElement = document.getElementById('error-message');
+      const token = tokenInput.value.trim();
+
+      // Basic validation
+      if (!token || !token.match(/^(ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,}$/)) {
+        errorElement.style.display = 'block';
+        return;
+      }
+
+      // Hide error if previously shown
+      errorElement.style.display = 'none';
+
+      // Save token to localStorage
+      localStorage.setItem('github_token', token);
+
+      // Close window if opened as popup, otherwise redirect
+      if (window.opener) {
+        window.opener.location.reload();
+        window.close();
+      } else {
+        window.location.href = window.location.origin;
+      }
+    });
+  </script>
+</body>
+</html>

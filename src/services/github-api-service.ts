@@ -68,45 +68,60 @@ class GitHubApiService {
 
       return freshData;
     } catch (error) {
-      // Special handling for auth errors
-      if (error instanceof Error && error.message.includes('Authentication failed')) {
-        console.error(`${debugPrefix} Authentication error: ${error.message}`);
-        localStorage.removeItem('github_token'); // Remove invalid token
+      // Handle all API errors with a nice fallback
+      console.error(`${debugPrefix} API error:`, error);
 
-        if (inProduction) {
-          // In production, create a minimal response with error information
-          // This prevents the UI from breaking completely
-          const errorData: FetchedData = {
-            details: {
-              title: `${type.toUpperCase()} #${number}`,
-              body: "Unable to load content - GitHub API authentication required.",
-              number: parseInt(number),
-              html_url: `https://github.com/${owner}/${repo}/${type === 'pr' ? 'pull' : 'issue'}/${number}`,
-              user: {
-                login: "anonymous",
-                html_url: "",
-                avatar_url: ""
-              }
-            },
-            comments: [],
-            type,
-            linkedIssue: undefined,
-            linkedPullRequests: []
-          };
+      // Clear any invalid token
+      if (error instanceof Error &&
+          (error.message.includes('Authentication failed') ||
+           error.message.includes('401') ||
+           error.message.includes('403'))) {
+        console.warn(`${debugPrefix} Detected authentication error - removing invalid token`);
+        localStorage.removeItem('github_token');
+      }
 
-          return errorData;
+      // Create a minimal response with error information in any environment
+      // This prevents UI from breaking completely
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorData: FetchedData = {
+        details: {
+          title: `${type.toUpperCase()} #${number}`,
+          body: inProduction
+            ? "## GitHub Authentication Required\n\n" +
+              "To view this content, you need to provide a GitHub personal access token.\n\n" +
+              "<div class='auth-error-actions'>\n" +
+              "  <button class='auth-token-button' onclick=\"window.open('/token-input.html', 'github_token', 'width=600,height=700')\">Add GitHub Token</button>\n" +
+              "</div>\n\n" +
+              "Error details: " + errorMessage
+            : "## API Request Failed\n\nError: " + errorMessage,
+          number: parseInt(number),
+          html_url: `https://github.com/${owner}/${repo}/${type === 'pr' ? 'pull' : 'issue'}/${number}`,
+          user: {
+            login: "system",
+            html_url: "",
+            avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          }
+        },
+        comments: [],
+        type,
+        linkedIssue: undefined,
+        linkedPullRequests: []
+      };
+
+      // If we have cached data (even expired), still prefer that over the error message
+      if (cachedData) {
+        try {
+          console.warn(`${debugPrefix} Using expired cache due to API error`);
+          const parsedData = JSON.parse(cachedData) as FetchedData;
+          return parsedData;
+        } catch (parseError) {
+          console.error(`${debugPrefix} Failed to parse cached data:`, parseError);
+          // Continue to return error data if parsing fails
         }
       }
 
-      // If we have expired cached data, still use that in case of error
-      if (cachedData) {
-        console.warn(`${debugPrefix} Using expired cache due to API error:`, error);
-        return JSON.parse(cachedData);
-      }
+      return errorData;
 
-      // Otherwise, propagate the error
-      console.error(`${debugPrefix} API request failed with no fallback cache:`, error);
-      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
