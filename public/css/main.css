@@ -158,7 +158,7 @@ footer {
   border-radius: 4px;
   flex: 0 0 auto; /* Don't allow shrinking */
   /* width: 640px; */ /* Fixed width for columns */
-  max-width: 634px; /* Maximum width on smaller screens */
+  max-width: 638px; /* Maximum width on smaller screens */
   min-width: 280px; /* Minimum width */
 }
 
