@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,7 +36,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: module-rewards
           directory: build/public
-          gitHubToken: ${{ secrets.GH_TOKEN }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request Comment
         if: success()
@@ -45,5 +49,5 @@ jobs:
 
             Visit the URL to preview your changes.
           comment_tag: cloudflare-deployment
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           create_if_not_exists: true
