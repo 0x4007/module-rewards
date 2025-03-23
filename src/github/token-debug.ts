@@ -30,8 +30,8 @@ async function debugToken() {
   console.log("\nTrying to extract token from bash environment directly:");
 
   try {
-    const { execSync } = require('child_process');
-    const bashToken = execSync('echo $GITHUB_TOKEN').toString().trim();
+    const { execSync } = require("child_process");
+    const bashToken = execSync("echo $GITHUB_TOKEN").toString().trim();
 
     if (bashToken) {
       console.log(`Bash extracted token: YES (length: ${bashToken.length})`);
@@ -68,9 +68,9 @@ async function testTokenWithClient(client: GitHubClient, tokenSource: string) {
     console.log("\nTest 2: Getting authenticated user info");
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        "Authorization": `Bearer ${client["token"]}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${client["token"]}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!userResponse.ok) {
@@ -86,9 +86,9 @@ async function testTokenWithClient(client: GitHubClient, tokenSource: string) {
     // Get list of repos
     const reposResponse = await fetch(`https://api.github.com/users/${userData.login}/repos?per_page=1`, {
       headers: {
-        "Authorization": `Bearer ${client["token"]}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${client["token"]}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!reposResponse.ok) {
@@ -102,12 +102,12 @@ async function testTokenWithClient(client: GitHubClient, tokenSource: string) {
       console.log(`Testing with repo: ${testRepo.full_name}`);
 
       // Try to access issues in this repo
-      const [owner, repo] = testRepo.full_name.split('/');
+      const [owner, repo] = testRepo.full_name.split("/");
       const issuesResponse = await fetch(`https://api.github.com/repos/${testRepo.full_name}/issues?per_page=1`, {
         headers: {
-          "Authorization": `Bearer ${client["token"]}`,
-          "Accept": "application/vnd.github.v3+json"
-        }
+          Authorization: `Bearer ${client["token"]}`,
+          Accept: "application/vnd.github.v3+json",
+        },
       });
 
       if (!issuesResponse.ok) {
@@ -139,10 +139,10 @@ async function testTokenWithClient(client: GitHubClient, tokenSource: string) {
     const graphqlResponse = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${client["token"]}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${client["token"]}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query: testQuery })
+      body: JSON.stringify({ query: testQuery }),
     });
 
     if (!graphqlResponse.ok) {
@@ -177,9 +177,11 @@ function logDetailedFetchError(error: any) {
       console.log("3. Rate limit exceeded");
       console.log("4. Token has been revoked or is invalid");
 
-      if (error.response.headers && error.response.headers.get('x-ratelimit-remaining') === '0') {
+      if (error.response.headers && error.response.headers.get("x-ratelimit-remaining") === "0") {
         console.log("\n⚠️ RATE LIMIT EXCEEDED! This is likely the cause of your 403 error.");
-        console.log(`Rate limit resets at: ${new Date(parseInt(error.response.headers.get('x-ratelimit-reset')) * 1000)}`);
+        console.log(
+          `Rate limit resets at: ${new Date(parseInt(error.response.headers.get("x-ratelimit-reset")) * 1000)}`
+        );
       }
     }
   } else {
@@ -188,6 +190,6 @@ function logDetailedFetchError(error: any) {
 }
 
 // Execute the debug function
-debugToken().catch(error => {
+debugToken().catch((error) => {
   console.error("Top-level error in debug script:", error);
 });

@@ -19,10 +19,11 @@ class GitHubApiService {
     this.client = new GitHubClientWithFallback(this.token);
 
     // Log information about the token
-    const inProduction = typeof window !== 'undefined' &&
-                         window.location.hostname !== "localhost" &&
-                         window.location.hostname !== "127.0.0.1";
-    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+    const inProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+    const envPrefix = inProduction ? "[PROD]" : "[DEV]";
 
     console.log(`${envPrefix} GitHub API Service initialized with token: ${this.token ? "YES" : "NO"}`);
     if (this.token) {
@@ -42,10 +43,11 @@ class GitHubApiService {
    */
   public async fetchData(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<FetchedData> {
     // Detect environment consistently
-    const inProduction = typeof window !== 'undefined' &&
-                        window.location.hostname !== "localhost" &&
-                        window.location.hostname !== "127.0.0.1";
-    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+    const inProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+    const envPrefix = inProduction ? "[PROD]" : "[DEV]";
 
     // Check for GH token in production
     if (inProduction && !this.token) {
@@ -57,22 +59,23 @@ class GitHubApiService {
     const cacheKey = `data-${owner}-${repo}-${type}-${number}`;
     const cacheVersionKey = `${cacheKey}-version`;
     const cachedTimestampKey = `${cacheKey}-timestamp`;
-    const CURRENT_CACHE_VERSION = '2'; // Increment when data structure changes
+    const CURRENT_CACHE_VERSION = "2"; // Increment when data structure changes
 
     let data: FetchedData | null = null;
 
     // Check cache first
     const cachedData = localStorage.getItem(cacheKey);
     const cachedTimestamp = localStorage.getItem(cachedTimestampKey);
-    const cachedVersion = localStorage.getItem(cacheVersionKey) || '1';
+    const cachedVersion = localStorage.getItem(cacheVersionKey) || "1";
 
     // Cache is expired if:
     // - No timestamp
     // - Timestamp is older than cache expiry time
     // - Cache version is not current
-    const cacheExpired = !cachedTimestamp ||
-                          Date.now() - parseInt(cachedTimestamp) > this.CACHE_EXPIRY ||
-                          cachedVersion !== CURRENT_CACHE_VERSION;
+    const cacheExpired =
+      !cachedTimestamp ||
+      Date.now() - parseInt(cachedTimestamp) > this.CACHE_EXPIRY ||
+      cachedVersion !== CURRENT_CACHE_VERSION;
 
     // Clear cache if version mismatch
     if (cachedData && cachedVersion !== CURRENT_CACHE_VERSION) {
@@ -89,7 +92,7 @@ class GitHubApiService {
         data = JSON.parse(cachedData) as FetchedData;
 
         // Verify cache has expected structure
-        if (type === 'issue' && !data.linkedPullRequests) {
+        if (type === "issue" && !data.linkedPullRequests) {
           console.warn(`${envPrefix} Cache integrity error: missing linkedPullRequests for issue ${number}`);
           // Continue to fetch fresh data
         } else {
@@ -118,12 +121,14 @@ class GitHubApiService {
       console.error(`${envPrefix} API error:`, error);
 
       // Clear any invalid token
-      if (error instanceof Error &&
-          (error.message.includes('Authentication failed') ||
-           error.message.includes('401') ||
-           error.message.includes('403'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes("Authentication failed") ||
+          error.message.includes("401") ||
+          error.message.includes("403"))
+      ) {
         console.warn(`${envPrefix} Detected authentication error - removing invalid token`);
-        localStorage.removeItem('github_token');
+        localStorage.removeItem("github_token");
       }
 
       // Create a minimal response with error information in any environment
@@ -132,21 +137,19 @@ class GitHubApiService {
       const errorData: FetchedData = {
         details: {
           title: `${type.toUpperCase()} #${number}`,
-          body: inProduction
-            ? createAuthMessage(errorMessage)
-            : "## API Request Failed\n\nError: " + errorMessage,
+          body: inProduction ? createAuthMessage(errorMessage) : "## API Request Failed\n\nError: " + errorMessage,
           number: parseInt(number),
-          html_url: `https://github.com/${owner}/${repo}/${type === 'pr' ? 'pull' : 'issue'}/${number}`,
+          html_url: `https://github.com/${owner}/${repo}/${type === "pr" ? "pull" : "issue"}/${number}`,
           user: {
             login: "system",
             html_url: "",
-            avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-          }
+            avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+          },
         },
         comments: [],
         type,
         linkedIssue: undefined,
-        linkedPullRequests: []
+        linkedPullRequests: [],
       };
 
       // If we have cached data (even expired), still prefer that over the error message
@@ -162,7 +165,6 @@ class GitHubApiService {
       }
 
       return errorData;
-
     }
   }
 
@@ -194,17 +196,18 @@ class GitHubApiService {
     type: "pr" | "issue"
   ): Promise<{ updated: boolean; data: FetchedData } | null> {
     // Detect environment consistently
-    const inProduction = typeof window !== 'undefined' &&
-                        window.location.hostname !== "localhost" &&
-                        window.location.hostname !== "127.0.0.1";
-    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+    const inProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+    const envPrefix = inProduction ? "[PROD]" : "[DEV]";
 
     try {
       // Set up cache keys
       const cacheKey = `data-${owner}-${repo}-${type}-${number}`;
       const cacheVersionKey = `${cacheKey}-version`;
       const cachedTimestampKey = `${cacheKey}-timestamp`;
-      const CURRENT_CACHE_VERSION = '2'; // Keep in sync with fetchData
+      const CURRENT_CACHE_VERSION = "2"; // Keep in sync with fetchData
 
       // Get cached data
       const cachedData = localStorage.getItem(cacheKey);

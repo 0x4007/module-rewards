@@ -7,9 +7,31 @@
  * Show the GitHub token input dialog
  * This can be triggered programmatically when authentication is needed
  */
+/**
+ * Adds a GitHub token input button to a specified DOM element
+ * @param selector CSS selector of the element to add the button to
+ */
+export function addTokenInputButton(selector: string): void {
+  const container = document.querySelector(selector);
+  if (!container) {
+    console.error(`Element not found for selector: ${selector}`);
+    return;
+  }
+
+  const button = document.createElement('button');
+  button.className = 'auth-token-button';
+  button.textContent = 'Add GitHub Token';
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    showTokenInput();
+  });
+
+  container.appendChild(button);
+}
+
 export function showTokenInput(): void {
   // Open the token input page in a popup window
-  window.open('/token-input.html', 'github_token', 'width=600,height=700');
+  window.open("/token-input.html", "github_token", "width=600,height=700");
 }
 
 /**
@@ -25,7 +47,7 @@ To view this content, you need to provide a GitHub personal access token.
   <button class='auth-token-button' onclick="window.open('/token-input.html', 'github_token', 'width=600,height=700')">Add GitHub Token</button>
 </div>
 
-${error ? `Error details: ${error}` : ''}`;
+${error ? `Error details: ${error}` : ""}`;
 }
 
 /**
@@ -34,7 +56,7 @@ ${error ? `Error details: ${error}` : ''}`;
  */
 export function initAuthHandler(): void {
   // Add CSS for auth buttons
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.textContent = `
     .auth-error-actions {
       margin: 20px 0;
@@ -58,9 +80,9 @@ export function initAuthHandler(): void {
   document.head.appendChild(style);
 
   // Add event listeners to any auth buttons on the page
-  document.addEventListener('click', (e) => {
+  document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
-    if (target.classList.contains('auth-token-button')) {
+    if (target.classList.contains("auth-token-button")) {
       e.preventDefault();
       showTokenInput();
     }
@@ -71,13 +93,13 @@ export function initAuthHandler(): void {
  * Get the current GitHub token
  */
 export function getGitHubToken(): string | null {
-  return localStorage.getItem('github_token');
+  return localStorage.getItem("github_token");
 }
 
 /**
  * Clear the current GitHub token
  */
 export function clearGitHubToken(): void {
-  localStorage.removeItem('github_token');
-  alert('GitHub token has been removed. You will need to add a new token to access GitHub content.');
+  localStorage.removeItem("github_token");
+  alert("GitHub token has been removed. You will need to add a new token to access GitHub content.");
 }

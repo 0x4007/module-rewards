@@ -26,46 +26,50 @@ export function parseGitHubUrl(url: string): UrlParseResult | null {
     owner: match[1],
     repo: match[2],
     number: match[4],
-    type: match[3] === "pull" ? "pr" : "issue"
+    type: match[3] === "pull" ? "pr" : "issue",
   };
 }
 
-  /**
-   * Determine if a GitHub URL should be an issue or pull request URL and return the correct version
-   */
-  export async function getCorrectGitHubUrl(url: string): Promise<string> {
-    const parsed = parseGitHubUrl(url);
-    if (!parsed) return url;
+/**
+ * Determine if a GitHub URL should be an issue or pull request URL and return the correct version
+ */
+export async function getCorrectGitHubUrl(url: string): Promise<string> {
+  const parsed = parseGitHubUrl(url);
+  if (!parsed) return url;
 
-    try {
-      // First try to fetch as a PR
-      const prResponse = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls/${parsed.number}`);
+  try {
+    // First try to fetch as a PR
+    const prResponse = await fetch(
+      `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls/${parsed.number}`
+    );
 
-      if (prResponse.ok) {
-        // If successful, this should be a PR URL
-        return url.replace(/\/(issues|pull)\//, "/pull/");
-      }
-
-      // If PR check failed, try to fetch as an issue
-      const issueResponse = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues/${parsed.number}`);
-
-      if (issueResponse.ok) {
-        // If successful, this should be an issue URL
-        return url.replace(/\/(issues|pull)\//, "/issues/");
-      }
-    } catch (error) {
-      console.error("Error checking GitHub endpoint:", error);
+    if (prResponse.ok) {
+      // If successful, this should be a PR URL
+      return url.replace(/\/(issues|pull)\//, "/pull/");
     }
 
-    // If there's any error or neither is found, return original URL
-    return url;
+    // If PR check failed, try to fetch as an issue
+    const issueResponse = await fetch(
+      `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/issues/${parsed.number}`
+    );
+
+    if (issueResponse.ok) {
+      // If successful, this should be an issue URL
+      return url.replace(/\/(issues|pull)\//, "/issues/");
+    }
+  } catch (error) {
+    console.error("Error checking GitHub endpoint:", error);
+  }
+
+  // If there's any error or neither is found, return original URL
+  return url;
 }
 
 /**
  * Navigate to the correct GitHub URL (converts issue URLs to PR URLs when appropriate)
  */
 export function navigateToCorrectUrl(url: string): void {
-  getCorrectGitHubUrl(url).then(correctUrl => {
+  getCorrectGitHubUrl(url).then((correctUrl) => {
     if (correctUrl !== url) {
       window.location.href = correctUrl;
     }

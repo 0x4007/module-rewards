@@ -59,13 +59,14 @@ export class GitHubClient {
 
   private async executeGraphQL<T>(query: string, variables: any): Promise<T | null> {
     // Safely check for environment variables
-    const safeProcessEnv = typeof process !== 'undefined' && process.env ? process.env : {};
-    const isProduction = safeProcessEnv.NODE_ENV === 'production';
-    const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
+    const safeProcessEnv = typeof process !== "undefined" && process.env ? process.env : {};
+    const isProduction = safeProcessEnv.NODE_ENV === "production";
+    const debugPrefix = isProduction ? "[PROD]" : "[DEV]";
 
     try {
       // Show token debugging info
-      const githubTokenPresent = typeof process !== 'undefined' && process.env && process.env.GITHUB_TOKEN ? "YES" : "NO";
+      const githubTokenPresent =
+        typeof process !== "undefined" && process.env && process.env.GITHUB_TOKEN ? "YES" : "NO";
       console.log(`${debugPrefix} 🔑 Token debug: GITHUB_TOKEN env var present:`, githubTokenPresent);
       console.log(`${debugPrefix} 🔑 Token debug: Client using token:`, this.token ? "YES" : "NO");
       if (this.token) {
@@ -76,9 +77,9 @@ export class GitHubClient {
       console.log(`${debugPrefix} Executing GraphQL query with variables:`, JSON.stringify(variables));
 
       // Log the actual headers being sent (redacting the token value)
-      const headersDebug = {...this.headers} as Record<string, string>;
+      const headersDebug = { ...this.headers } as Record<string, string>;
       if (headersDebug["Authorization"]) {
-        headersDebug["Authorization"] = headersDebug["Authorization"].replace(/Bearer .+/, 'Bearer [REDACTED]');
+        headersDebug["Authorization"] = headersDebug["Authorization"].replace(/Bearer .+/, "Bearer [REDACTED]");
       }
       console.log(`${debugPrefix} Request headers:`, headersDebug);
 
@@ -96,9 +97,9 @@ export class GitHubClient {
       console.log(`${debugPrefix} GraphQL response received in ${responseTime}ms, status: ${response.status}`);
 
       // Log headers for debugging
-      const limitRemaining = response.headers.get('x-ratelimit-remaining');
-      const limitReset = response.headers.get('x-ratelimit-reset');
-      const authHeader = response.headers.get('www-authenticate');
+      const limitRemaining = response.headers.get("x-ratelimit-remaining");
+      const limitReset = response.headers.get("x-ratelimit-reset");
+      const authHeader = response.headers.get("www-authenticate");
 
       if (limitRemaining) {
         console.log(`${debugPrefix} GitHub API rate limit remaining: ${limitRemaining}`);
@@ -140,8 +141,10 @@ export class GitHubClient {
 
         // Log partial data if available despite errors
         if (result.data) {
-          console.log(`${debugPrefix} Partial data received despite errors:`,
-            JSON.stringify(result.data, null, 2).substring(0, 200) + '...');
+          console.log(
+            `${debugPrefix} Partial data received despite errors:`,
+            JSON.stringify(result.data, null, 2).substring(0, 200) + "..."
+          );
         }
 
         return null;
@@ -150,14 +153,14 @@ export class GitHubClient {
       // Debug success response
       if (isIssue30Query) {
         console.log(`${debugPrefix} 🔍 DEBUG for Issue #30: GraphQL query successful`);
-        console.log(`${debugPrefix} Data preview:`, JSON.stringify(result.data).substring(0, 100) + '...');
+        console.log(`${debugPrefix} Data preview:`, JSON.stringify(result.data).substring(0, 100) + "...");
 
         // Check for timeline nodes specifically
-        const timelineNodes = result.data?.repository?.issue?.timelineItems?.nodes;
+        // Use type assertion to inform TypeScript about the expected structure
+        const timelineNodes = (result.data as any)?.repository?.issue?.timelineItems?.nodes;
         if (timelineNodes) {
           console.log(`${debugPrefix} Timeline nodes count: ${timelineNodes.length}`);
-          console.log(`${debugPrefix} First few nodes:`,
-            JSON.stringify(timelineNodes.slice(0, 2), null, 2));
+          console.log(`${debugPrefix} First few nodes:`, JSON.stringify(timelineNodes.slice(0, 2), null, 2));
         } else {
           console.log(`${debugPrefix} No timeline nodes found in result`);
         }
@@ -212,9 +215,9 @@ export class GitHubClient {
 
   public async findLinkedPullRequests(owner: string, repo: string, issueNumber: string): Promise<LinkedPullRequest[]> {
     // Safely check for environment variables
-    const safeProcessEnv = typeof process !== 'undefined' && process.env ? process.env : {};
-    const isProduction = safeProcessEnv.NODE_ENV === 'production';
-    const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
+    const safeProcessEnv = typeof process !== "undefined" && process.env ? process.env : {};
+    const isProduction = safeProcessEnv.NODE_ENV === "production";
+    const debugPrefix = isProduction ? "[PROD]" : "[DEV]";
 
     console.log(`${debugPrefix} 🔎 Finding linked PRs for issue ${owner}/${repo}#${issueNumber}`);
 
@@ -229,8 +232,10 @@ export class GitHubClient {
 
       const data = await this.executeGraphQL<LinkedPRsQueryResponse>(ISSUES_LINKED_PRS_QUERY, variables);
 
-      console.log(`${debugPrefix} GraphQL response received for issue #${issueNumber}:`,
-        data ? 'Data received' : 'No data received');
+      console.log(
+        `${debugPrefix} GraphQL response received for issue #${issueNumber}:`,
+        data ? "Data received" : "No data received"
+      );
 
       if (!data?.repository?.issue) {
         console.log(`${debugPrefix} No issue #${issueNumber} found in repository`);
@@ -270,8 +275,10 @@ export class GitHubClient {
           };
         });
 
-      console.log(`${debugPrefix} Found ${linkedPRs.length} linked PRs for issue #${issueNumber}:`,
-        linkedPRs.map(pr => `#${pr.number}`).join(', '));
+      console.log(
+        `${debugPrefix} Found ${linkedPRs.length} linked PRs for issue #${issueNumber}:`,
+        linkedPRs.map((pr) => `#${pr.number}`).join(", ")
+      );
       return linkedPRs;
     } catch (error) {
       console.error(`${debugPrefix} Error finding linked PRs:`, error);

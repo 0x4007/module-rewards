@@ -14,7 +14,7 @@ export interface GitHubUser {
   login: string;
   html_url: string;
   avatar_url: string;
-  type?: string;  // 'User' or 'Bot' or 'Organization'
+  type?: string; // 'User' or 'Bot' or 'Organization'
 }
 
 export interface GitHubComment {

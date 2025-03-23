@@ -39,7 +39,7 @@ class EventManager {
   private processQueryParameters(): boolean {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const queryParam = urlParams.get('q');
+      const queryParam = urlParams.get("q");
 
       if (queryParam) {
         console.log("Found query parameter 'q':", queryParam);
@@ -139,22 +139,21 @@ class EventManager {
    */
   private setupWebSocket(): void {
     // Check if we're in a production build
-    const inProduction = window.location.hostname !== "localhost" &&
-                        window.location.hostname !== "127.0.0.1";
+    const inProduction = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
 
     // Skip WebSocket entirely in production environments
     if (inProduction) {
-      console.log('[PROD] Hot reload disabled in production environment');
+      console.log("[PROD] Hot reload disabled in production environment");
       return;
     }
 
     // Only in development: Try to connect to WebSocket server
-    console.log('[DEV] Setting up development hot reload');
+    console.log("[DEV] Setting up development hot reload");
 
     let reconnectTimeout: number | null = null;
     const connectWebSocket = () => {
       try {
-        console.log('[DEV] Attempting to connect to WebSocket server...');
+        console.log("[DEV] Attempting to connect to WebSocket server...");
         const ws = new WebSocket("ws://localhost:8081");
 
         // Clear any pending reconnect timers when we connect
@@ -171,7 +170,7 @@ class EventManager {
         };
 
         ws.onopen = () => {
-          console.log('[DEV] WebSocket connection established');
+          console.log("[DEV] WebSocket connection established");
         };
 
         ws.onclose = () => {
@@ -183,7 +182,7 @@ class EventManager {
         };
 
         ws.onerror = () => {
-          console.log('[DEV] WebSocket connection error, development server may not be running');
+          console.log("[DEV] WebSocket connection error, development server may not be running");
           // Don't try to reconnect on error
           if (reconnectTimeout) {
             clearTimeout(reconnectTimeout);
@@ -191,13 +190,12 @@ class EventManager {
           }
         };
       } catch (error) {
-        console.log('[DEV] Failed to initialize WebSocket connection');
+        console.log("[DEV] Failed to initialize WebSocket connection");
       }
     };
 
     // Only try to connect on localhost
-    if (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1") {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
       connectWebSocket();
     }
   }

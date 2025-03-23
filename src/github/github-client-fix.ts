@@ -48,14 +48,15 @@ export class GitHubClientWithFallback {
       // Handle authentication errors specifically to show token input
       // For authentication errors, we'll pass through but enhance the error message
       // This ensures the error handling in github-api-service.ts will display the auth message
-      if (error instanceof Error && (
-          error.message.includes('Authentication failed') ||
-          error.message.includes('401') ||
-          error.message.includes('403')
-      )) {
+      if (
+        error instanceof Error &&
+        (error.message.includes("Authentication failed") ||
+          error.message.includes("401") ||
+          error.message.includes("403"))
+      ) {
         console.warn("Authentication error detected in GitHubClientWithFallback");
         // Clear the invalid token from localStorage
-        localStorage.removeItem('github_token');
+        localStorage.removeItem("github_token");
 
         // Enhance the error with our customized auth message
         const errorDetails = error.message;
@@ -114,13 +115,17 @@ export class GitHubClientWithFallback {
   /**
    * Fallback implementation using REST API to find linked pull requests
    */
-  private async findLinkedPullRequestsWithREST(owner: string, repo: string, issueNumber: string): Promise<LinkedPullRequest[]> {
+  private async findLinkedPullRequestsWithREST(
+    owner: string,
+    repo: string,
+    issueNumber: string
+  ): Promise<LinkedPullRequest[]> {
     console.log(`Using REST API to find linked PRs for issue ${owner}/${repo}#${issueNumber}`);
 
     try {
       // First get the issue to extract links from its body
       const issueResponse = await fetch(`${this.githubApiBaseUrl}/repos/${owner}/${repo}/issues/${issueNumber}`, {
-        headers: this.getApiHeaders()
+        headers: this.getApiHeaders(),
       });
 
       if (!issueResponse.ok) {
@@ -132,7 +137,8 @@ export class GitHubClientWithFallback {
       // Look for PR references in the issue body
       // This searches for strings like "Closes #123" or "#123" or "owner/repo#123"
       const linkedPRs: LinkedPullRequest[] = [];
-      const prRegex = /(close[sd]?|fix(e[sd])?|resolve[sd]?)?(\s+)?(#|https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/pull\/)(\d+)/gi;
+      const prRegex =
+        /(close[sd]?|fix(e[sd])?|resolve[sd]?)?(\s+)?(#|https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/pull\/)(\d+)/gi;
       const crossRepoRegex = /([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)#(\d+)/gi;
 
       // Extract PR numbers from the issue body
@@ -179,13 +185,17 @@ export class GitHubClientWithFallback {
   /**
    * Fallback implementation using REST API to find a linked issue
    */
-  private async findLinkedIssueWithREST(owner: string, repo: string, prNumber: string): Promise<LinkedIssue | undefined> {
+  private async findLinkedIssueWithREST(
+    owner: string,
+    repo: string,
+    prNumber: string
+  ): Promise<LinkedIssue | undefined> {
     console.log(`Using REST API to find linked issue for PR ${owner}/${repo}#${prNumber}`);
 
     try {
       // Get the PR to extract links from its body
       const prResponse = await fetch(`${this.githubApiBaseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`, {
-        headers: this.getApiHeaders()
+        headers: this.getApiHeaders(),
       });
 
       if (!prResponse.ok) {
@@ -196,7 +206,8 @@ export class GitHubClientWithFallback {
 
       // Look for issue references in the PR body
       // This searches for strings like "Closes #123" or "Fixes #123" or "Resolves #123"
-      const issueRegex = /(close[sd]?|fix(e[sd])?|resolve[sd]?)(\s+)?(#|https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/issues\/)(\d+)/gi;
+      const issueRegex =
+        /(close[sd]?|fix(e[sd])?|resolve[sd]?)(\s+)?(#|https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/issues\/)(\d+)/gi;
       const crossRepoRegex = /([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)#(\d+)/gi;
 
       // Extract issue numbers from the PR body
@@ -259,7 +270,7 @@ export class GitHubClientWithFallback {
   private async fetchPRDetails(owner: string, repo: string, prNumber: string): Promise<LinkedPullRequest | null> {
     try {
       const response = await fetch(`${this.githubApiBaseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`, {
-        headers: this.getApiHeaders()
+        headers: this.getApiHeaders(),
       });
 
       if (!response.ok) {
@@ -282,10 +293,10 @@ export class GitHubClientWithFallback {
         },
         repository: {
           owner: {
-            login: owner
+            login: owner,
           },
-          name: repo
-        }
+          name: repo,
+        },
       };
     } catch (error) {
       console.error(`Error fetching PR ${owner}/${repo}#${prNumber}:`, error);
@@ -299,7 +310,7 @@ export class GitHubClientWithFallback {
   private async fetchIssueDetails(owner: string, repo: string, issueNumber: string): Promise<LinkedIssue | undefined> {
     try {
       const response = await fetch(`${this.githubApiBaseUrl}/repos/${owner}/${repo}/issues/${issueNumber}`, {
-        headers: this.getApiHeaders()
+        headers: this.getApiHeaders(),
       });
 
       if (!response.ok) {
@@ -322,8 +333,8 @@ export class GitHubClientWithFallback {
         html_url: issue.html_url,
         repository: {
           owner: owner,
-          name: repo
-        }
+          name: repo,
+        },
       };
     } catch (error) {
       console.error(`Error fetching issue ${owner}/${repo}#${issueNumber}:`, error);

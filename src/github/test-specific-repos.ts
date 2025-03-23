@@ -20,9 +20,9 @@ async function testSpecificRepos() {
   try {
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!userResponse.ok) {
@@ -34,7 +34,7 @@ async function testSpecificRepos() {
     console.log(`Authenticated as: ${username}`);
 
     // Now test a few repositories specifically
-    await testRepo(client, username, ".ubiquity-os");  // Your repo we saw in the previous test
+    await testRepo(client, username, ".ubiquity-os"); // Your repo we saw in the previous test
 
     // Try specific API operations that might be causing 403 errors
     console.log("\n=== Testing Specific API Operations ===");
@@ -44,9 +44,9 @@ async function testSpecificRepos() {
     try {
       const collabsResponse = await fetch(`https://api.github.com/repos/${username}/.ubiquity-os/collaborators`, {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.github.v3+json"
-        }
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
       });
 
       console.log(`Status: ${collabsResponse.status}`);
@@ -66,9 +66,9 @@ async function testSpecificRepos() {
     try {
       const webhooksResponse = await fetch(`https://api.github.com/repos/${username}/.ubiquity-os/hooks`, {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.github.v3+json"
-        }
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
       });
 
       console.log(`Status: ${webhooksResponse.status}`);
@@ -97,9 +97,9 @@ async function testSpecificRepos() {
     try {
       const orgsResponse = await fetch(`https://api.github.com/user/orgs`, {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.github.v3+json"
-        }
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
       });
 
       if (orgsResponse.ok) {
@@ -113,9 +113,9 @@ async function testSpecificRepos() {
 
           const orgReposResponse = await fetch(`https://api.github.com/orgs/${orgName}/repos?per_page=1`, {
             headers: {
-              "Authorization": `Bearer ${token}`,
-              "Accept": "application/vnd.github.v3+json"
-            }
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github.v3+json",
+            },
           });
 
           if (orgReposResponse.ok) {
@@ -149,7 +149,6 @@ async function testSpecificRepos() {
     } else {
       console.log("No alternative token found or same as primary token");
     }
-
   } catch (error) {
     console.error("Failed to authenticate user:", error);
   }
@@ -162,9 +161,9 @@ async function testRepo(client: GitHubClient, owner: string, repo: string) {
     // Get basic repo info
     const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
       headers: {
-        "Authorization": `Bearer ${client["token"]}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${client["token"]}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!repoResponse.ok) {
@@ -179,9 +178,9 @@ async function testRepo(client: GitHubClient, owner: string, repo: string) {
     console.log("\nTesting issues access...");
     const issuesResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues?per_page=1`, {
       headers: {
-        "Authorization": `Bearer ${client["token"]}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${client["token"]}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (issuesResponse.ok) {
@@ -200,9 +199,9 @@ async function testRepo(client: GitHubClient, owner: string, repo: string) {
     console.log("\nTesting pull requests access...");
     const prsResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls?per_page=1`, {
       headers: {
-        "Authorization": `Bearer ${client["token"]}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${client["token"]}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (prsResponse.ok) {
@@ -216,7 +215,6 @@ async function testRepo(client: GitHubClient, owner: string, repo: string) {
     } else {
       console.log(`❌ Failed to access PRs: ${prsResponse.status}`);
     }
-
   } catch (error) {
     console.error(`Error testing repo ${owner}/${repo}:`, error);
   }
@@ -249,6 +247,6 @@ async function testPullRequest(client: GitHubClient, owner: string, repo: string
 }
 
 // Execute the test function
-testSpecificRepos().catch(error => {
+testSpecificRepos().catch((error) => {
   console.error("Top-level error in repository test script:", error);
 });

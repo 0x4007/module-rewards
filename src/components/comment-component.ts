@@ -10,8 +10,7 @@ import { isGitHubBot } from "../utils/github-utils";
 // Export the scoreMap for use by other components
 export const scoreMap = new Map<number, CommentScores>();
 
-
- interface CommentDisplayOptions {
+interface CommentDisplayOptions {
   containerSelector: string;
   idPrefix?: string;
   className?: string;
@@ -108,38 +107,38 @@ function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-    // Always check for slash commands and bots regardless of scores
-    // This fixes the slash command detection when it's not properly propagated from modules
-    const isSlashCommand = comment.body.trim().startsWith("/");
-    const isBot = isGitHubBot(comment.user);
+  // Always check for slash commands and bots regardless of scores
+  // This fixes the slash command detection when it's not properly propagated from modules
+  const isSlashCommand = comment.body.trim().startsWith("/");
+  const isBot = isGitHubBot(comment.user);
 
-    // Apply appropriate styling for slash commands
-    if (isSlashCommand) {
-      commentElement.classList.add("slash-command", "badge-base");
-    }
+  // Apply appropriate styling for slash commands
+  if (isSlashCommand) {
+    commentElement.classList.add("slash-command", "badge-base");
+  }
 
-    // Apply styling for bot accounts
-    if (isBot) {
-      commentElement.classList.add("bot-comment", "badge-base");
-    }
+  // Apply styling for bot accounts
+  if (isBot) {
+    commentElement.classList.add("bot-comment", "badge-base");
+  }
 
-    // If it's a slash command or bot comment but doesn't have proper zero scores, generate them
-    if ((isSlashCommand || isBot) && (!scores || scores.wordCount !== 0)) {
-      scores = {
-        wordCount: 0,
-        original: 0,
-        exponential: 0,
-        isGrouped: false,
-        isSlashCommand: isSlashCommand,
-        isBot: isBot
-      };
-    }
+  // If it's a slash command or bot comment but doesn't have proper zero scores, generate them
+  if ((isSlashCommand || isBot) && (!scores || scores.wordCount !== 0)) {
+    scores = {
+      wordCount: 0,
+      original: 0,
+      exponential: 0,
+      isGrouped: false,
+      isSlashCommand: isSlashCommand,
+      isBot: isBot,
+    };
+  }
 
-    // Add scores if provided and showScores is true (or it's a slash command which should always show scores)
-    if (scores && (showScores || isSlashCommand)) {
-      const scoresElement = renderScores(scores);
-      commentElement.appendChild(scoresElement);
-    }
+  // Add scores if provided and showScores is true (or it's a slash command which should always show scores)
+  if (scores && (showScores || isSlashCommand)) {
+    const scoresElement = renderScores(scores);
+    commentElement.appendChild(scoresElement);
+  }
 
   // Add the comment to the container
   container.appendChild(commentElement);

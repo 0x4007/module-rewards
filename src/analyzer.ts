@@ -35,10 +35,11 @@ export async function analyze(inputUrl: string): Promise<void> {
 
   try {
     // Detect environment consistently across the application
-    const inProduction = typeof window !== 'undefined' &&
-                          window.location.hostname !== "localhost" &&
-                          window.location.hostname !== "127.0.0.1";
-    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+    const inProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+    const envPrefix = inProduction ? "[PROD]" : "[DEV]";
     console.log(`${envPrefix} Analyzing URL: ${inputUrl}`);
 
     // Log all issues with linked PR detection for better visibility
@@ -62,10 +63,12 @@ export async function analyze(inputUrl: string): Promise<void> {
     console.log(`${envPrefix} Data fetched successfully`);
 
     // Check for linked PRs if this is an issue
-    if (type === 'issue' && data.linkedPullRequests) {
+    if (type === "issue" && data.linkedPullRequests) {
       if (data.linkedPullRequests.length > 0) {
-        console.log(`${envPrefix} Linked PRs found:`,
-          data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
+        console.log(
+          `${envPrefix} Linked PRs found:`,
+          data.linkedPullRequests.map((pr) => `#${pr.number} (${pr.state})`).join(", ")
+        );
       } else {
         console.log(`${envPrefix} No linked PRs found for issue #${number}`);
       }
@@ -74,13 +77,15 @@ export async function analyze(inputUrl: string): Promise<void> {
     // Process the data
     console.log(`${envPrefix} Processing GitHub data...`);
     const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(data);
-    console.log(`${envPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`);
+    console.log(
+      `${envPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`
+    );
 
     // Display comments with sections
     let prTitle, prNumber, issueTitle, issueNumber;
 
     // Extract title and number information for the header
-    if (type === 'pr') {
+    if (type === "pr") {
       prTitle = data.details.title;
       prNumber = data.details.number;
       // If there's a linked issue, extract its info
@@ -100,10 +105,20 @@ export async function analyze(inputUrl: string): Promise<void> {
       }
     }
 
-    renderComments("pr", prComments, "#pr-conversation", calculateAllScores,
-      prTitle ? { title: prTitle, number: prNumber } : undefined);
-    renderComments("issue", issueComments, "#issue-conversation", calculateAllScores,
-      issueTitle ? { title: issueTitle, number: issueNumber } : undefined);
+    renderComments(
+      "pr",
+      prComments,
+      "#pr-conversation",
+      calculateAllScores,
+      prTitle ? { title: prTitle, number: prNumber } : undefined
+    );
+    renderComments(
+      "issue",
+      issueComments,
+      "#issue-conversation",
+      calculateAllScores,
+      issueTitle ? { title: issueTitle, number: issueNumber } : undefined
+    );
 
     // Set content loaded state for UI
     uiStateManager.setContentLoaded("pr", prComments.length > 0);
@@ -175,10 +190,11 @@ async function backgroundRefresh(
   originalData: any
 ): Promise<void> {
   // Detect environment consistently
-  const inProduction = typeof window !== 'undefined' &&
-                      window.location.hostname !== "localhost" &&
-                      window.location.hostname !== "127.0.0.1";
-  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+  const inProduction =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+  const envPrefix = inProduction ? "[PROD]" : "[DEV]";
 
   // Wait a bit before checking for updates
   setTimeout(async () => {
@@ -198,7 +214,7 @@ async function backgroundRefresh(
         // Extract title and number information for the headers (for updates)
         let prTitle, prNumber, issueTitle, issueNumber;
 
-        if (result.data.type === 'pr') {
+        if (result.data.type === "pr") {
           prTitle = result.data.details.title;
           prNumber = result.data.details.number;
           if (result.data.linkedIssue) {
@@ -217,10 +233,20 @@ async function backgroundRefresh(
         }
 
         // Display updated comments
-        renderComments("pr", prComments, "#pr-conversation", calculateAllScores,
-          prTitle ? { title: prTitle, number: prNumber } : undefined);
-        renderComments("issue", issueComments, "#issue-conversation", calculateAllScores,
-          issueTitle ? { title: issueTitle, number: issueNumber } : undefined);
+        renderComments(
+          "pr",
+          prComments,
+          "#pr-conversation",
+          calculateAllScores,
+          prTitle ? { title: prTitle, number: prNumber } : undefined
+        );
+        renderComments(
+          "issue",
+          issueComments,
+          "#issue-conversation",
+          calculateAllScores,
+          issueTitle ? { title: issueTitle, number: issueNumber } : undefined
+        );
 
         // Update UI state
         uiStateManager.setContentLoaded("pr", prComments.length > 0);

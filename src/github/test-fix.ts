@@ -28,9 +28,9 @@ async function testFix() {
     // Get the user's login
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!userResponse.ok) {
@@ -43,9 +43,9 @@ async function testFix() {
     // Get user's repos to find one without a dot prefix
     const reposResponse = await fetch(`https://api.github.com/users/${username}/repos?per_page=10`, {
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!reposResponse.ok) {
@@ -55,7 +55,7 @@ async function testFix() {
     const repos = await reposResponse.json();
 
     // Find a repository without a dot prefix
-    const normalRepo = repos.find((repo: any) => !repo.name.startsWith('.'));
+    const normalRepo = repos.find((repo: any) => !repo.name.startsWith("."));
 
     if (!normalRepo) {
       console.log(`Couldn't find a normal repository, skipping this test`);
@@ -86,7 +86,7 @@ async function testFix() {
     console.log(`\n----- Testing with dot-prefixed repository name -----`);
 
     // Find a repository with a dot prefix, or use the one we saw in previous tests
-    const dotRepo = repos.find((repo: any) => repo.name.startsWith('.')) || { name: '.ubiquity-os' };
+    const dotRepo = repos.find((repo: any) => repo.name.startsWith(".")) || { name: ".ubiquity-os" };
 
     console.log(`Testing with dot-prefixed repository: ${username}/${dotRepo.name}`);
 
@@ -148,14 +148,15 @@ async function testFix() {
 2. Gracefully handles dot-prefixed repositories that cause GraphQL issues
 3. Uses REST API fallback for repositories that have issues with GraphQL
 4. Provides consistent behavior across all repository types`);
-    console.log(`\nTo fix the 403 errors with your GitHub token, update the service to use the GitHubClientWithFallback class.`);
-
+    console.log(
+      `\nTo fix the 403 errors with your GitHub token, update the service to use the GitHubClientWithFallback class.`
+    );
   } catch (error) {
     console.error(`Error in test:`, error);
   }
 }
 
 // Run the test
-testFix().catch(error => {
+testFix().catch((error) => {
   console.error("Top-level error in test:", error);
 });

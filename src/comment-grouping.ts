@@ -8,7 +8,7 @@ import { isGitHubBot } from "./utils/github-utils";
 /**
  * Configuration options for comment grouping
  */
- interface CommentGroupingOptions {
+interface CommentGroupingOptions {
   /** Whether to enable comment grouping (default: true) */
   enabled?: boolean;
 }
@@ -132,7 +132,7 @@ export function detectConsecutiveComments(
   for (const group of groups) {
     // Only create group entries for comments that are part of multi-comment groups
     // and where the user is not a bot
-    if (group.commentIds.length > 1 && !isGitHubBot({login: group.user} as GitHubComment['user'])) {
+    if (group.commentIds.length > 1 && !isGitHubBot({ login: group.user } as GitHubComment["user"])) {
       for (const id of group.commentIds) {
         groupMap[String(id)] = group;
       }

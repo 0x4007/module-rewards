@@ -22,9 +22,9 @@ export async function testGithubToken(): Promise<boolean> {
     // Try to access the authenticated user endpoint
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!userResponse.ok) {
@@ -61,9 +61,11 @@ export function forceTokenInput(): void {
 }
 
 // Add these functions to window for testing from console
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).testGithubToken = testGithubToken;
   (window as any).forceTokenInput = forceTokenInput;
   (window as any).clearGitHubToken = clearGitHubToken;
-  console.log("GitHub token test functions added to window object. Try: testGithubToken(), forceTokenInput(), or clearGitHubToken()");
+  console.log(
+    "GitHub token test functions added to window object. Try: testGithubToken(), forceTokenInput(), or clearGitHubToken()"
+  );
 }

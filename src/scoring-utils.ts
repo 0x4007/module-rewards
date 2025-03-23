@@ -5,7 +5,7 @@ import { CommentScores } from "./types";
  * Counts words in a text, excluding code blocks, URLs, etc.
  * For slash commands (starting with '/') and bot comments, returns 0 to exclude them from scoring.
  */
-function countWords(text: string, isSlashCommand?: boolean, isBot?: boolean): number {
+export function countWords(text: string, isSlashCommand?: boolean, isBot?: boolean): number {
   // Skip if text is empty
   if (!text || typeof text !== "string") return 0;
 
@@ -67,7 +67,7 @@ export function calculateAllScores(
       exponential: calculateExponentialScore(individualWordCount),
       isGrouped: false,
       isSlashCommand, // Include the flag in the returned object
-      isBot,          // Include the flag in the returned object
+      isBot, // Include the flag in the returned object
     };
   }
 
@@ -82,7 +82,7 @@ export function calculateAllScores(
     groupWordCount,
     isGrouped: true,
     isSlashCommand, // Include the flag in the returned object
-    isBot,          // Include the flag in the returned object
+    isBot, // Include the flag in the returned object
   };
 }
 
