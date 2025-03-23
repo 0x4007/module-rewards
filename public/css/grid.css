@@ -32,7 +32,7 @@ background > :nth-child(2) {
 }
 @keyframes background-gradients-fade-in {
   to {
-    opacity: 0.125;
+    opacity: 0.25;
   }
 }
 @keyframes background-grid-fade-in {

@@ -4,6 +4,14 @@ console.log('🔨 Build process starting...');
 
 const BUILD_TIMEOUT = 10000; // 10 seconds
 
+// Set environment if not already set
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
+}
+
+// Log build mode
+console.log(`Building for ${process.env.NODE_ENV} environment`);
+
 // Handle unexpected errors
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled promise rejection in build:', err);
@@ -24,6 +32,9 @@ const buildPromise = new Promise(async (resolve, reject) => {
       sourcemap: process.env.NODE_ENV !== 'production' ? 'inline' : false,
       minify: process.env.NODE_ENV === 'production',
       external: ['marked'],
+      define: {
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+      },
     }).then(result => {
       if (!result.success) {
         throw new Error(`Build failed: ${result.logs}`);
