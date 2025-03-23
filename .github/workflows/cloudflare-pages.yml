@@ -1,15 +1,17 @@
 name: Deploy to Cloudflare Pages
 
 on:
+  # Only run on push to main branch (for production)
   push:
-    branches: ['**']
+    branches: ['main']
+  # For all other branches, only run on PR events
   pull_request:
     types: [opened, synchronize]
 
 # Prevent concurrent deployments on same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -114,7 +116,7 @@ jobs:
             exit 1
           fi
 
-      - name: Create deployment status
+      - name: Create deployment
         if: success()
         uses: actions/github-script@v7
         with:
@@ -122,11 +124,29 @@ jobs:
             const deployType = context.ref === 'refs/heads/main' ? 'Production' : 'Preview'
             const url = process.env.DEPLOYMENT_URL
 
-            await github.rest.repos.createDeploymentStatus({
+            // First create a deployment
+            const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              deployment_id: context.payload.deployment ? context.payload.deployment.id : null,
-              state: 'success',
-              environment_url: url,
-              description: `${deployType} deployment completed`
-            })
+              ref: context.ref,
+              environment: deployType.toLowerCase(),
+              auto_merge: false,
+              required_contexts: [],
+              description: `${deployType} deployment to Cloudflare Pages`
+            });
+
+            // Then create a success status for that deployment
+            if (deployment && deployment.data) {
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deployment.data.id,
+                state: 'success',
+                environment_url: url,
+                description: `${deployType} deployment completed successfully`
+              });
+
+              console.log(`Created successful deployment status for deployment ${deployment.data.id}`);
+            } else {
+              console.log('Failed to create deployment - could not create status');
+            }
