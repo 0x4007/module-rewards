@@ -150,16 +150,39 @@
             if (window.opener) {
               // Try to tell the opener window that a new token is available
               try {
+                // Try direct method call first
                 if (window.opener.notifyTokenUpdated) {
                   window.opener.notifyTokenUpdated(token);
                 }
+
+                // Also send via postMessage for more reliable cross-window communication
+                window.opener.postMessage({
+                  type: 'github_token_updated',
+                  token: token.substring(0, 4) + '...' // Only send first few chars for logging
+                }, window.location.origin);
+
+                console.log('Token update notification sent to parent window');
               } catch (err) {
                 console.log('Could not call window.opener method:', err);
               }
 
-              window.opener.location.reload();
-              window.close();
+              // Add a small delay to ensure the message is processed
+              setTimeout(() => {
+                try {
+                  // Try to trigger the handler directly if possible
+                  if (window.opener.handleTokenUpdate) {
+                    window.opener.handleTokenUpdate();
+                  }
+                } catch (e) {
+                  console.log('Could not call handleTokenUpdate directly:', e);
+                }
+
+                // Finally reload and close
+                window.opener.location.reload();
+                window.close();
+              }, 250);
             } else {
+              // If not opened as popup, just redirect
               window.location.href = window.location.origin;
             }
           } else {
