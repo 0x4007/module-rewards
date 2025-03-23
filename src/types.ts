@@ -1,5 +1,5 @@
 // GitHub API Types
- interface GitHubIssue {
+export interface GitHubIssue {
   number: number;
   title: string;
   user: GitHubUser;
@@ -14,6 +14,7 @@ export interface GitHubUser {
   login: string;
   html_url: string;
   avatar_url: string;
+  type?: string;  // 'User' or 'Bot' or 'Organization'
 }
 
 export interface GitHubComment {
@@ -29,7 +30,7 @@ export interface GitHubComment {
   pull_request_url?: string; // For PR comments
 }
 
- interface GitHubReview {
+export interface GitHubReview {
   id: number;
   user: GitHubUser;
   body: string;
@@ -40,7 +41,7 @@ export interface GitHubComment {
   pull_request_url: string;
 }
 
- interface GitHubPR {
+export interface GitHubPR {
   number: number;
   title: string;
   user: GitHubUser;
@@ -56,7 +57,7 @@ export interface GitHubComment {
 }
 
 // Application Types
- interface UrlParseResult {
+export interface UrlParseResult {
   owner: string;
   repo: string;
   number: string;
@@ -75,7 +76,7 @@ export interface LinkedIssue {
   };
 }
 
- interface LinkedPullRequest {
+export interface LinkedPullRequest {
   id?: string;
   number: number;
   title: string;
@@ -98,7 +99,7 @@ export interface LinkedIssue {
   comments?: GitHubComment[];
 }
 
- interface FetchedData {
+export interface FetchedData {
   details: GitHubPR | GitHubIssue;
   comments: GitHubComment[];
   type: "pr" | "issue";
@@ -115,7 +116,7 @@ export interface CommentScores {
   groupWordCount?: number;
 }
 
- interface ScoringMetrics {
+export interface ScoringMetrics {
   original: number[];
   logAdjusted: number[];
   exponential: number[];

@@ -5,55 +5,11 @@
 import { CommentGroupMap, detectConsecutiveComments } from "../comment-grouping";
 import { calculateGroupAwareScores } from "../scoring-utils";
 import { CommentScores, GitHubComment } from "../types";
+import { isGitHubBot } from "../utils/github-utils";
 
 // Export the scoreMap for use by other components
 export const scoreMap = new Map<number, CommentScores>();
 
-/**
- * Common bot usernames to detect
- */
-const COMMON_BOT_NAMES = [
-  "dependabot",
-  "renovate",
-  "github-actions",
-  "codecov",
-  "stale",
-  "imgbot",
-  "semantic-release",
-  "netlify",
-  "allcontributors",
-  "now",
-  "vercel",
-  "snyk",
-];
-
-/**
- * Determines if a username belongs to a bot
- */
-function isBotUsername(username?: string): boolean {
-  if (!username) return false;
-
-  // Check for standard [bot] suffix
-  if (username.endsWith("[bot]")) return true;
-
-  // Check against list of common bot names
-  return COMMON_BOT_NAMES.some((botName) => username.toLowerCase().includes(botName.toLowerCase()));
-}
-
-/**
- * Check if a user object represents a bot
- */
-function isBotUser(user?: { login?: string; type?: string }): boolean {
-  if (!user) return false;
-
-  // Check username pattern
-  if (isBotUsername(user.login)) return true;
-
-  // Check GitHub user type
-  if (user.type === "Bot") return true;
-
-  return false;
-}
 
  interface CommentDisplayOptions {
   containerSelector: string;
@@ -162,7 +118,7 @@ function renderComment(
       }
 
       // Add bot comment styling (check for bot indicators in username)
-      if (comment.user?.login?.endsWith("[bot]") || isBotUsername(comment.user?.login)) {
+      if (isGitHubBot(comment.user)) {
         commentElement.classList.add("bot-comment", "badge-base");
       }
     }
@@ -312,7 +268,7 @@ export function renderComments(
       // For comments not in a group, calculate scores normally
       // Check for special comment types
       const isSlashCommand = comment.body.trim().startsWith("/");
-      const isBot = isBotUser(comment.user);
+      const isBot = isGitHubBot(comment.user);
       commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
 
       // Store scores in the map

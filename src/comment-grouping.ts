@@ -3,6 +3,7 @@
  * This helps with scoring calculations to prevent gaming the system with multiple short comments
  */
 import { GitHubComment } from "./types";
+import { isGitHubBot } from "./utils/github-utils";
 
 /**
  * Configuration options for comment grouping
@@ -74,8 +75,8 @@ export function detectConsecutiveComments(
   let currentGroup: CommentGroup | null = null;
 
   for (const comment of sortedComments) {
-    // Skip comments without a user or body
-    if (!comment.user?.login || !comment.body) {
+    // Skip comments without a user or body, or if from a bot
+    if (!comment.user?.login || !comment.body || isGitHubBot(comment.user)) {
       continue;
     }
 
@@ -87,8 +88,9 @@ export function detectConsecutiveComments(
     // Check if this comment continues the current group (same user and same source)
     const isSameUser = currentGroup && currentGroup.user === currentUser;
     const isSameSource = currentGroup && currentGroup.source === commentSource;
+    const isCurrentOrNextBot = isGitHubBot(comment.user);
 
-    if (isSameUser && isSameSource && currentGroup) {
+    if (isSameUser && isSameSource && currentGroup && !isCurrentOrNextBot) {
       // Continue the current group
       currentGroup.commentIds.push(comment.id);
       currentGroup.combinedText += "\n\n" + comment.body;
@@ -110,12 +112,13 @@ export function detectConsecutiveComments(
 
   // Map each comment ID to its group
   for (const group of groups) {
-    // Only create group entries for comments that are part of multi-comment groups
-    if (group.commentIds.length > 1) {
-      for (const id of group.commentIds) {
-        groupMap[String(id)] = group;
-      }
+  // Only create group entries for comments that are part of multi-comment groups
+  // and where the user is not a bot
+  if (group.commentIds.length > 1 && !isGitHubBot({login: group.user} as GitHubComment['user'])) {
+    for (const id of group.commentIds) {
+      groupMap[String(id)] = group;
     }
+  }
   }
 
   return groupMap;
