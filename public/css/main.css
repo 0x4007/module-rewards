@@ -46,7 +46,6 @@
 * {
   font-family: var(--font-family);
   box-sizing: border-box;
-  /* font-size: 16px; */
 }
 
 body {
@@ -70,9 +69,7 @@ header {
 }
 
 footer {
-  /* margin-top: 3rem; */
   padding-top: 1rem;
-  /* border-top: 1px solid var(--border); */
   color: var(--text-light);
   font-size: 0.9rem;
   text-align: center;
@@ -117,18 +114,14 @@ footer {
 
 /* ========== LAYOUT & CONTENT STRUCTURE ========== */
 
-/* Two-column layout styles */
 .content-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  /* margin-top: 2rem; */
-  /* width: 100%; */
   gap: 8px;
 }
 
 .column {
   border-radius: 4px;
-  /* max-width: 50%; */
 }
 
 .column h2 {
@@ -140,15 +133,13 @@ footer {
 }
 
 .conversation {
-  /* overflow-y: auto; */
-  /* padding-right: 0.5rem; */
 }
 
 #details {
   margin-bottom: 1.5rem;
+  padding: 16px;
   backdrop-filter: blur(24px);
   background-color: #80808010;
-  padding: 16px;
 }
 
 .title {
@@ -157,8 +148,6 @@ footer {
 }
 
 .meta {
-  /* color: var(--text-light); */
-  /* font-size: 0.9rem; */
   color: #808080;
 }
 
@@ -168,7 +157,6 @@ footer {
 }
 
 .meta strong {
-  /* color: var(--primary); */
   font-weight: 600;
 }
 
@@ -176,7 +164,6 @@ footer {
 
 .loading-indicator {
   padding: 0.5rem 1rem;
-  /* background: var(--hover); */
   border-radius: 4px;
   margin: 1rem 0;
   backdrop-filter: blur(24px);
@@ -195,7 +182,6 @@ footer {
   display: none;
 }
 
-/* Section loading indicators */
 .section-loading-indicator {
   display: flex;
   justify-content: center;
@@ -245,7 +231,6 @@ footer {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Animations */
 @keyframes ellipsis-animation {
   0% { content: "."; }
   33% { content: ".."; }
@@ -258,12 +243,11 @@ footer {
   border-radius: 4px;
   margin-bottom: 8px;
   padding: 8px 16px;
-  background: #80808010;
   position: relative;
   backdrop-filter: blur(24px);
+  background-color: #80808010;
 }
 
-/* Styles for grouped comments (consecutive comments from the same user) */
 .grouped-comment {
   border-left: 3px solid var(--error);
   background-color: rgba(255, 68, 68, 0.05);
@@ -273,7 +257,6 @@ footer {
   opacity: 0.8;
 }
 
-/* Shared badge styles */
 .badge-base::after {
   display: inline-block;
   font-size: 11px;
@@ -281,14 +264,9 @@ footer {
   padding: 0px 8px;
   border-radius: 3px;
   position: absolute;
-  /* right: 8px; */
-  /* top: 24px; */
-  /* margin: 8px 16px; */
-  /* opacity: 0.75; */
   bottom: 12px;
 }
 
-/* Grouped comment styles */
 .grouped-comment::after {
   content: "Double Post";
   background-color: var(--error);
@@ -303,7 +281,6 @@ footer {
   opacity: 0.5;
 }
 
-/* Slash command styles */
 .slash-command::after {
   content: "Slash Command";
   background-color: var(--primary);
@@ -318,7 +295,6 @@ footer {
   opacity: 0.5;
 }
 
-/* Bot comment styles */
 .bot-comment::after {
   content: "Bot";
   background-color: var(--success);
@@ -338,7 +314,6 @@ footer {
   height: 32px;
   border-radius: 4px;
   vertical-align: middle;
-  /* float: left; */
 }
 
 .comment-header .user-info {
@@ -364,7 +339,6 @@ footer {
   font-size: 12px;
   color: var(--text-light);
   margin-left: 4px;
-  /* float: right; */
   text-decoration: none;
   position: absolute;
   right: 24px;
@@ -374,7 +348,6 @@ footer {
   overflow-wrap: break-word;
   line-height: 1.5;
   color: var(--text);
-  /* margin-bottom: 1rem; */
 }
 
 /* Markdown styling */
@@ -409,7 +382,6 @@ footer {
   padding: 2px 4px;
   border-radius: 3px;
   font-family: monospace;
-  /* font-size: 16px; */
 }
 
 .comment-body blockquote {
@@ -467,10 +439,9 @@ footer {
   font-weight: 600;
   margin-bottom: 16px;
   padding: 16px;
-  /* border-bottom: 1px solid var(--border); */
-  background-color: #80808010;
-  backdrop-filter: blur(24px);
   justify-content: center;
+  backdrop-filter: blur(24px);
+  background-color: #80808010;
 }
 
 .conversation-header svg {
@@ -483,15 +454,11 @@ footer {
   gap: 8px;
   color: var(--text-light);
   padding: 16px;
-  /* border: 1px dashed var(--border); */
   border-radius: 6px;
-  /* margin: 16px 0; */
   min-width: 160px;
-  /* text-align: center; */
-  /* text-align: center; */
+  justify-content: center;
   backdrop-filter: blur(24px);
   background-color: #80808010;
-  justify-content: center;
 }
 
 .empty-state svg {
@@ -501,25 +468,10 @@ footer {
 /* ========== SCORE DISPLAY ========== */
 
 .comment-scores {
-  /* padding: 10px 15px; */
-  /* display: flex; */
-  /* flex-wrap: wrap; */
   gap: 15px;
   font-size: 12px;
   color: var(--text-light);
-  /* align-items: end; */
-  /* text-align: center; */
-  /* display: inline-block; */
-  /* float: left; */
-  /* opacity: 0.5; */
   text-align: right;
-}
-
-.group-info {
-  /* background-color: var(--error); */
-  /* padding: 2px 6px; */
-  /* border-radius: 12px; */
-  /* margin-top: 4px; */
 }
 
 .group-indicator {
@@ -530,27 +482,22 @@ footer {
 .score-info {
   display: inline-block;
   align-items: center;
-  /* margin-left: 12px; */
   opacity: 0.66;
   padding: 4px 8px;
-  /* font-size: 12px; */
 }
 
 .score-label {
   font-weight: 600;
-  /* margin-right: 5px; */
   font-size: 12px;
 }
 
 .score-value {
-  /* padding: 2px 6px; */
   border-radius: 12px;
   color: var(--primary);
   font-weight: 600;
   font-size: 12px;
 }
 
-/* Add a little flair for high scores */
 .score-value[data-high-score="true"] {
   background-color: var(--success);
   color: var(--bg);
@@ -560,57 +507,38 @@ footer {
 /* ========== SCORE SUMMARY STYLES ========== */
 
 .score-summary {
-  /* background-color: var(--hover); */
-  /* border: 1px solid var(--border); */
   border-radius: 4px;
-  /* padding: 1rem; */
-  /* margin-top: 1rem; */
-  /* margin-bottom: 2rem; */
 }
 
 .score-summary h3 {
-  /* margin-top: 0; */
   color: var(--text);
-  /* border-bottom: 1px solid var(--border); */
-  /* padding-bottom: 0.5rem; */
   font-size: 1.1rem;
   font-weight: 600;
   display: inline-block;
-  /* vertical-align: middle; */
 }
 
 .score-summary-table {
   width: 100%;
-  /* border-collapse: collapse; */
-  /* margin-top: 0.5rem; */
-  background-color: #80808010;
   border-radius: 4px;
   padding: 8px 16px;
-  /* backdrop-filter: blur(24px); */
-  /* float: right; */
-  /* display: inline-table; */
-  /* border: none; */
+  backdrop-filter: blur(24px);
+  background-color: #80808010;
 }
 
 .score-summary-table th,
 .score-summary-table td {
   text-align: left;
-  /* padding: 8px; */
-  /* border-bottom: 1px solid var(--border); */
   text-align: right;
   padding: 4px 12px;
-  /* border: none; */
 }
 
 .score-summary-table th {
-  /* background-color: var(--hover); */
   font-weight: 600;
   color: var(--text);
   text-align: center;
 }
 
 .score-summary-table th.sort-column {
-  /* background-color: var(--primary); */
   color: white;
   position: relative;
   background-color: #80808010;
@@ -624,13 +552,7 @@ footer {
 
 .score-summary-table td.sort-column-cell {
   font-weight: bold;
-  /* background-color: rgba(var(--primary-rgb, 0, 102, 204), 0.1); */
-  /* color: var(--primary); */
   background-color: #80808010;
-}
-
-.score-summary-table tr:nth-child(even) {
-  /* background-color: var(--hover); */
 }
 
 .contributor-cell {
@@ -731,57 +653,46 @@ footer {
   }
 }
 
-
 .score-info:hover {
-    opacity: 1;
+  opacity: 1;
 }
-
 
 .comment-header {
-    margin-bottom: 24px;
-    /* text-align: right; */
-}
-
-
-tr {
-    /* text-align: right; */
-    /* border: none; */
+  margin-bottom: 24px;
 }
 
 pre {
-    font-size: 12px;
+  font-size: 12px;
 }
 
 /* Dynamic state classes */
 .hidden-element {
-    opacity: 0;
+  opacity: 0;
 }
 
 .display-none {
-    display: none;
+  display: none;
 }
 
 .display-block {
-    display: block;
+  display: block;
 }
 
 /* Error message overlay */
 .error-message-overlay {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px;
-    background-color: var(--error);
-    color: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;
-    opacity: 1;
-    transition: opacity 0.3s ease-in-out;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px;
+  background-color: var(--error);
+  color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
 }
 
-
 div#score-summary-content {
-    /* display: inline-block; */
-    vertical-align: middle;
+  vertical-align: middle;
 }
