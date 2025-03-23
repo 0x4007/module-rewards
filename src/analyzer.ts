@@ -95,8 +95,33 @@ export async function analyze(inputUrl: string): Promise<void> {
     });
 
     // Display comments with sections
-    renderComments("pr", prComments, "#pr-conversation", calculateAllScores);
-    renderComments("issue", issueComments, "#issue-conversation", calculateAllScores);
+    let prTitle, prNumber, issueTitle, issueNumber;
+
+    // Extract title and number information for the header
+    if (type === 'pr') {
+      prTitle = data.details.title;
+      prNumber = data.details.number;
+      // If there's a linked issue, extract its info
+      if (data.linkedIssue) {
+        issueTitle = data.linkedIssue.title;
+        issueNumber = data.linkedIssue.number;
+      }
+    } else {
+      // It's an issue
+      issueTitle = data.details.title;
+      issueNumber = data.details.number;
+      // If there's a linked PR, extract its info
+      if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
+        const mainPR = data.linkedPullRequests[0];
+        prTitle = mainPR.title;
+        prNumber = mainPR.number;
+      }
+    }
+
+    renderComments("pr", prComments, "#pr-conversation", calculateAllScores,
+      prTitle ? { title: prTitle, number: prNumber } : undefined);
+    renderComments("issue", issueComments, "#issue-conversation", calculateAllScores,
+      issueTitle ? { title: issueTitle, number: issueNumber } : undefined);
 
     // Set content loaded state for UI
     uiStateManager.setContentLoaded("pr", prComments.length > 0);
@@ -192,9 +217,32 @@ async function backgroundRefresh(
         domManager.clearContent("issueConversation");
         domManager.clearContent("prConversation");
 
+        // Extract title and number information for the headers (for updates)
+        let prTitle, prNumber, issueTitle, issueNumber;
+
+        if (result.data.type === 'pr') {
+          prTitle = result.data.details.title;
+          prNumber = result.data.details.number;
+          if (result.data.linkedIssue) {
+            issueTitle = result.data.linkedIssue.title;
+            issueNumber = result.data.linkedIssue.number;
+          }
+        } else {
+          // It's an issue
+          issueTitle = result.data.details.title;
+          issueNumber = result.data.details.number;
+          if (result.data.linkedPullRequests && result.data.linkedPullRequests.length > 0) {
+            const mainPR = result.data.linkedPullRequests[0];
+            prTitle = mainPR.title;
+            prNumber = mainPR.number;
+          }
+        }
+
         // Display updated comments
-        renderComments("pr", prComments, "#pr-conversation", calculateAllScores);
-        renderComments("issue", issueComments, "#issue-conversation", calculateAllScores);
+        renderComments("pr", prComments, "#pr-conversation", calculateAllScores,
+          prTitle ? { title: prTitle, number: prNumber } : undefined);
+        renderComments("issue", issueComments, "#issue-conversation", calculateAllScores,
+          issueTitle ? { title: issueTitle, number: issueNumber } : undefined);
 
         // Update UI state
         uiStateManager.setContentLoaded("pr", prComments.length > 0);

@@ -403,12 +403,15 @@ footer {
   position: absolute;
   right: 16px;
   color: #ffffffbf;
+  line-height: 2;
+  white-space: nowrap;
 }
 
 .comment-body {
   overflow-wrap: break-word;
   line-height: 1.5;
   color: var(--text);
+  padding: 12px 0;
 }
 
 /* Markdown styling */
@@ -748,7 +751,8 @@ footer {
 }
 
 .comment-header {
-  margin-bottom: 24px;
+  /* margin-bottom: 12px; */
+  /* border-bottom: 1px solid transparent; */
 }
 
 pre {
@@ -810,4 +814,19 @@ hr {
 
 p {
     margin: auto;
+}
+
+
+summary {
+    /* display: inline-block; */
+    /* width: 12px; */
+}
+
+::marker {
+    display: inline-block;
+    position: absolute;
+}
+
+b > * {
+    display: inline-block;
 }
