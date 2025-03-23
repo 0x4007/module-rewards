@@ -18,8 +18,7 @@ export async function analyze(inputUrl: string): Promise<void> {
     return;
   }
 
-  // Show global loading state
-  domManager.show("loadingIndicator");
+  // Initialize UI components
 
   // Initialize UI state manager with containers
   uiStateManager.registerContainer("issue", domManager.get("issueConversation"));
@@ -135,7 +134,7 @@ export async function analyze(inputUrl: string): Promise<void> {
     uiStateManager.setError("pr", error instanceof Error ? error.message : String(error));
     showError(error instanceof Error ? error.message : String(error));
   } finally {
-    domManager.hide("loadingIndicator");
+    // Analysis complete
   }
 }
 

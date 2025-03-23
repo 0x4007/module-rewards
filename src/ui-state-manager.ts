@@ -90,7 +90,6 @@ class UIStateManager {
 
     // Show loading indicator only when loading and no content yet
     loadingEl.classList.toggle("display-none", !state.isLoading);
-    loadingEl.classList.toggle("display-block", state.isLoading);
 
     // If there's an error, show it
     if (state.error && !state.hasContent) {

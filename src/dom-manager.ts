@@ -8,7 +8,6 @@ interface DOMElements {
   urlInput: HTMLInputElement;
   analyzeBtn: HTMLButtonElement;
   analyzeForm: HTMLFormElement;
-  loadingIndicator: HTMLElement;
   errorMessage: HTMLElement;
   scoreSummary: HTMLElement;
   scoreSummaryContent: HTMLElement;
@@ -31,7 +30,6 @@ class DOMManager {
         urlInput: document.getElementById("url-input") as HTMLInputElement,
         analyzeBtn: document.getElementById("analyze-btn") as HTMLButtonElement,
         analyzeForm: document.getElementById("analyze-form") as HTMLFormElement,
-        loadingIndicator: document.getElementById("loading-indicator") as HTMLElement,
         errorMessage: document.getElementById("error-message") as HTMLElement,
         scoreSummary: document.getElementById("score-summary") as HTMLElement,
         scoreSummaryContent: document.getElementById("score-summary-content") as HTMLElement,

@@ -63,6 +63,7 @@ body {
   margin: 0 auto;
   font-size: 16px;
   overflow-x: visible; /* Allow content-columns to overflow */
+  max-width: 1280px;
 }
 
 h1 {
@@ -78,8 +79,6 @@ header {
   margin-bottom: 4px;
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
-  border-left: none;
-  border-right: none;
   text-align: center;
 }
 
@@ -95,8 +94,6 @@ footer {
   backdrop-filter: blur(12px);
   border: 1px solid #ffffff10;
   padding: 16px 0;
-  border-left: none;
-  border-right: none;
   /* background-color: rgba(0, 0, 0, 0.7); */ /* Semi-transparent background */
 }
 
@@ -160,8 +157,8 @@ footer {
 .column {
   border-radius: 4px;
   flex: 0 0 auto; /* Don't allow shrinking */
-  width: 540px; /* Fixed width for columns */
-  max-width: 90vw; /* Maximum width on smaller screens */
+  /* width: 640px; */ /* Fixed width for columns */
+  max-width: 638px; /* Maximum width on smaller screens */
   min-width: 280px; /* Minimum width */
 }
 
@@ -182,15 +179,6 @@ footer {
 
 /* ========== STATUS INDICATORS ========== */
 
-.loading-indicator {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  margin: 1rem 0;
-  backdrop-filter: blur(12px);
-  background-color: #00000040;
-  border:1px solid #ffffff10;
-}
-
 .error-message {
   padding: 0.5rem 1rem;
   background: var(--hover);
@@ -207,12 +195,12 @@ footer {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 30px;
+  padding: 16px;
   color: var(--text-light);
-  border-radius: 6px;
-  margin: 15px 0;
+  border-radius: 4px;
+  /* margin: 15px 0; */
   backdrop-filter: blur(12px);
-  background-color: #00000040;
+  /* background-color: #00000040; */
   border:1px solid #ffffff10;
 }
 
@@ -514,6 +502,7 @@ footer {
   border:1px solid #ffffff10;
   margin: 4px auto;
   vertical-align: middle;
+  user-select: none;
 }
 
 .empty-state svg {
@@ -577,8 +566,6 @@ footer {
 .score-summary {
   border-radius: 4px;
   border: 1px solid #ffffff10;
-  border-left: none;
-  border-right: none;
 }
 
 .score-summary h3 {
@@ -760,7 +747,7 @@ pre {
 }
 
 .display-block {
-  display: block;
+  /* display: block; */
 }
 
 /* Error message overlay */
