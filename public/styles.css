@@ -215,23 +215,74 @@ body {
   border-bottom: none;
 }
 
-/* Update notification */
-.update-notification {
+/* Update notification container */
+.notification-container {
   position: fixed;
-  bottom: 1rem;
   right: 1rem;
-  padding: 0.5rem 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+/* Notification styles */
+.update-notification {
+  position: relative;
+  padding: 0.75rem 1.25rem;
+  margin-top: 0.5rem;
   background-color: #0366d6;
   color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(3, 102, 214, 0.3);
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  min-width: 200px;
+  transform-origin: right bottom;
+  pointer-events: auto;
+}
+
+/* Success variant */
+.update-notification.success {
+  background-color: #2ea44f;
+  box-shadow: 0 2px 8px rgba(46, 164, 79, 0.3);
+}
+
+/* Notification states */
+.update-notification[style*="opacity: 1"] {
+  transform: translateX(0) scale(1);
+}
+
+.update-notification[style*="opacity: 0"] {
+  transform: translateX(100%) scale(0.95);
+}
+
+/* Animation for stacking notifications */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.update-notification.new {
+  animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .results-container {
     flex-direction: column;
+  }
+
+  .notification-container {
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .update-notification {
+    width: 100%;
   }
 }

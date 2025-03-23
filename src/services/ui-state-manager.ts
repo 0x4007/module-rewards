@@ -14,7 +14,10 @@ class UIStateManager {
   private loadingContainers: Record<string, HTMLElement | null> = {};
   private loadingElements: Record<string, HTMLElement | null> = {};
   private noContentElements: Record<string, HTMLElement | null> = {};
-  private activeNotifications: HTMLElement[] = [];
+  private activeNotifications: UIComponent[] = [];
+  private readonly MAX_NOTIFICATIONS = 3;
+  private readonly NOTIFICATION_DURATION = 3000;
+  private readonly FADE_DURATION = 300;
 
   /**
    * Register a container for a section
@@ -221,9 +224,6 @@ class UIStateManager {
   }
 
   /**
-   * Show a notification when content is updated
-   */
-  /**
    * UI Component Factory Methods
    */
   private createComponent(options: {
@@ -251,45 +251,67 @@ class UIStateManager {
     };
   }
 
-  private createNotification(message: string): UIComponent {
+  private notificationContainer: HTMLElement | null = null;
+
+  private ensureNotificationContainer(): void {
+    if (!this.notificationContainer) {
+      const container = document.createElement("div");
+      container.className = "notification-container";
+      document.body.appendChild(container);
+      this.notificationContainer = container;
+    }
+  }
+
+  private createNotification(message: string, type: "info" | "success" = "info"): UIComponent {
+    this.ensureNotificationContainer();
+
     const notification = this.createComponent({
       type: "notification",
-      className: "update-notification",
+      className: `update-notification ${type}`,
       text: message
     });
 
-    document.body.appendChild(notification.element);
-    this.activeNotifications.push(notification.element);
+    notification.element.classList.add("new");
 
-    // Clean up old notifications if there are too many
-    while (this.activeNotifications.length > 3) {
+    // Add to active notifications and handle cleanup
+    this.activeNotifications.push(notification);
+    while (this.activeNotifications.length > this.MAX_NOTIFICATIONS) {
       const oldNotification = this.activeNotifications.shift();
-      oldNotification?.remove();
+      oldNotification?.element.remove();
     }
 
     return notification;
   }
 
   /**
-   * Show a notification when content is updated
+   * Show a notification with optional type and duration
    */
-  public notifyContentUpdated(): void {
-    const notification = this.createNotification("Content updated with latest data");
+  public notify(message: string, options?: { type?: "info" | "success"; duration?: number }): void {
+    const notification = this.createNotification(message, options?.type);
+    const duration = options?.duration || this.NOTIFICATION_DURATION;
 
-    // Fade in
-    setTimeout(() => notification.show(), 0);
+    // Add to DOM and show
+    this.notificationContainer?.appendChild(notification.element);
+    requestAnimationFrame(() => notification.show());
 
-    // Fade out and remove after 3 seconds
+    // Schedule removal
     setTimeout(() => {
       notification.hide();
       setTimeout(() => {
         notification.remove();
-        const index = this.activeNotifications.indexOf(notification.element);
+        const index = this.activeNotifications.indexOf(notification);
         if (index > -1) {
           this.activeNotifications.splice(index, 1);
         }
-      }, 300);
-    }, 3000);
+      }, this.FADE_DURATION);
+    }, duration);
+  }
+
+  /**
+   * Show a notification when content is updated
+   */
+  public notifyContentUpdated(): void {
+    this.notify("Content updated with latest data", { type: "success" });
   }
 }
 

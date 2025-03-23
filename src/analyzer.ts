@@ -5,6 +5,7 @@
 import { renderComments } from "./components/comment-component";
 import { renderScoreSummary } from "./components/score-summary-component";
 import { domManager } from "./dom-manager";
+import { getCorrectGitHubUrl } from "./github/browser-utils";
 import { githubApiService } from "./services/github-api-service";
 import { uiStateManager } from "./services/ui-state-manager";
 import { GitHubComment } from "./types";
@@ -95,14 +96,32 @@ export async function analyze(url: string): Promise<void> {
 
     console.log("Starting analysis for URL:", url);
 
-    // Parse GitHub URL (client-side validation before sending to server)
-    const parsedUrl = githubApiService.parseUrl(url);
+    // Parse and validate URL, checking if it's actually a PR vs Issue
+    let parsedUrl = githubApiService.parseUrl(url);
     if (!parsedUrl) {
       domManager.showError("Invalid GitHub URL format");
       return;
     }
 
-    console.log("Parsed GitHub URL:", parsedUrl);
+    // Check if URL points to correct type (PR vs Issue)
+    const correctUrl = await getCorrectGitHubUrl(url);
+    if (correctUrl !== url) {
+      console.log("URL type corrected:", correctUrl);
+      const newParsed = githubApiService.parseUrl(correctUrl);
+      if (!newParsed) {
+        domManager.showError("Failed to parse corrected URL");
+        return;
+      }
+      // Update both URL and parsed info
+      url = correctUrl;
+      parsedUrl = newParsed;
+      uiStateManager.notify(`Type corrected: This is actually a ${parsedUrl.type === "pr" ? "Pull Request" : "Issue"}`, {
+        type: "info"
+      });
+      console.log("Using corrected URL:", url, "of type:", parsedUrl.type);
+    } else {
+      console.log("URL verified as:", parsedUrl.type);
+    }
 
     // Clear previous content
     domManager.clearContent("prConversation");
@@ -142,9 +161,8 @@ export async function analyze(url: string): Promise<void> {
       uiStateManager.startLoading("issue");
     }
 
-    // If we have no data at all, fetch immediately
-    if (!initialData) {
-      console.log("No cached data, fetching...");
+    // Function to fetch data from server
+    async function fetchFromServer(useCache: boolean = false) {
       try {
         const response = await fetch(API_ENDPOINTS.ANALYZE, {
           method: "POST",
@@ -153,7 +171,10 @@ export async function analyze(url: string): Promise<void> {
           },
           body: JSON.stringify({
             url,
-            forceGitHub: true
+            type: parsedUrl?.type || "issue",
+            forceGitHub: !useCache,
+            verifyType: true,
+            useCache
           })
         });
 
@@ -161,66 +182,50 @@ export async function analyze(url: string): Promise<void> {
           throw new Error(`Server error: ${response.status}`);
         }
 
-        const data = await response.json() as ServerAnalysisResponse;
+        return await response.json() as ServerAnalysisResponse;
+      } catch (error) {
+        console.warn("Server fetch failed:", error);
+        return null;
+      }
+    }
+
+    // Initial fetch if no cached data
+    if (!initialData) {
+      console.log("No cached data, fetching...");
+      try {
+        const data = await fetchFromServer(false);
+        if (!data) {
+          throw new Error("Failed to fetch data");
+        }
+
         const hash = generateContentHash(data);
         localStorage.setItem(`${url}-hash`, hash);
         localStorage.setItem(`${url}-data`, JSON.stringify(data));
         localStorage.setItem(`${url}-lastCheck`, Date.now().toString());
-
         await renderData(data);
       } catch (error) {
-        console.warn("Data fetch failed:", error);
+        console.warn("Initial fetch failed:", error);
         throw error;
       } finally {
         uiStateManager.stopLoading("pr");
         uiStateManager.stopLoading("issue");
       }
     } else if (needsRefresh(url)) {
-      // We have data but it's stale - check for updates after a delay
+      // Check for updates after a delay if data is stale
       console.log("Will check for updates in background...");
       setTimeout(async () => {
-        try {
-          // Try cache API and fresh GitHub data in parallel
-          const [cachedData, freshData] = await Promise.all([
-          // Try server cache
-          fetch(API_ENDPOINTS.ANALYZE, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              url,
-              useCache: true
-            })
-          }).then(r => r.json()).catch(() => null),
+        const freshData = await fetchFromServer(false);
+        if (!freshData) return;
 
-            // Fresh GitHub data
-            fetch(API_ENDPOINTS.ANALYZE, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                url,
-                forceGitHub: true
-              })
-            }).then(r => r.json()).catch(() => null)
-          ]);
+        const freshHash = generateContentHash(freshData);
+        const currentHash = localStorage.getItem(`${url}-hash`);
 
-          if (freshData) {
-            const freshHash = generateContentHash(freshData);
-            const currentHash = localStorage.getItem(`${url}-hash`);
-
-            if (currentHash !== freshHash) {
-              await renderData(freshData);
-              uiStateManager.notifyContentUpdated();
-              localStorage.setItem(`${url}-hash`, freshHash);
-              localStorage.setItem(`${url}-data`, JSON.stringify(freshData));
-              localStorage.setItem(`${url}-lastCheck`, Date.now().toString());
-            }
-          }
-        } catch (error) {
-          console.warn("Background refresh failed:", error);
+        if (currentHash !== freshHash) {
+          await renderData(freshData);
+          uiStateManager.notify("Content updated with latest changes", { type: "success" });
+          localStorage.setItem(`${url}-hash`, freshHash);
+          localStorage.setItem(`${url}-data`, JSON.stringify(freshData));
+          localStorage.setItem(`${url}-lastCheck`, Date.now().toString());
         }
       }, 2000); // Check after 2 seconds
     }
