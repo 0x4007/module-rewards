@@ -6,16 +6,25 @@
   "scripts": {
     "dev": "bun run build/dev.ts",
     "build": "bun run build/build.ts",
-    "start": "bun run src/server.ts"
+    "start": "bun run src/server.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "example:readability": "bun src/examples/readability-test.ts",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "knip": "knip"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "esbuild": "^0.20.0",
+    "knip": "5.46.0",
+    "prettier": "3.5.3",
     "typescript": "^5.0.0"
   },
   "dependencies": {
     "@types/ws": "^8.18.0",
     "marked": "^9.0.0",
+    "text-readability": "^1.1.1",
     "ws": "^8.18.1"
   }
 }

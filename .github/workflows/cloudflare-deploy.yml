@@ -1,0 +1,54 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  pull-requests: write
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run build
+
+      - name: Deploy to Cloudflare Pages
+        id: cloudflare
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: module-rewards
+          directory: build/public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request Comment
+        if: success()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ## 🚀 Cloudflare Pages Preview
+
+            Your changes have been deployed to: ${{ steps.cloudflare.outputs.url }}
+
+            Visit the URL to preview your changes.
+          comment_tag: cloudflare-deployment
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          create_if_not_exists: true
