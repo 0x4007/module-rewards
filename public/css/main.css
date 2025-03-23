@@ -27,7 +27,6 @@
   --error: #ff4444;
   --success: #00aa55;
   --font-family: "Ubiquity Nova", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --footer-height: 53px; /* Height of the footer including padding and border */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,20 +53,16 @@ html, body {
   overflow-x: hidden; /* Prevent horizontal scrollbar on body */
   width: 100%;
   position: relative;
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   line-height: 1.6;
   color: var(--text);
   background: #000;
-  /* max-width: 1200px; */
   margin: 0 auto;
-  /* padding: 2rem; */
   font-size: 16px;
   overflow-x: visible; /* Allow content-columns to overflow */
-  /* Add padding to the bottom to account for the fixed footer */
-  padding-bottom: var(--footer-height);
 }
 
 h1 {
@@ -88,12 +83,12 @@ header {
   text-align: center;
 }
 
+main {
+  /* No special positioning - just let it flow naturally */
+}
+
 footer {
-  /* Fixed footer that stays at the bottom of the viewport */
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  /* Normal document flow - will only be visible when scrolled to the bottom */
   color: var(--text-light);
   font-size: 0.9rem;
   text-align: center;
@@ -160,7 +155,6 @@ footer {
   justify-content: center;
   position: relative; /* Ensure proper stacking context */
   left: 0; /* Ensure left alignment doesn't get cut off */
-  padding-bottom: 58px;
 }
 
 .column {
@@ -285,6 +279,7 @@ footer {
   backdrop-filter: blur(12px);
   background-color: #00000040;
   border:1px solid #ffffff10;
+  overflow: scroll;
 }
 
 .grouped-comment {
@@ -839,3 +834,6 @@ h6 {
     text-overflow: ellipsis;
     overflow: hidden;
 }
+
+
+details {cursor: pointer;}
