@@ -1,5 +1,6 @@
 /**
- * Data Processor - Processes GitHub API data into display-ready format
+ * Server-side Data Processor
+ * Processes GitHub API data into display-ready format
  */
 import { GitHubComment } from "../types";
 import { FetchedData, LinkedPullRequest } from "./github-api-service";
@@ -15,13 +16,7 @@ export function processGitHubData(data: FetchedData): {
   prInfo?: string;
   issueInfo?: string;
 } {
-  // Detect environment consistently across the application
-  const inProduction = typeof window !== 'undefined' &&
-                      window.location.hostname !== "localhost" &&
-                      window.location.hostname !== "127.0.0.1";
-  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
-
-  console.log(`${envPrefix} Processing GitHub data, type: ${data.type}`);
+  console.log(`[SERVER] Processing GitHub data, type: ${data.type}`);
 
   // Initialize return values
   const prComments: GitHubComment[] = [];
@@ -42,13 +37,13 @@ export function processGitHubData(data: FetchedData): {
     if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
       const mainPR = data.linkedPullRequests[0];
       prInfo = `Linked PR #${mainPR.number}: ${mainPR.title}`;
-      console.log(`${envPrefix} Set PR info: ${prInfo}`);
+      console.log(`[SERVER] Set PR info: ${prInfo}`);
     } else {
-      console.log(`${envPrefix} No linked PRs found for issue #${data.details.number}`);
+      console.log(`[SERVER] No linked PRs found for issue #${data.details.number}`);
     }
   }
 
-  console.log(`${envPrefix} Processed ${prComments.length} PR comments and ${issueComments.length} issue comments`);
+  console.log(`[SERVER] Processed ${prComments.length} PR comments and ${issueComments.length} issue comments`);
   return { prComments, issueComments, prInfo, issueInfo };
 }
 
@@ -107,13 +102,7 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
  * Process and prepare Issue data for display
  */
 function processIssueView(data: FetchedData, prComments: GitHubComment[], issueComments: GitHubComment[]): void {
-  // Detect environment consistently across the application
-  const inProduction = typeof window !== 'undefined' &&
-                      window.location.hostname !== "localhost" &&
-                      window.location.hostname !== "127.0.0.1";
-  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
-
-  console.log(`${envPrefix} Processing issue view for #${data.details.number}`);
+  console.log(`[SERVER] Processing issue view for #${data.details.number}`);
 
   // Create temporary array to hold all comments
   const allComments: GitHubComment[] = [];
@@ -141,15 +130,15 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
   issueComments.push(...allComments);
 
   // Handle linked PRs if available
-  console.log(`${envPrefix} Checking linked PRs, data.linkedPullRequests:`,
+  console.log(`[SERVER] Checking linked PRs, data.linkedPullRequests:`,
     data.linkedPullRequests ? `Found ${data.linkedPullRequests.length} PRs` : 'None found');
 
   if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
-    console.log(`${envPrefix} Linked PRs available:`,
+    console.log(`[SERVER] Linked PRs available:`,
       data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
 
     const mainPR = data.linkedPullRequests[0];
-    console.log(`${envPrefix} Processing main linked PR #${mainPR.number}`);
+    console.log(`[SERVER] Processing main linked PR #${mainPR.number}`);
 
     // If we have the PR body, add it as first comment
     // Create temporary array to hold all comments
@@ -157,13 +146,13 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
 
     // Add PR comments if available first (chronological order)
     if (mainPR.comments) {
-      console.log(`${envPrefix} Adding ${mainPR.comments.length} PR comments`);
+      console.log(`[SERVER] Adding ${mainPR.comments.length} PR comments`);
       prAllComments.push(...mainPR.comments);
     }
 
     // Add PR body as the very first comment if it exists
     if (mainPR.body) {
-      console.log(`${envPrefix} Adding PR body as first comment`);
+      console.log(`[SERVER] Adding PR body as first comment`);
       const prBodyComment: GitHubComment = {
         id: -3,
         body: mainPR.body,
@@ -179,14 +168,14 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       // Properly insert at the beginning to prevent double-post issues
       prAllComments.unshift(prBodyComment);
     } else {
-      console.log(`${envPrefix} PR #${mainPR.number} has no body content`);
+      console.log(`[SERVER] PR #${mainPR.number} has no body content`);
     }
 
     // Now assign the properly ordered comments if we have any
     if (prAllComments.length > 0) {
       prComments.push(...prAllComments);
     } else {
-      console.log(`${envPrefix} No comments found for PR #${mainPR.number}, generating PR list HTML instead`);
+      console.log(`[SERVER] No comments found for PR #${mainPR.number}, generating PR list HTML instead`);
       // If no comments, just show PR references
       const prListHTML = generatePRListHTML(data.linkedPullRequests);
       const prListComment: GitHubComment = {
@@ -204,10 +193,10 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       prComments.push(prListComment);
     }
   } else {
-    console.log(`${envPrefix} No linked PRs found for issue #${data.details.number}`);
+    console.log(`[SERVER] No linked PRs found for issue #${data.details.number}`);
   }
 
-  console.log(`${envPrefix} Finished processing issue view, PR comments count: ${prComments.length}`);
+  console.log(`[SERVER] Finished processing issue view, PR comments count: ${prComments.length}`);
 }
 
 /**
@@ -223,7 +212,3 @@ function generatePRListHTML(prs: LinkedPullRequest[]): string {
 
   return html;
 }
-
-/**
- * Show a notification when content is updated
- */

@@ -156,7 +156,7 @@ class EventManager {
     const connectWebSocket = () => {
       try {
         console.log('[DEV] Attempting to connect to WebSocket server...');
-        const ws = new WebSocket("ws://localhost:8081");
+        const ws = new WebSocket("ws://localhost:8082");
 
         // Clear any pending reconnect timers when we connect
         if (reconnectTimeout) {

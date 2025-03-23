@@ -1,45 +1,31 @@
 /**
  * Analyzer - Main entry point for PR/Issue analysis
- * Handles fetching data from GitHub and displaying it in the UI
+ * Uses server-side API for GitHub data fetching and content scoring
  */
 import { renderComments } from "./components/comment-component";
 import { renderScoreSummary } from "./components/score-summary-component";
-import { ModuleChain } from "./core/module-chain";
 import { domManager } from "./dom-manager";
-import { ContentFilter } from "./modules/content-filter";
-import { ScoringPipeline } from "./modules/scoring-pipeline";
-import { ReadabilityScorer, TechnicalScorer } from "./scorers";
-import { notifyContentUpdated, processGitHubData } from "./services/data-processor";
 import { githubApiService } from "./services/github-api-service";
+import { uiStateManager } from "./services/ui-state-manager";
+import { GitHubComment } from "./types";
 
-// Initialize scoring pipeline with default configuration
-const scoringChain = new ModuleChain("scoring")
-  .addModule(new ContentFilter())
-  .addModule(
-    new ScoringPipeline({
-      scorers: [
-        {
-          scorer: new ReadabilityScorer({ targetScore: 70 }),
-          weight: 0.6
-        },
-        {
-          scorer: new TechnicalScorer({
-            weights: {
-              codeBlockQuality: 0.5,
-              technicalTerms: 0.3,
-              explanationQuality: 0.2
-            }
-          }),
-          weight: 0.4
-        }
-      ],
-      debug: true,
-    })
-  );
+// Server API endpoints
+const API_ENDPOINTS = {
+  ANALYZE: "/api/analyze",
+  SCORE: "/api/score"
+};
+
+// Interface for the server API response
+interface ServerAnalysisResponse {
+  prComments: GitHubComment[];
+  issueComments: GitHubComment[];
+  prInfo?: string;
+  issueInfo?: string;
+}
 
 /**
  * Analyze a GitHub PR or Issue URL
- * Fetch data, process it, and display it in the UI
+ * Use server API to fetch, process, and score the data
  */
 export async function analyze(url: string): Promise<void> {
   try {
@@ -50,7 +36,7 @@ export async function analyze(url: string): Promise<void> {
 
     console.log("Starting analysis for URL:", url);
 
-    // Parse GitHub URL
+    // Parse GitHub URL (client-side validation before sending to server)
     const parsedUrl = githubApiService.parseUrl(url);
     if (!parsedUrl) {
       domManager.showError("Invalid GitHub URL format");
@@ -65,36 +51,48 @@ export async function analyze(url: string): Promise<void> {
     domManager.clearContent("scoreSummaryContent");
     domManager.hide("scoreSummary");
 
-    // Add loading indicator to containers
+    // Initialize containers with loading states
     domManager.withElement("prConversation", element => {
-      element.innerHTML = '<div class="section-loading-indicator"><div class="spinner"></div><span>Loading PR comments...</span></div>';
+      uiStateManager.registerContainer("pr", element);
+      uiStateManager.startLoading("pr");
     });
 
     domManager.withElement("issueConversation", element => {
-      element.innerHTML = '<div class="section-loading-indicator"><div class="spinner"></div><span>Loading issue comments...</span></div>';
+      uiStateManager.registerContainer("issue", element);
+      uiStateManager.startLoading("issue");
     });
 
-    // Fetch data from GitHub API with caching
-    const data = await githubApiService.fetchData(
-      parsedUrl.owner,
-      parsedUrl.repo,
-      parsedUrl.number,
-      parsedUrl.type
-    );
+    // Use server-side API to fetch and analyze data
+    const response = await fetch(API_ENDPOINTS.ANALYZE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ url })
+    });
 
-    // Process the data
-    const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(data);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Server error: ${response.status}`);
+    }
 
-    // Clear loading indicators
-    domManager.clearContent("prConversation");
-    domManager.clearContent("issueConversation");
+    // Parse response
+    const { prComments, issueComments, prInfo, issueInfo } = await response.json() as ServerAnalysisResponse;
+
+    // Stop loading states
+    uiStateManager.stopLoading("pr");
+    uiStateManager.stopLoading("issue");
+
+    // Extract number from PR or issue info for rendering
+    const number = prInfo?.match(/#(\d+)/) || issueInfo?.match(/#(\d+)/);
+    const numberStr = number ? number[1] : "";
 
     // Render comments
     renderComments("pr", prComments, "#pr-conversation",
-      prInfo ? { title: prInfo, number: data.details.number.toString() } : undefined);
+      prInfo ? { title: prInfo, number: numberStr } : undefined);
 
     renderComments("issue", issueComments, "#issue-conversation",
-      issueInfo ? { title: issueInfo, number: data.details.number.toString() } : undefined);
+      issueInfo ? { title: issueInfo, number: numberStr } : undefined);
 
     // Render score summary
     renderScoreSummary(prComments, issueComments);
@@ -107,9 +105,7 @@ export async function analyze(url: string): Promise<void> {
 
     // Do a background refresh after analysis to get latest data
     setTimeout(() => {
-      if (parsedUrl) {
-        backgroundRefresh(parsedUrl.owner, parsedUrl.repo, parsedUrl.number, parsedUrl.type);
-      }
+      backgroundRefresh(url);
     }, 30000); // 30 seconds delay
 
   } catch (error) {
@@ -119,39 +115,52 @@ export async function analyze(url: string): Promise<void> {
 }
 
 /**
- * Do a background refresh of data
+ * Do a background refresh of data using the server API
  */
-async function backgroundRefresh(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<void> {
+async function backgroundRefresh(url: string): Promise<void> {
   try {
     console.log("Starting background refresh...");
 
-    // Refresh data in background
-    const refreshResult = await githubApiService.refreshCachedData(owner, repo, number, type);
+    // Use server API to refresh data
+    const response = await fetch(API_ENDPOINTS.ANALYZE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url,
+        refresh: true // Tell server this is a refresh request
+      })
+    });
 
-    // If data was updated, update the UI
-    if (refreshResult && refreshResult.updated) {
-      console.log("Content updated, refreshing UI...");
-
-      // Process the updated data
-      const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(refreshResult.data);
-
-      // Clear previous content
-      domManager.clearContent("prConversation");
-      domManager.clearContent("issueConversation");
-
-      // Render updated comments
-      renderComments("pr", prComments, "#pr-conversation",
-        prInfo ? { title: prInfo, number: refreshResult.data.details.number.toString() } : undefined);
-
-      renderComments("issue", issueComments, "#issue-conversation",
-        issueInfo ? { title: issueInfo, number: refreshResult.data.details.number.toString() } : undefined);
-
-      // Update score summary
-      renderScoreSummary(prComments, issueComments);
-
-      // Show notification that content was updated
-      notifyContentUpdated();
+    if (!response.ok) {
+      console.warn("Background refresh failed:", response.status);
+      return;
     }
+
+    // Parse response
+    const { prComments, issueComments, prInfo, issueInfo } = await response.json() as ServerAnalysisResponse;
+
+    // Extract number from PR or issue info for rendering
+    const number = prInfo?.match(/#(\d+)/) || issueInfo?.match(/#(\d+)/);
+    const numberStr = number ? number[1] : "";
+
+    // Clear previous content
+    domManager.clearContent("prConversation");
+    domManager.clearContent("issueConversation");
+
+    // Render updated comments
+    renderComments("pr", prComments, "#pr-conversation",
+      prInfo ? { title: prInfo, number: numberStr } : undefined);
+
+    renderComments("issue", issueComments, "#issue-conversation",
+      issueInfo ? { title: issueInfo, number: numberStr } : undefined);
+
+    // Update score summary
+    renderScoreSummary(prComments, issueComments);
+
+    // Show notification that content was updated
+    uiStateManager.notifyContentUpdated();
   } catch (error) {
     console.error("Background refresh failed:", error);
     // Don't show user-facing error for background refresh

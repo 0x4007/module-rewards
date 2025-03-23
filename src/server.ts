@@ -4,10 +4,16 @@ import { ModuleChain } from "./core/module-chain";
 import { ContentFilter } from "./modules/content-filter";
 import { ScoringPipeline } from "./modules/scoring-pipeline";
 import { ReadabilityScorer, TechnicalScorer } from "./scorers";
+import { processGitHubData } from "./server/data-processor";
+import { createServerGitHubApiService } from "./server/github-api-service";
+import { GitHubComment } from "./types";
 
 const PORT = 3002;
 
 console.log("Server initialization starting...");
+
+// Initialize GitHub API service
+const githubApiService = createServerGitHubApiService(process.env.GITHUB_TOKEN);
 
 // Initialize scoring pipeline
 const scoringChain = new ModuleChain("scoring")
@@ -93,6 +99,113 @@ try {
             }
           }
 
+          // API endpoint for analyzing GitHub PR/Issue
+          if (path === "/api/analyze" && req.method === "POST") {
+            try {
+              const body = await req.json();
+
+              // Extract parameters (either URL or direct parameters)
+              let owner: string | null = null;
+              let repo: string | null = null;
+              let number: string | null = null;
+              let type: "pr" | "issue" | null = null;
+              const refresh = !!body.refresh; // Check if it's a refresh request
+
+              // Option 1: Parse from URL
+              if (body.url && typeof body.url === "string") {
+                const parsedUrl = githubApiService.parseUrl(body.url);
+                if (parsedUrl) {
+                  owner = parsedUrl.owner;
+                  repo = parsedUrl.repo;
+                  number = parsedUrl.number;
+                  type = parsedUrl.type;
+                }
+              }
+              // Option 2: Direct parameters
+              else {
+                owner = body.owner;
+                repo = body.repo;
+                number = body.number?.toString();
+                type = body.type === "pr" || body.type === "issue" ? body.type : null;
+              }
+
+              // Validate parameters
+              if (!owner || !repo || !number || !type) {
+                return new Response(
+                  JSON.stringify({
+                    error: "Missing or invalid parameters. Provide either valid 'url' or 'owner', 'repo', 'number', and 'type'."
+                  }),
+                  { status: 400, headers: { "Content-Type": "application/json" } }
+                );
+              }
+
+              console.log(`[SERVER] Analyzing ${type} #${number} from ${owner}/${repo}${refresh ? ' (refresh)' : ''}`);
+
+              // Fetch data from GitHub
+              const fetchedData = await githubApiService.fetchData(owner, repo, number, type);
+
+              // Process GitHub data
+              const processedData = processGitHubData(fetchedData);
+
+              // Define interface for scored comments
+              interface ScoredComment extends GitHubComment {
+                score?: number;
+                scoringDetails?: any;
+              }
+
+              // Apply scoring to comments
+              const allComments = [...processedData.prComments, ...processedData.issueComments];
+              const scoredComments: ScoredComment[] = [];
+
+              for (const comment of allComments) {
+                if (!comment.body) continue;
+
+                // Create cloud event for scoring
+                const event = {
+                  specversion: "1.0",
+                  type: "com.github.comment",
+                  source: "/api/analyze",
+                  id: crypto.randomUUID(),
+                  time: new Date().toISOString(),
+                  data: { content: comment.body },
+                };
+
+                // Process through scoring pipeline
+                const scoringResult = await scoringChain.execute(event);
+
+                // Add score to comment
+                scoredComments.push({
+                  ...comment,
+                  score: scoringResult.data?.score,
+                  scoringDetails: scoringResult.data?.scoringDetails
+                });
+              }
+
+              // Return results
+              return new Response(
+                JSON.stringify({
+                  prComments: processedData.prComments.map(comment => {
+                    const scored = scoredComments.find(sc => sc.id === comment.id);
+                    return scored || comment;
+                  }),
+                  issueComments: processedData.issueComments.map(comment => {
+                    const scored = scoredComments.find(sc => sc.id === comment.id);
+                    return scored || comment;
+                  }),
+                  prInfo: processedData.prInfo,
+                  issueInfo: processedData.issueInfo
+                }),
+                { headers: { "Content-Type": "application/json" } }
+              );
+            } catch (err) {
+              console.error("Error processing analyze request:", err);
+              return new Response(
+                JSON.stringify({ error: "Error analyzing GitHub content" }),
+                { status: 500, headers: { "Content-Type": "application/json" } }
+              );
+            }
+          }
+
           // Unknown API endpoint
           return new Response(
             JSON.stringify({ error: "Endpoint not found" }),
@@ -133,6 +246,10 @@ try {
     console.log("  GET  /api/environment - Get environment configuration");
     console.log("  POST /api/score - Score content using the scoring pipeline");
     console.log("     Request body: { \"content\": \"text to score\" }");
+    console.log("  POST /api/analyze - Analyze GitHub PR/Issue");
+    console.log("     Request body: { \"url\": \"github.com/owner/repo/...\" }");
+    console.log("     -- OR --");
+    console.log("     Request body: { \"owner\": \"...\", \"repo\": \"...\", \"number\": \"...\", \"type\": \"pr|issue\" }");
   } else {
     throw new Error("Failed to create server instance");
   }

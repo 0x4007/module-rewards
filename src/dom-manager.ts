@@ -2,6 +2,7 @@
  * DOM Manager - Central point for all DOM element references
  * Eliminates redundant element selection across files
  */
+import { uiStateManager } from "./services/ui-state-manager";
 
 // DOM elements cache
 interface DOMElements {
@@ -46,6 +47,11 @@ class DOMManager {
       if (missingElements.length > 0) {
         console.error(`Missing DOM elements: ${missingElements.join(", ")}`);
         return false;
+      }
+
+      // Register error container with UI State Manager
+      if (this.elements.errorMessage) {
+        uiStateManager.registerErrorContainer(this.elements.errorMessage);
       }
 
       this.initialized = true;
@@ -142,12 +148,7 @@ class DOMManager {
    * @param message The error message to display
    */
   public showError(message: string): void {
-    this.withElement("errorMessage", (error) => {
-      if (error instanceof HTMLElement) {
-        error.textContent = message;
-        error.classList.remove("hidden");
-      }
-    });
+    uiStateManager.setError(message);
   }
 }
 

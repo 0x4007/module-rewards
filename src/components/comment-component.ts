@@ -3,7 +3,7 @@
  * Includes functionality for displaying comment content, user info, and scores
  */
 import { detectConsecutiveComments } from "../comment-grouping";
-import { calculateGroupAwareScores } from "../scoring-utils";
+import { calculateGroupAwareScores, countWords } from "../scoring-utils";
 import { CommentScores, GitHubComment } from "../types";
 
 // Export the scoreMap for use by other components
@@ -255,9 +255,6 @@ export function renderComments(
     return new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime();
   });
 
-  // Detect consecutive comments from the same user within the same context
-  const commentGroups = detectConsecutiveComments(sortedComments, section);
-
   // Only clear scores when we're processing PR comments (the first set)
   if (section === "pr") {
     scoreMap.clear();
@@ -267,35 +264,57 @@ export function renderComments(
   for (const comment of sortedComments) {
     if (!comment.body) continue;
 
-    // Check if this comment is part of a group
-    const groupInfo = commentGroups[String(comment.id)];
-    let showScores = true;
     let commentScores: CommentScores | undefined;
+    let showScores = true;
 
-    if (groupInfo) {
-      // Only show scores on the last comment in each group
-      const isLastInGroup = groupInfo.commentIds[groupInfo.commentIds.length - 1] === comment.id;
-      showScores = isLastInGroup;
+    // Check if scores were provided from the server
+    if ('score' in comment && comment.score !== undefined) {
+      // Server has already calculated scores
+      const wordCount = countWords(comment.body, true, isGitHubBot(comment.user));
 
-      if (isLastInGroup) {
-        // For the last comment, calculate scores based on the entire group
-        commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+      commentScores = {
+        wordCount,
+        original: 'originalScore' in comment ? (comment.originalScore as number) : 0,
+        exponential: comment.score as number,
+        isGrouped: 'isGrouped' in comment ? (comment.isGrouped as boolean) : false,
+        groupWordCount: 'groupWordCount' in comment ? (comment.groupWordCount as number) : undefined
+      };
+
+      // Store scores in the map for score summary component
+      scoreMap.set(comment.id, commentScores);
+    } else {
+      // Fallback: calculate scores client-side if server didn't provide them
+      // Only needed for backward compatibility or development without server
+
+      // Check if this comment is part of a group
+      const commentGroups = detectConsecutiveComments(sortedComments, section);
+      const groupInfo = commentGroups[String(comment.id)];
+
+      if (groupInfo) {
+        // Only show scores on the last comment in each group
+        const isLastInGroup = groupInfo.commentIds[groupInfo.commentIds.length - 1] === comment.id;
+        showScores = isLastInGroup;
+
+        if (isLastInGroup) {
+          // For the last comment, calculate scores based on the entire group
+          commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+
+          // Store scores in the map
+          if (commentScores) {
+            scoreMap.set(comment.id, commentScores);
+          }
+        }
+      } else {
+        // For comments not in a group, calculate scores normally
+        // Check for special comment types
+        const isSlashCommand = comment.body.trim().startsWith("/");
+        const isBot = isGitHubBot(comment.user);
+        commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
 
         // Store scores in the map
         if (commentScores) {
           scoreMap.set(comment.id, commentScores);
         }
-      }
-    } else {
-      // For comments not in a group, calculate scores normally
-      // Check for special comment types
-      const isSlashCommand = comment.body.trim().startsWith("/");
-      const isBot = isGitHubBot(comment.user);
-      commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
-
-      // Store scores in the map
-      if (commentScores) {
-        scoreMap.set(comment.id, commentScores);
       }
     }
 
