@@ -315,5 +315,48 @@ class GitHubApiService {
   }
 }
 
+/**
+ * Create a function to refresh the API service with a new token
+ * This allows us to update the service when a token is added without reloading the page
+ */
+let currentApiService: GitHubApiService;
+
+export function refreshGitHubApiService(): GitHubApiService {
+  const token = localStorage.getItem("github_token");
+
+  // Create a new instance with the current token
+  currentApiService = new GitHubApiService(token);
+
+  // Detect environment for consistent logging
+  const inProduction =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+  const envPrefix = inProduction ? "[PROD]" : "[DEV]";
+
+  console.log(`${envPrefix} GitHub API service refreshed with token: ${token ? "YES" : "NO"}`);
+
+  return currentApiService;
+}
+
 // Export singleton instance with token from localStorage
-export const githubApiService = new GitHubApiService(localStorage.getItem("github_token"));
+// Use the refresh function to initialize it
+export const githubApiService = refreshGitHubApiService();
+
+// Add a global event listener to detect token changes and refresh the service
+if (typeof window !== "undefined") {
+  // Create window.refreshGitHubToken for use from console
+  (window as any).refreshGitHubToken = () => {
+    const newService = refreshGitHubApiService();
+    console.log("GitHub API service manually refreshed");
+    return newService.token ? true : false;
+  };
+
+  // Listen for storage events to detect when another tab changes the token
+  window.addEventListener("storage", (event) => {
+    if (event.key === "github_token") {
+      console.log("GitHub token changed in another tab, refreshing API service");
+      refreshGitHubApiService();
+    }
+  });
+}
