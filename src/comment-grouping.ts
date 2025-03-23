@@ -63,8 +63,22 @@ export function detectConsecutiveComments(
     return {};
   }
 
-  // Ensure comments are sorted by creation date
+  // Special IDs for PR/issue body comments that should always be processed first
+  const bodyCommentIds = [0, -3];
+
+  // Sort comments: PR/issue body first, then by creation date
   const sortedComments = [...comments].sort((a, b) => {
+    // If a is a PR/issue body comment and b is not, a comes first
+    if (bodyCommentIds.includes(a.id as number) && !bodyCommentIds.includes(b.id as number)) {
+      return -1;
+    }
+
+    // If b is a PR/issue body comment and a is not, b comes first
+    if (bodyCommentIds.includes(b.id as number) && !bodyCommentIds.includes(a.id as number)) {
+      return 1;
+    }
+
+    // Otherwise sort by creation date
     return new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime();
   });
 
@@ -85,12 +99,16 @@ export function detectConsecutiveComments(
     // Check if the comment has any source-specific properties
     const commentSource = getCommentSource(comment, section);
 
+    // Check if this is a PR/issue body comment (special IDs 0 or -3)
+    const isPROrIssueBody = bodyCommentIds.includes(comment.id as number);
+
     // Check if this comment continues the current group (same user and same source)
     const isSameUser = currentGroup && currentGroup.user === currentUser;
     const isSameSource = currentGroup && currentGroup.source === commentSource;
     const isCurrentOrNextBot = isGitHubBot(comment.user);
 
-    if (isSameUser && isSameSource && currentGroup && !isCurrentOrNextBot) {
+    // Never group PR/issue body comments with other comments, even from the same author
+    if (!isPROrIssueBody && isSameUser && isSameSource && currentGroup && !isCurrentOrNextBot) {
       // Continue the current group
       currentGroup.commentIds.push(comment.id);
       currentGroup.combinedText += "\n\n" + comment.body;
@@ -112,13 +130,13 @@ export function detectConsecutiveComments(
 
   // Map each comment ID to its group
   for (const group of groups) {
-  // Only create group entries for comments that are part of multi-comment groups
-  // and where the user is not a bot
-  if (group.commentIds.length > 1 && !isGitHubBot({login: group.user} as GitHubComment['user'])) {
-    for (const id of group.commentIds) {
-      groupMap[String(id)] = group;
+    // Only create group entries for comments that are part of multi-comment groups
+    // and where the user is not a bot
+    if (group.commentIds.length > 1 && !isGitHubBot({login: group.user} as GitHubComment['user'])) {
+      for (const id of group.commentIds) {
+        groupMap[String(id)] = group;
+      }
     }
-  }
   }
 
   return groupMap;

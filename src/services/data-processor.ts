@@ -57,7 +57,15 @@ export function processGitHubData(data: FetchedData): {
  * Process and prepare PR data for display
  */
 function processPRView(data: FetchedData, prComments: GitHubComment[], issueComments: GitHubComment[]): void {
-  // Add PR body as first comment if it exists
+  // Create temporary array to hold all comments
+  const allComments: GitHubComment[] = [];
+
+  // Add all PR comments first (this will be chronological)
+  if (data.comments && data.comments.length > 0) {
+    allComments.push(...data.comments);
+  }
+
+  // Add PR body as the very first comment if it exists
   if (data.details.body) {
     const prBodyComment: GitHubComment = {
       id: 0,
@@ -67,14 +75,12 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
       updated_at: data.details.updated_at,
       html_url: data.details.html_url,
     };
-    // Insert at beginning
-    prComments.push(prBodyComment);
+    // Properly insert at the beginning to prevent double-post issues
+    allComments.unshift(prBodyComment);
   }
 
-  // Add all PR comments
-  if (data.comments && data.comments.length > 0) {
-    prComments.push(...data.comments);
-  }
+  // Now assign the properly ordered comments
+  prComments.push(...allComments);
 
   // Handle linked issue if available
   if (data.linkedIssue) {
@@ -110,7 +116,15 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
 
   console.log(`${envPrefix} Processing issue view for #${data.details.number}`);
 
-  // Add issue body as first comment if it exists
+  // Create temporary array to hold all comments
+  const allComments: GitHubComment[] = [];
+
+  // Add all issue comments first (this will be chronological)
+  if (data.comments && data.comments.length > 0) {
+    allComments.push(...data.comments);
+  }
+
+  // Add issue body as the very first comment if it exists
   if (data.details.body) {
     const issueBodyComment: GitHubComment = {
       id: 0,
@@ -120,14 +134,12 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       updated_at: data.details.updated_at,
       html_url: data.details.html_url,
     };
-    // Insert at beginning
-    issueComments.push(issueBodyComment);
+    // Properly insert at the beginning to prevent double-post issues
+    allComments.unshift(issueBodyComment);
   }
 
-  // Add all issue comments
-  if (data.comments && data.comments.length > 0) {
-    issueComments.push(...data.comments);
-  }
+  // Now assign the properly ordered comments
+  issueComments.push(...allComments);
 
   // Handle linked PRs if available
   console.log(`${envPrefix} Checking linked PRs, data.linkedPullRequests:`,
@@ -141,8 +153,18 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
     console.log(`${envPrefix} Processing main linked PR #${mainPR.number}`);
 
     // If we have the PR body, add it as first comment
+    // Create temporary array to hold all comments
+    const allComments: GitHubComment[] = [];
+
+    // Add PR comments if available first (chronological order)
+    if (mainPR.comments) {
+      console.log(`${envPrefix} Adding ${mainPR.comments.length} PR comments`);
+      allComments.push(...mainPR.comments);
+    }
+
+    // Add PR body as the very first comment if it exists
     if (mainPR.body) {
-      console.log(`${envPrefix} Adding PR body as comment`);
+      console.log(`${envPrefix} Adding PR body as first comment`);
       const prBodyComment: GitHubComment = {
         id: -3,
         body: mainPR.body,
@@ -155,15 +177,15 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
         updated_at: new Date().toISOString(),
         html_url: mainPR.url,
       };
-      prComments.push(prBodyComment);
+      // Properly insert at the beginning to prevent double-post issues
+      allComments.unshift(prBodyComment);
     } else {
       console.log(`${envPrefix} PR #${mainPR.number} has no body content`);
     }
 
-    // Add PR comments if available
-    if (mainPR.comments) {
-      console.log(`${envPrefix} Adding ${mainPR.comments.length} PR comments`);
-      prComments.push(...mainPR.comments);
+    // Now assign the properly ordered comments if we have any
+    if (allComments.length > 0) {
+      prComments.push(...allComments);
     } else {
       console.log(`${envPrefix} No comments found for PR #${mainPR.number}, generating PR list HTML instead`);
       // If no comments, just show PR references

@@ -67,29 +67,43 @@ body {
 }
 
 h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 100;
   /* margin: 0 0 1.5rem; */
   line-height: 1;
+  text-rendering: geometricPrecision;
+  text-align: center;
 }
 
 header {
-  margin-bottom: 2rem;
+  margin-bottom: 4px;
+  backdrop-filter: blur(12px);
+  border: 1px solid #ffffff10;
+  border-left: none;
+  border-right: none;
+  text-align: center;
 }
 
 footer {
-  padding-top: 1rem;
+  /* padding-top: 1rem; */
   color: var(--text-light);
   font-size: 0.9rem;
   text-align: center;
+  backdrop-filter: blur(12px);
+  border-top: 1px solid #ffffff10;
+  padding: 16px 0;
 }
 
 /* ========== FORM ELEMENTS ========== */
 
 .analyze-form {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
+  gap: 4px;
+  /* margin-bottom: 2rem; */
+  max-width: 640px;
+  /* text-align: center; */
+  /* justify-content: center; */
+  margin: auto;
 }
 
 .url-input {
@@ -144,7 +158,7 @@ footer {
 }
 
 .issue-column {
-  margin-right: 10px;
+  margin-right: 4px;
 }
 
 .column h2 {
@@ -285,7 +299,7 @@ footer {
 
 .comment {
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   padding: 8px 16px;
   position: relative;
   backdrop-filter: blur(12px);
@@ -483,7 +497,7 @@ footer {
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  margin: 8px auto;
+  margin: 4px auto;
   padding: 16px;
   justify-content: center;
   backdrop-filter: blur(12px);
@@ -784,4 +798,9 @@ hr {
     overflow: hidden;
     max-width: 100%;
     width: auto;
+}
+
+
+p {
+    margin: auto;
 }
