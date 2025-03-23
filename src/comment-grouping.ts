@@ -1,182 +1,110 @@
 /**
- * Comment Grouping - Utility functions for detecting and grouping consecutive comments from the same user
- * This helps with scoring calculations to prevent gaming the system with multiple short comments
+ * Comment Grouping - Handles the detection and grouping of consecutive comments from the same user
+ * This ensures fair scoring by treating consecutive comments as one larger comment
  */
 import { GitHubComment } from "./types";
-import { isGitHubBot } from "./utils/github-utils";
 
-/**
- * Configuration options for comment grouping
- */
- interface CommentGroupingOptions {
-  /** Whether to enable comment grouping (default: true) */
-  enabled?: boolean;
-}
-
-/**
- * Default options for comment grouping
- */
-const DEFAULT_OPTIONS: CommentGroupingOptions = {
-  enabled: true,
-};
-
-/**
- * A group of consecutive comments from the same user
- */
 export interface CommentGroup {
-  /** The user who posted the comments */
-  user: string;
-  /** The source/context of the comments */
-  source: string;
-  /** The comment IDs in this group */
-  commentIds: (string | number)[];
-  /** The combined text of all comments in the group */
-  combinedText: string;
-  /** The total word count of all comments in the group */
+  commentIds: number[];
+  userId: string;
   totalWordCount: number;
+  commentCount: number;
 }
 
-/**
- * Maps comment IDs to their group
- */
 export interface CommentGroupMap {
   [commentId: string]: CommentGroup;
 }
 
 /**
- * Detects and groups consecutive comments from the same user within the same context
- * @param comments The list of comments to group
- * @param section The section these comments belong to (pr or issue)
- * @param options Configuration options
- * @returns A map of comment IDs to their groups
+ * Detect consecutive comments from the same user within the same context
+ *
+ * This function analyzes a list of comments to identify groups of consecutive comments
+ * from the same user. This is important for scoring purposes because we want to score
+ * consecutive comments as a single unit to prevent gaming the system by posting multiple
+ * short comments instead of one longer comment.
+ *
+ * @param comments List of GitHub comments to analyze
+ * @param context Context type (PR or issue) to ensure we don't group across different contexts
+ * @returns Map of comment IDs to their group information
  */
 export function detectConsecutiveComments(
   comments: GitHubComment[],
-  section: "pr" | "issue",
-  options: CommentGroupingOptions = {}
+  context: "pr" | "issue"
 ): CommentGroupMap {
-  // Merge with default options
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const groups: CommentGroupMap = {};
 
-  // If grouping is disabled, return an empty map
-  if (!opts.enabled) {
-    return {};
+  // If less than 2 comments, no grouping needed
+  if (!comments || comments.length < 2) {
+    return groups;
   }
 
-  // Special IDs for PR/issue body comments that should always be processed first
-  const bodyCommentIds = [0, -3];
+  // Sort comments by creation date
+  const sortedComments = [...comments].sort(
+    (a, b) => new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime()
+  );
 
-  // Sort comments: PR/issue body first, then by creation date
-  const sortedComments = [...comments].sort((a, b) => {
-    // If a is a PR/issue body comment and b is not, a comes first
-    if (bodyCommentIds.includes(a.id as number) && !bodyCommentIds.includes(b.id as number)) {
-      return -1;
-    }
-
-    // If b is a PR/issue body comment and a is not, b comes first
-    if (bodyCommentIds.includes(b.id as number) && !bodyCommentIds.includes(a.id as number)) {
-      return 1;
-    }
-
-    // Otherwise sort by creation date
-    return new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime();
-  });
-
-  const groups: CommentGroup[] = [];
-  const groupMap: CommentGroupMap = {};
-
-  // Process all comments
+  // Iterate through comments to find consecutive ones from same user
   let currentGroup: CommentGroup | null = null;
+  let previousUser: string | null = null;
 
   for (const comment of sortedComments) {
-    // Skip comments without a user or body, or if from a bot
-    if (!comment.user?.login || !comment.body || isGitHubBot(comment.user)) {
+    const currentUser = comment.user?.login;
+
+    // Skip if no user (should not happen)
+    if (!currentUser) {
       continue;
     }
 
-    const currentUser = comment.user.login;
-
-    // Check if the comment has any source-specific properties
-    const commentSource = getCommentSource(comment, section);
-
-    // Check if this is a PR/issue body comment (special IDs 0 or -3)
-    const isPROrIssueBody = bodyCommentIds.includes(comment.id as number);
-
-    // Check if this comment continues the current group (same user and same source)
-    const isSameUser = currentGroup && currentGroup.user === currentUser;
-    const isSameSource = currentGroup && currentGroup.source === commentSource;
-    const isCurrentOrNextBot = isGitHubBot(comment.user);
-
-    // Never group PR/issue body comments with other comments, even from the same author
-    if (!isPROrIssueBody && isSameUser && isSameSource && currentGroup && !isCurrentOrNextBot) {
-      // Continue the current group
+    // If this is the same user as the previous comment, add to current group
+    if (currentUser === previousUser && currentGroup) {
       currentGroup.commentIds.push(comment.id);
-      currentGroup.combinedText += "\n\n" + comment.body;
-      currentGroup.totalWordCount += countWordsInText(comment.body);
+      currentGroup.commentCount++;
+
+      // Update word count (will be calculated fully later)
+      currentGroup.totalWordCount += countWords(comment.body || "");
+
+      // Record this comment as part of the group
+      groups[String(comment.id)] = currentGroup;
     } else {
-      // Start a new group
+      // Not part of a current group - check if it could start a new group
+      // We won't know yet if it's a group until we see the next comment
       currentGroup = {
-        user: currentUser,
-        source: getCommentSource(comment, section),
         commentIds: [comment.id],
-        combinedText: comment.body,
-        totalWordCount: countWordsInText(comment.body),
+        userId: currentUser,
+        totalWordCount: countWords(comment.body || ""),
+        commentCount: 1
       };
-      groups.push(currentGroup);
     }
 
-    // No need to track comment time anymore
+    previousUser = currentUser;
   }
 
-  // Map each comment ID to its group
-  for (const group of groups) {
-    // Only create group entries for comments that are part of multi-comment groups
-    // and where the user is not a bot
-    if (group.commentIds.length > 1 && !isGitHubBot({login: group.user} as GitHubComment['user'])) {
-      for (const id of group.commentIds) {
-        groupMap[String(id)] = group;
-      }
+  // Filter out standalone comments (not part of a group)
+  for (const id in groups) {
+    if (groups[id].commentCount < 2) {
+      delete groups[id];
     }
   }
 
-  return groupMap;
+  return groups;
 }
 
 /**
- * Determines the source context of a comment
- * @param comment The comment to analyze
- * @param section The section (pr or issue) this comment belongs to
- * @returns A string identifier for the comment's source/context
+ * Simple word count function - counts whitespace-separated tokens
+ * Ignores code blocks for more accurate conversational word count
+ *
+ * @param text Text to count words in
+ * @returns Number of words
  */
-function getCommentSource(comment: GitHubComment, section: "pr" | "issue"): string {
-  // Start with the section as the base source
-  let source = section;
+function countWords(text: string): number {
+  if (!text) return 0;
 
-  // Add more specific context if available
-  if (comment.path) {
-    // This is a file-specific PR review comment
-    source += `:review:${comment.path}`;
-  } else if (comment.pull_request_url) {
-    // This is a PR conversation comment
-    source += `:conversation`;
-  } else if (comment.commit_id) {
-    // This is a commit-specific comment
-    source += `:commit:${comment.commit_id}`;
-  }
+  // Remove code blocks
+  const noCodeText = text.replace(/```[\s\S]*?```/g, "");
 
-  return source;
-}
-
-/**
- * Helper function to count words in text
- * This is a simplified version - the full logic would use the same implementation as in scoring-utils.ts
- */
-function countWordsInText(text: string): number {
-  if (!text || typeof text !== "string") return 0;
-
-  // A simple word count for this helper
-  return text
-    .trim()
+  // Count words (non-empty whitespace-separated tokens)
+  return noCodeText
     .split(/\s+/)
-    .filter((word) => word.length > 0).length;
+    .filter(token => token.trim().length > 0)
+    .length;
 }

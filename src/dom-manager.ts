@@ -35,7 +35,7 @@ class DOMManager {
         scoreSummaryContent: document.getElementById("score-summary-content") as HTMLElement,
         issueConversation: document.getElementById("issue-conversation") as HTMLElement,
         prConversation: document.getElementById("pr-conversation") as HTMLElement,
-        contentColumns: document.getElementById("content-columns") as HTMLElement,
+        contentColumns: document.getElementById("content-columns") as HTMLElement
       };
 
       // Verify all elements were found
@@ -133,6 +133,19 @@ class DOMManager {
     this.withElement(key, (element) => {
       if (element instanceof HTMLElement) {
         element.innerHTML = "";
+      }
+    });
+  }
+
+  /**
+   * Show an error message
+   * @param message The error message to display
+   */
+  public showError(message: string): void {
+    this.withElement("errorMessage", (error) => {
+      if (error instanceof HTMLElement) {
+        error.textContent = message;
+        error.classList.remove("hidden");
       }
     });
   }

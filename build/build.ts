@@ -29,8 +29,8 @@ const buildPromise = new Promise(async (resolve, reject) => {
       outdir: './public/js',
       target: 'browser',
       format: 'esm',
-      minify: process.env.NODE_ENV === 'production',
-      sourcemap: process.env.NODE_ENV === 'production' ? 'external' : 'inline',
+      minify: false, // Disable minification for better debugging
+      sourcemap: 'inline', // Always use inline source maps for better debugging
       external: ['marked'],
       define: {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),

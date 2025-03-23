@@ -1,253 +1,159 @@
 /**
- * GitHub Analyzer - Main module for analyzing GitHub content
- * Refactored to use modular components and services
+ * Analyzer - Main entry point for PR/Issue analysis
+ * Handles fetching data from GitHub and displaying it in the UI
  */
 import { renderComments } from "./components/comment-component";
+import { renderScoreSummary } from "./components/score-summary-component";
+import { ModuleChain } from "./core/module-chain";
 import { domManager } from "./dom-manager";
-import { calculateAllScores } from "./scoring-utils";
+import { ContentFilter } from "./modules/content-filter";
+import { ScoringPipeline } from "./modules/scoring-pipeline";
+import { ReadabilityScorer, TechnicalScorer } from "./scorers";
 import { notifyContentUpdated, processGitHubData } from "./services/data-processor";
 import { githubApiService } from "./services/github-api-service";
-import { uiStateManager } from "./ui-state-manager";
+
+// Initialize scoring pipeline with default configuration
+const scoringChain = new ModuleChain("scoring")
+  .addModule(new ContentFilter())
+  .addModule(
+    new ScoringPipeline({
+      scorers: [
+        {
+          scorer: new ReadabilityScorer({ targetScore: 70 }),
+          weight: 0.6
+        },
+        {
+          scorer: new TechnicalScorer({
+            weights: {
+              codeBlockQuality: 0.5,
+              technicalTerms: 0.3,
+              explanationQuality: 0.2
+            }
+          }),
+          weight: 0.4
+        }
+      ],
+      debug: true,
+    })
+  );
 
 /**
- * Process and display content for a GitHub issue or PR
+ * Analyze a GitHub PR or Issue URL
+ * Fetch data, process it, and display it in the UI
  */
-export async function analyze(inputUrl: string): Promise<void> {
-  if (!inputUrl || !inputUrl.includes("github.com")) {
-    showError("Please enter a valid GitHub URL");
-    return;
-  }
-
-  // Initialize UI components
-
-  // Initialize UI state manager with containers
-  uiStateManager.registerContainer("issue", domManager.get("issueConversation"));
-  uiStateManager.registerContainer("pr", domManager.get("prConversation"));
-
-  // Clear previous content
-  clearResults();
-  uiStateManager.clearSection("issue");
-  uiStateManager.clearSection("pr");
-
-  // Start loading state for both sections
-  uiStateManager.startLoading("issue");
-  uiStateManager.startLoading("pr");
-
+export async function analyze(url: string): Promise<void> {
   try {
-    // Detect environment consistently across the application
-    const inProduction = typeof window !== 'undefined' &&
-                          window.location.hostname !== "localhost" &&
-                          window.location.hostname !== "127.0.0.1";
-    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
-    console.log(`${envPrefix} Analyzing URL: ${inputUrl}`);
-
-    // Log all issues with linked PR detection for better visibility
-    const issueMatch = inputUrl.match(/\/issues\/(\d+)/);
-    if (issueMatch) {
-      const issueNumber = issueMatch[1];
-      console.log(`${envPrefix} Analyzing issue #${issueNumber} - monitoring linked PRs detection`);
+    if (!url || !url.includes("github.com")) {
+      domManager.showError("Please enter a valid GitHub URL");
+      return;
     }
 
-    // Parse the URL
-    const parsedUrl = githubApiService.parseUrl(inputUrl);
-    const { owner, repo, number, type } = parsedUrl;
-    console.log(`${envPrefix} Parsed URL - Owner: ${owner}, Repo: ${repo}, Number: ${number}, Type: ${type}`);
+    console.log("Starting analysis for URL:", url);
 
-    // Store last URL for future use
-    localStorage.setItem("last_url", inputUrl);
-
-    // Fetch data from GitHub
-    console.log(`${envPrefix} Fetching data from GitHub API...`);
-    const data = await githubApiService.fetchData(owner, repo, number, type);
-    console.log(`${envPrefix} Data fetched successfully`);
-
-    // Check for linked PRs if this is an issue
-    if (type === 'issue' && data.linkedPullRequests) {
-      if (data.linkedPullRequests.length > 0) {
-        console.log(`${envPrefix} Linked PRs found:`,
-          data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
-      } else {
-        console.log(`${envPrefix} No linked PRs found for issue #${number}`);
-      }
+    // Parse GitHub URL
+    const parsedUrl = githubApiService.parseUrl(url);
+    if (!parsedUrl) {
+      domManager.showError("Invalid GitHub URL format");
+      return;
     }
+
+    console.log("Parsed GitHub URL:", parsedUrl);
+
+    // Clear previous content
+    domManager.clearContent("prConversation");
+    domManager.clearContent("issueConversation");
+    domManager.clearContent("scoreSummaryContent");
+    domManager.hide("scoreSummary");
+
+    // Add loading indicator to containers
+    domManager.withElement("prConversation", element => {
+      element.innerHTML = '<div class="section-loading-indicator"><div class="spinner"></div><span>Loading PR comments...</span></div>';
+    });
+
+    domManager.withElement("issueConversation", element => {
+      element.innerHTML = '<div class="section-loading-indicator"><div class="spinner"></div><span>Loading issue comments...</span></div>';
+    });
+
+    // Fetch data from GitHub API with caching
+    const data = await githubApiService.fetchData(
+      parsedUrl.owner,
+      parsedUrl.repo,
+      parsedUrl.number,
+      parsedUrl.type
+    );
 
     // Process the data
-    console.log(`${envPrefix} Processing GitHub data...`);
     const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(data);
-    console.log(`${envPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`);
 
-    // Display comments with sections
-    let prTitle, prNumber, issueTitle, issueNumber;
+    // Clear loading indicators
+    domManager.clearContent("prConversation");
+    domManager.clearContent("issueConversation");
 
-    // Extract title and number information for the header
-    if (type === 'pr') {
-      prTitle = data.details.title;
-      prNumber = data.details.number;
-      // If there's a linked issue, extract its info
-      if (data.linkedIssue) {
-        issueTitle = data.linkedIssue.title;
-        issueNumber = data.linkedIssue.number;
+    // Render comments
+    renderComments("pr", prComments, "#pr-conversation",
+      prInfo ? { title: prInfo, number: data.details.number.toString() } : undefined);
+
+    renderComments("issue", issueComments, "#issue-conversation",
+      issueInfo ? { title: issueInfo, number: data.details.number.toString() } : undefined);
+
+    // Render score summary
+    renderScoreSummary(prComments, issueComments);
+
+    // Show both containers
+    domManager.show("contentColumns");
+
+    // Store URL in localStorage
+    localStorage.setItem("last_url", url);
+
+    // Do a background refresh after analysis to get latest data
+    setTimeout(() => {
+      if (parsedUrl) {
+        backgroundRefresh(parsedUrl.owner, parsedUrl.repo, parsedUrl.number, parsedUrl.type);
       }
-    } else {
-      // It's an issue
-      issueTitle = data.details.title;
-      issueNumber = data.details.number;
-      // If there's a linked PR, extract its info
-      if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
-        const mainPR = data.linkedPullRequests[0];
-        prTitle = mainPR.title;
-        prNumber = mainPR.number;
-      }
-    }
+    }, 30000); // 30 seconds delay
 
-    renderComments("pr", prComments, "#pr-conversation", calculateAllScores,
-      prTitle ? { title: prTitle, number: prNumber } : undefined);
-    renderComments("issue", issueComments, "#issue-conversation", calculateAllScores,
-      issueTitle ? { title: issueTitle, number: issueNumber } : undefined);
-
-    // Set content loaded state for UI
-    uiStateManager.setContentLoaded("pr", prComments.length > 0);
-    uiStateManager.setContentLoaded("issue", issueComments.length > 0);
-
-    // Generate the score summary from both sets of comments
-    try {
-      // Using dynamic import to avoid circular dependencies
-      import("./components/score-summary-component").then((summaryModule) => {
-        if (typeof summaryModule.renderScoreSummary === "function") {
-          // Import scoreMap from comment-component
-          import("./components/comment-component").then((commentModule) => {
-            // Only show score summary if we have comments
-            if (prComments.length > 0 || issueComments.length > 0) {
-              summaryModule.renderScoreSummary(prComments, issueComments, commentModule.scoreMap);
-            }
-          });
-        }
-      });
-    } catch (error) {
-      console.error("Failed to render score summary:", error);
-    }
-
-    // Perform background refresh to check for updates
-    backgroundRefresh(owner, repo, number, type, data);
   } catch (error) {
-    uiStateManager.setError("issue", error instanceof Error ? error.message : String(error));
-    uiStateManager.setError("pr", error instanceof Error ? error.message : String(error));
-    showError(error instanceof Error ? error.message : String(error));
-  } finally {
-    // Analysis complete
+    console.error("Error analyzing content:", error);
+    domManager.showError(`Error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 /**
- * Clear previous results
+ * Do a background refresh of data
  */
-function clearResults(): void {
-  // Clear score summary
-  domManager.clearContent("scoreSummaryContent");
-  domManager.hide("scoreSummary");
+async function backgroundRefresh(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<void> {
+  try {
+    console.log("Starting background refresh...");
 
-  // Clear conversation containers
-  domManager.clearContent("issueConversation");
-  domManager.clearContent("prConversation");
-}
+    // Refresh data in background
+    const refreshResult = await githubApiService.refreshCachedData(owner, repo, number, type);
 
-/**
- * Display error message
- */
-function showError(message: string): void {
-  domManager.withElement("errorMessage", (element) => {
-    element.textContent = message;
-    element.classList.remove("hidden");
+    // If data was updated, update the UI
+    if (refreshResult && refreshResult.updated) {
+      console.log("Content updated, refreshing UI...");
 
-    // Hide after 5 seconds
-    setTimeout(() => element.classList.add("hidden"), 5000);
-  });
-}
+      // Process the updated data
+      const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(refreshResult.data);
 
-/**
- * Perform background refresh to check for updates
- */
-async function backgroundRefresh(
-  owner: string,
-  repo: string,
-  number: string,
-  type: "pr" | "issue",
-  originalData: any
-): Promise<void> {
-  // Detect environment consistently
-  const inProduction = typeof window !== 'undefined' &&
-                      window.location.hostname !== "localhost" &&
-                      window.location.hostname !== "127.0.0.1";
-  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+      // Clear previous content
+      domManager.clearContent("prConversation");
+      domManager.clearContent("issueConversation");
 
-  // Wait a bit before checking for updates
-  setTimeout(async () => {
-    try {
-      console.log(`${envPrefix} Starting background refresh for ${owner}/${repo}/${type}/${number}`);
-      const result = await githubApiService.refreshCachedData(owner, repo, number, type);
+      // Render updated comments
+      renderComments("pr", prComments, "#pr-conversation",
+        prInfo ? { title: prInfo, number: refreshResult.data.details.number.toString() } : undefined);
 
-      if (result && result.updated) {
-        console.log(`${envPrefix} Content updated, refreshing display`);
-        // Process and display updated data
-        const { prComments, issueComments } = processGitHubData(result.data);
+      renderComments("issue", issueComments, "#issue-conversation",
+        issueInfo ? { title: issueInfo, number: refreshResult.data.details.number.toString() } : undefined);
 
-        // Clear existing content
-        domManager.clearContent("issueConversation");
-        domManager.clearContent("prConversation");
+      // Update score summary
+      renderScoreSummary(prComments, issueComments);
 
-        // Extract title and number information for the headers (for updates)
-        let prTitle, prNumber, issueTitle, issueNumber;
-
-        if (result.data.type === 'pr') {
-          prTitle = result.data.details.title;
-          prNumber = result.data.details.number;
-          if (result.data.linkedIssue) {
-            issueTitle = result.data.linkedIssue.title;
-            issueNumber = result.data.linkedIssue.number;
-          }
-        } else {
-          // It's an issue
-          issueTitle = result.data.details.title;
-          issueNumber = result.data.details.number;
-          if (result.data.linkedPullRequests && result.data.linkedPullRequests.length > 0) {
-            const mainPR = result.data.linkedPullRequests[0];
-            prTitle = mainPR.title;
-            prNumber = mainPR.number;
-          }
-        }
-
-        // Display updated comments
-        renderComments("pr", prComments, "#pr-conversation", calculateAllScores,
-          prTitle ? { title: prTitle, number: prNumber } : undefined);
-        renderComments("issue", issueComments, "#issue-conversation", calculateAllScores,
-          issueTitle ? { title: issueTitle, number: issueNumber } : undefined);
-
-        // Update UI state
-        uiStateManager.setContentLoaded("pr", prComments.length > 0);
-        uiStateManager.setContentLoaded("issue", issueComments.length > 0);
-
-        // Update the score summary
-        try {
-          import("./components/score-summary-component").then((summaryModule) => {
-            if (typeof summaryModule.renderScoreSummary === "function") {
-              import("./components/comment-component").then((commentModule) => {
-                if (prComments.length > 0 || issueComments.length > 0) {
-                  summaryModule.renderScoreSummary(prComments, issueComments, commentModule.scoreMap);
-                }
-              });
-            }
-          });
-        } catch (error) {
-          console.error(`${envPrefix} Failed to update score summary:`, error);
-        }
-
-        // Show notification
-        notifyContentUpdated();
-      } else {
-        console.log(`${envPrefix} No content updates found during background refresh`);
-      }
-    } catch (error) {
-      console.error(`${envPrefix} Background refresh error:`, error);
+      // Show notification that content was updated
+      notifyContentUpdated();
     }
-  }, 30000); // Check after 30 seconds
+  } catch (error) {
+    console.error("Background refresh failed:", error);
+    // Don't show user-facing error for background refresh
+  }
 }

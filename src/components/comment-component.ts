@@ -1,21 +1,35 @@
 /**
  * Comment Component - Handles rendering of GitHub comments
- * Extracted from dom-utils and analyzer.ts to improve separation of concerns
+ * Includes functionality for displaying comment content, user info, and scores
  */
-import { CommentGroupMap, detectConsecutiveComments } from "../comment-grouping";
+import { detectConsecutiveComments } from "../comment-grouping";
 import { calculateGroupAwareScores } from "../scoring-utils";
 import { CommentScores, GitHubComment } from "../types";
-import { isGitHubBot } from "../utils/github-utils";
 
 // Export the scoreMap for use by other components
 export const scoreMap = new Map<number, CommentScores>();
 
-
- interface CommentDisplayOptions {
+interface CommentDisplayOptions {
   containerSelector: string;
   idPrefix?: string;
   className?: string;
   showScores?: boolean;
+}
+
+/**
+ * Check if a user is a GitHub bot account
+ */
+export function isGitHubBot(user?: any): boolean {
+  if (!user) return false;
+
+  // Check if user has the .type property set to 'Bot'
+  if (user.type === "Bot") return true;
+
+  // Check for common bot username patterns
+  return user.login.endsWith("[bot]") ||
+    ["github-actions", "dependabot", "renovate"].some(botName =>
+      user.login.toLowerCase().includes(botName.toLowerCase())
+    );
 }
 
 /**
@@ -108,7 +122,7 @@ function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-    // Add scores if provided and showScores is true
+  // Add scores if provided and showScores is true
   if (scores && showScores) {
     // Add special classes for identified comment types
     if (scores.wordCount === 0) {
@@ -181,7 +195,6 @@ export function renderComments(
   section: "pr" | "issue",
   comments: GitHubComment[],
   containerSelector: string,
-  calculateScores: (text: string) => CommentScores,
   titleInfo?: { title: string; number: string }
 ): void {
   const container = document.querySelector(containerSelector);
@@ -243,7 +256,7 @@ export function renderComments(
   });
 
   // Detect consecutive comments from the same user within the same context
-  const commentGroups: CommentGroupMap = detectConsecutiveComments(sortedComments, section);
+  const commentGroups = detectConsecutiveComments(sortedComments, section);
 
   // Only clear scores when we're processing PR comments (the first set)
   if (section === "pr") {
@@ -297,21 +310,4 @@ export function renderComments(
       commentScores
     );
   }
-
-  // Note: Score summary rendering is now handled by the analyzer.ts file
-  // after both PR and issue comments are processed
-}
-
-/**
- * Generate HTML for PR list
- */
-function generatePRListHTML(prs: any[]): string {
-  let html = `# Linked Pull Requests\n\n`;
-
-  prs.forEach((pr) => {
-    const statusIcon = pr.state === "closed" ? "❌" : pr.state === "merged" ? "✅" : "⏳";
-    html += `${statusIcon} [#${pr.number}: ${pr.title}](${pr.url}) by ${pr.author.login}\n\n`;
-  });
-
-  return html;
 }

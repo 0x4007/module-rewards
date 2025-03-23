@@ -170,7 +170,7 @@ process.on('uncaughtException', (err) => {
 // Check initial setup completed
 if (isInitialBuildComplete && isServerRunning) {
   console.log('\n✨ Development environment ready!\n');
-  console.log('- Local server: http://localhost:3001');
+  console.log('- Local server: http://localhost:3002');
   console.log('- WebSocket server: ws://localhost:8081');
   console.log('\nPress Ctrl+C to stop');
 }

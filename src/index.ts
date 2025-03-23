@@ -1,8 +1,8 @@
-import { GitHubClient } from "./github";
 import { EventRouter } from "./core/event-router";
 import { ModuleChain, ModuleChainRegistry } from "./core/module-chain";
+import { domManager } from "./dom-manager";
+import { GitHubClient } from "./github";
 import { CommentProcessorConfig, IssueCommentProcessor, PRCommentProcessor } from "./processors";
-import { showError } from "./dom-utils";
 
 export interface GitHubWebhookHeaders {
   "x-github-event"?: string;
@@ -64,8 +64,19 @@ export async function processWebhook(
 
     return results;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    showError(errorMessage);
+    const message = error instanceof Error ? error.message : String(error);
+    domManager.withElement("errorMessage", (el) => {
+      el.textContent = message;
+      el.classList.add("error-message-overlay");
+      el.style.opacity = "1";
+      setTimeout(() => {
+        el.style.opacity = "0";
+        setTimeout(() => {
+          el.textContent = "";
+          el.classList.remove("error-message-overlay");
+        }, 300);
+      }, 5000);
+    });
     throw error;
   }
 }

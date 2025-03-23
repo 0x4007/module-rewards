@@ -1,94 +1,91 @@
-# PR Analysis Tool
+# Content Scoring System
 
-A TypeScript-based application to analyze and visualize GitHub comment quality using different scoring algorithms, providing insights into conversation effectiveness in PR discussions.
-
-## Features
-
-- Multiple scoring algorithms (original, log-adjusted, exponential)
-- Proper markdown rendering and word counting
-- Individual comment analysis
-- User contribution statistics
-- Clean, responsive visualization
-
-## Tech Stack
-
-- **TypeScript**: Type-safe JavaScript
-- **esbuild**: Fast, lean TypeScript/JavaScript bundler
-- **Bun**: JavaScript runtime and package manager
-- **Marked.js**: Markdown parsing and rendering
+A modular system for analyzing and scoring content based on various metrics like readability and technical quality.
 
 ## Project Structure
 
 ```
-├── src/                 # TypeScript source files
-│   ├── types.ts         # Type definitions
-│   ├── github-api.ts    # GitHub API integration
-│   ├── scoring-utils.ts # Scoring algorithm implementations
-│   ├── main.ts          # Main application entry point
-│   └── server.ts        # Development server
-├── public/              # Static assets
-│   ├── index.html       # Main HTML file
-│   ├── styles.css       # CSS styles
-│   └── js/              # Compiled JavaScript (generated)
-├── build/               # Build system
-│   ├── build.ts         # Production build script
-│   └── dev.ts           # Development server with hot reload
-└── package.json         # Project configuration
+├── src/
+│   ├── core/           # Core system components
+│   │   ├── module-base.ts
+│   │   └── module-chain.ts
+│   ├── modules/        # Scoring modules
+│   │   ├── content-filter.ts
+│   │   └── scoring-pipeline.ts
+│   ├── scorers/        # Individual scoring implementations
+│   │   ├── base-scorer.ts
+│   │   ├── readability-scorer.ts
+│   │   └── technical-scorer.ts
+│   └── utils/          # Shared utilities
+│       ├── cloud-events.ts
+│       └── text-readability-shim.ts
+├── experimental/       # Experimental features
+└── tests/             # Test files
 ```
 
-## Getting Started
+## Scoring Strategies
 
-### Prerequisites
+The system supports multiple scoring strategies through a modular architecture:
 
-- [Bun](https://bun.sh/) (JavaScript runtime)
+1. **Readability Scoring**
+   - Flesch Reading Ease
+   - Flesch-Kincaid Grade Level
+   - Other readability metrics
 
-### Installation
+2. **Technical Quality Scoring**
+   - Code block analysis
+   - Technical term usage
+   - Explanation quality
+
+3. **Future Scoring Modules** (Planned)
+   - Sentiment analysis
+   - Code quality metrics
+   - Language model-based scoring
+   - Citation and reference quality
+
+## Development
 
 ```bash
 # Install dependencies
 bun install
-```
 
-### Development
-
-```bash
-# Start development server with hot reloading
+# Run development server
 bun run dev
+
+# Run tests
+bun test
 ```
 
-This will:
-1. Compile TypeScript to JavaScript
-2. Bundle the code with esbuild
-3. Start a development server at http://localhost:3001
-4. Watch for changes and automatically rebuild
+## Adding New Scoring Strategies
 
-### Building for Production
+1. Create a new scorer in `src/scorers/`
+2. Extend `BaseScorer` class
+3. Implement scoring logic
+4. Register in scoring pipeline
 
-```bash
-# Build for production
-bun run build
+Example:
+
+```typescript
+export class NewScorer extends BaseScorer<Config> {
+  readonly id = "new-scorer";
+
+  async score(content: string): Promise<ScorerResult> {
+    // Implementation
+    return {
+      rawScore: score,
+      normalizedScore: this.normalize(score),
+      metrics: { ... }
+    };
+  }
+}
 ```
 
-### Running the Server
+## Contributing
 
-```bash
-# Start the server only
-bun run start
-```
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
-## Scoring Algorithms
+## License
 
-The application implements three different scoring algorithms:
-
-1. **Original Score**: Based on power-law (0.85 exponent): `Math.pow(wordCount, 0.85)`
-2. **Log-Adjusted Score**: Balances length: `Math.pow(wordCount, 0.85) * (1 / Math.log2(wordCount + 2))`
-3. **Exponential Score**: Penalizes verbosity: `Math.pow(wordCount, 0.85) * Math.exp(-wordCount / 100)`
-
-## GitHub API Integration
-
-The application integrates with GitHub's API to fetch:
-- PR details
-- PR review comments
-- Issue comments
-
-For best results, provide a GitHub personal access token when prompted.
+MIT License

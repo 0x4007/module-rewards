@@ -1,9 +1,8 @@
 /**
- * Data Processor - Processes GitHub data into display-ready format
- * Extracted from analyzer.ts to improve separation of concerns
+ * Data Processor - Processes GitHub API data into display-ready format
  */
-import { FetchedData, LinkedPullRequest } from "../github/types";
 import { GitHubComment } from "../types";
+import { FetchedData, LinkedPullRequest } from "./github-api-service";
 
 /**
  * Process and prepare GitHub data for display
@@ -73,7 +72,7 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
       user: data.details.user,
       created_at: data.details.created_at,
       updated_at: data.details.updated_at,
-      html_url: data.details.html_url,
+      html_url: data.details.html_url
     };
     // Properly insert at the beginning to prevent double-post issues
     allComments.unshift(prBodyComment);
@@ -92,7 +91,7 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
         user: data.details.user, // Use PR author as fallback
         created_at: "",
         updated_at: "",
-        html_url: data.linkedIssue.html_url,
+        html_url: data.linkedIssue.html_url
       };
       issueComments.push(issueBodyComment);
     }
@@ -132,7 +131,7 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       user: data.details.user,
       created_at: data.details.created_at,
       updated_at: data.details.updated_at,
-      html_url: data.details.html_url,
+      html_url: data.details.html_url
     };
     // Properly insert at the beginning to prevent double-post issues
     allComments.unshift(issueBodyComment);
@@ -154,12 +153,12 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
 
     // If we have the PR body, add it as first comment
     // Create temporary array to hold all comments
-    const allComments: GitHubComment[] = [];
+    const prAllComments: GitHubComment[] = [];
 
     // Add PR comments if available first (chronological order)
     if (mainPR.comments) {
       console.log(`${envPrefix} Adding ${mainPR.comments.length} PR comments`);
-      allComments.push(...mainPR.comments);
+      prAllComments.push(...mainPR.comments);
     }
 
     // Add PR body as the very first comment if it exists
@@ -171,21 +170,21 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
         user: {
           login: mainPR.author.login,
           html_url: mainPR.author.html_url || "",
-          avatar_url: mainPR.author.avatar_url || "",
+          avatar_url: mainPR.author.avatar_url || ""
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        html_url: mainPR.url,
+        html_url: mainPR.url
       };
       // Properly insert at the beginning to prevent double-post issues
-      allComments.unshift(prBodyComment);
+      prAllComments.unshift(prBodyComment);
     } else {
       console.log(`${envPrefix} PR #${mainPR.number} has no body content`);
     }
 
     // Now assign the properly ordered comments if we have any
-    if (allComments.length > 0) {
-      prComments.push(...allComments);
+    if (prAllComments.length > 0) {
+      prComments.push(...prAllComments);
     } else {
       console.log(`${envPrefix} No comments found for PR #${mainPR.number}, generating PR list HTML instead`);
       // If no comments, just show PR references
@@ -200,7 +199,7 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        html_url: "",
+        html_url: ""
       };
       prComments.push(prListComment);
     }

@@ -1,76 +1,38 @@
 /**
  * Score Summary Component - Aggregates and displays contributor scores
- * Restores the functionality to show total scores for each contributor
  */
 import { domManager } from "../dom-manager";
-import { CommentScores, GitHubComment, GitHubUser } from "../types";
-
-interface ContributorScores {
-  user: GitHubUser;
-  totalOriginal: number;
-  totalExponential: number;
-  commentCount: number;
-}
-
-/**
- * Aggregates scores by contributor across all comments
- */
-function aggregateScoresByContributor(
-  prComments: GitHubComment[],
-  issueComments: GitHubComment[],
-  scoreMap: Map<number, CommentScores>
-): ContributorScores[] {
-  // Combine all comments
-  const allComments = [...prComments, ...issueComments];
-
-  // Map to track contributors and their scores
-  const contributorsMap = new Map<string, ContributorScores>();
-
-  // Process each comment
-  allComments.forEach((comment) => {
-    // Skip comments without user info or scores
-    if (!comment.user || !scoreMap.has(comment.id)) return;
-
-    const username = comment.user.login;
-    const scores = scoreMap.get(comment.id)!;
-
-    // Get or create contributor entry
-    if (!contributorsMap.has(username)) {
-      contributorsMap.set(username, {
-        user: comment.user,
-        totalOriginal: 0,
-        totalExponential: 0,
-        commentCount: 0,
-      });
-    }
-
-    // Update contributor totals
-    const contributor = contributorsMap.get(username)!;
-    contributor.totalOriginal += scores.original;
-    contributor.totalExponential += scores.exponential;
-    contributor.commentCount++;
-  });
-
-  // Convert map to array and sort by highest exponential score
-  return Array.from(contributorsMap.values()).sort((a, b) => b.totalExponential - a.totalExponential);
-}
+import { calculateUserScores } from "../scoring-utils";
+import { GitHubComment } from "../types";
+import { scoreMap } from "./comment-component";
 
 /**
  * Renders the score summary at the top of the page
  */
 export function renderScoreSummary(
   prComments: GitHubComment[],
-  issueComments: GitHubComment[],
-  scoreMap: Map<number, CommentScores>
+  issueComments: GitHubComment[]
 ): void {
-  // Aggregate scores by contributor
-  const contributorScores = aggregateScoresByContributor(prComments, issueComments, scoreMap);
+  // Combine all comments to calculate contributor scores
+  const allComments = [...prComments, ...issueComments];
 
   // Don't show empty summary
-  if (contributorScores.length === 0) {
+  if (allComments.length === 0) {
     domManager.hide("scoreSummary");
     return;
   }
+
+  // Calculate contributor scores
+  const userScores = calculateUserScores(scoreMap, allComments);
+
+  // Convert to array for sorting
+  const contributorScores = Object.entries(userScores).map(([username, stats]) => ({
+    username,
+    stats
+  }));
+
+  // Sort by exponential score (highest first)
+  contributorScores.sort((a, b) => b.stats.exponential - a.stats.exponential);
 
   // Clear previous content
   domManager.withElement("scoreSummaryContent", (element) => {
@@ -91,7 +53,7 @@ export function renderScoreSummary(
     table.appendChild(headerRow);
 
     // Add row for each contributor
-    contributorScores.forEach((contributor) => {
+    contributorScores.forEach(({ username, stats }) => {
       const row = document.createElement("tr");
 
       // Contributor cell with avatar and name
@@ -99,35 +61,40 @@ export function renderScoreSummary(
       contributorCell.className = "contributor-cell";
 
       // Add avatar if available
-      if (contributor.user.avatar_url) {
+      if (stats.avatar) {
         const avatar = document.createElement("img");
-        avatar.src = contributor.user.avatar_url;
-        avatar.alt = contributor.user.login;
+        avatar.src = stats.avatar;
+        avatar.alt = username;
         avatar.className = "summary-avatar";
         contributorCell.appendChild(avatar);
       }
 
       // Add username
-      const username = document.createElement("a");
-      username.href = contributor.user.html_url;
-      username.textContent = contributor.user.login;
-      username.className = "summary-username";
-      contributorCell.appendChild(username);
+      const usernameEl = document.createElement("a");
+      if (stats.url) {
+        usernameEl.href = stats.url;
+        usernameEl.target = "_blank";
+      } else {
+        usernameEl.href = "#";
+      }
+      usernameEl.textContent = username;
+      usernameEl.className = "summary-username";
+      contributorCell.appendChild(usernameEl);
 
       row.appendChild(contributorCell);
 
       // Score cells
       const originalCell = document.createElement("td");
-      originalCell.textContent = contributor.totalOriginal.toFixed(2);
+      originalCell.textContent = stats.original.toFixed(2);
       row.appendChild(originalCell);
 
       const exponentialCell = document.createElement("td");
       exponentialCell.className = "sort-column-cell";
-      exponentialCell.textContent = contributor.totalExponential.toFixed(2);
+      exponentialCell.textContent = stats.exponential.toFixed(2);
       row.appendChild(exponentialCell);
 
       const commentCountCell = document.createElement("td");
-      commentCountCell.textContent = contributor.commentCount.toString();
+      commentCountCell.textContent = stats.count.toString();
       row.appendChild(commentCountCell);
 
       table.appendChild(row);
@@ -143,7 +110,7 @@ export function renderScoreSummary(
 /**
  * Clear the score summary
  */
-function clearScoreSummary(): void {
+export function clearScoreSummary(): void {
   domManager.clearContent("scoreSummaryContent");
   domManager.hide("scoreSummary");
 }

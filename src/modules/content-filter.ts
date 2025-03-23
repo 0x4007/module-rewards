@@ -94,47 +94,15 @@ export class ContentFilter extends BaseModule<ContentFilterConfig, Record<string
   private extractContentAndAuthor(event: CloudEvent): { content?: string; author?: string } {
     const data = event.data as any;
 
-    // GitHub issue comment
-    if (event.type.includes("github.issue_comment")) {
+    // Check if we have direct content and metadata from our analyzer
+    if (data?.content !== undefined && data?.metadata) {
       return {
-        content: data?.comment?.body,
-        author: data?.comment?.user?.login,
+        content: data.content,
+        author: data.metadata.user
       };
     }
 
-    // GitHub issue
-    if (event.type.includes("github.issues")) {
-      return {
-        content: data?.issue?.body,
-        author: data?.issue?.user?.login,
-      };
-    }
-
-    // GitHub pull request
-    if (event.type.includes("github.pull_request")) {
-      return {
-        content: data?.pull_request?.body,
-        author: data?.pull_request?.user?.login,
-      };
-    }
-
-    // Google Docs document
-    if (event.type.includes("google-docs.document")) {
-      return {
-        content: data?.document?.content,
-        author: data?.document?.author,
-      };
-    }
-
-    // Telegram message
-    if (event.type.includes("telegram.message")) {
-      return {
-        content: data?.message?.text,
-        author: data?.message?.from?.username,
-      };
-    }
-
-    // Default fallback - try some common patterns
+    // Default fallback for other event types
     return {
       content: data?.content || data?.body || data?.text,
       author: data?.author || data?.user?.login || data?.sender?.login,

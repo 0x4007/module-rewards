@@ -76,8 +76,9 @@ class EventManager {
       const handleSubmit = async (e?: Event) => {
         if (e) e.preventDefault();
 
-        const urlInput = domManager.get("urlInput");
-        const inputValue = urlInput.value.trim();
+        // Read the value directly from the DOM to ensure we have the latest
+        const directInput = document.getElementById("url-input") as HTMLInputElement;
+        const inputValue = directInput?.value.trim() || "";
 
         console.log("Form submission triggered, input value:", inputValue);
 
@@ -210,7 +211,9 @@ class EventManager {
     try {
       // Get the value from the input if not passed directly
       if (!inputValue) {
-        inputValue = domManager.get("urlInput").value.trim();
+        // Read directly from the DOM element for reliability
+        const directInput = document.getElementById("url-input") as HTMLInputElement;
+        inputValue = directInput?.value.trim() || "";
       }
 
       // Prevent multiple simultaneous calls
@@ -229,7 +232,9 @@ class EventManager {
 
         // Update the URL in the input field if it changed
         if (correctUrl !== inputValue) {
-          domManager.get("urlInput").value = correctUrl;
+          // Update the DOM element directly for reliability
+          const directInput = document.getElementById("url-input") as HTMLInputElement;
+          if (directInput) directInput.value = correctUrl;
           // Removed history.replaceState to avoid cross-origin issues
           // when GitHub URLs are used from localhost
         }
@@ -265,6 +270,7 @@ class EventManager {
 
     if (lastUrl) {
       console.log("Loading last URL from localStorage:", lastUrl);
+
       domManager.withElement("urlInput", (input) => {
         input.value = lastUrl;
         void this.triggerAnalyze(lastUrl);

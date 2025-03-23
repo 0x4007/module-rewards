@@ -1,106 +1,181 @@
-import { CommentGroup } from "./comment-grouping";
+/**
+ * Scoring Utilities - Functions for calculating and processing scores
+ */
+import { CommentGroupMap } from "./comment-grouping";
 import { CommentScores } from "./types";
 
 /**
- * Counts words in a text, excluding code blocks, URLs, etc.
- * For slash commands (starting with '/') and bot comments, returns 0 to exclude them from scoring.
+ * Calculate original score based on a power-law relationship with word count
+ * Using a 0.85 exponent provides a reasonable curve that rewards length but not too aggressively
+ *
+ * @param wordCount Number of words in the content
+ * @returns Original score
  */
-function countWords(text: string, isSlashCommand?: boolean, isBot?: boolean): number {
-  // Skip if text is empty
-  if (!text || typeof text !== "string") return 0;
-
-  // Skip scoring if this is a slash command or from a bot
-  if (isSlashCommand === true || isBot === true) return 0;
-
-  // Remove block quotes (lines starting with >)
-  let cleanedText = text.replace(/^>.*(?:\r?\n|$)/gm, "");
-
-  // Remove code blocks
-  cleanedText = cleanedText.replace(/```[\s\S]*?```/g, "");
-
-  // Remove inline code
-  cleanedText = cleanedText.replace(/`[^`]+`/g, "");
-
-  // Remove URLs
-  cleanedText = cleanedText.replace(/https?:\/\/\S+/g, "");
-
-  // Count words (non-empty strings after splitting by whitespace)
-  return cleanedText
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length > 0).length;
-}
-
-/**
- * Calculates the original score based on power-law (0.85 exponent)
- */
-function calculateOriginalScore(wordCount: number): number {
+export function calculateOriginalScore(wordCount: number): number {
   return Math.pow(wordCount, 0.85);
 }
 
 /**
- * Calculates the exponential score which penalizes verbosity
+ * Calculate log-adjusted score that better balances length consideration
+ *
+ * @param wordCount Number of words in the content
+ * @returns Log-adjusted score
  */
-function calculateExponentialScore(wordCount: number): number {
+export function calculateLogAdjustedScore(wordCount: number): number {
+  return Math.pow(wordCount, 0.85) * (1 / Math.log2(wordCount + 2));
+}
+
+/**
+ * Calculate exponential score that penalizes verbosity
+ *
+ * @param wordCount Number of words in the content
+ * @returns Exponential score
+ */
+export function calculateExponentialScore(wordCount: number): number {
   return Math.pow(wordCount, 0.85) * Math.exp(-wordCount / 100);
 }
 
 /**
- * Calculates all scoring metrics for a given text
- * Optionally accepts a commentGroup parameter for handling consecutive comments
- * and flags indicating if the text is a slash command or from a bot
+ * Count words in a text, optionally skipping certain types of content
+ *
+ * @param text Text to count words in
+ * @param skipCodeBlocks Whether to skip code blocks
+ * @param isBot Whether the content is from a bot
+ * @returns Word count
  */
-export function calculateAllScores(
-  text: string,
-  commentGroup?: CommentGroup,
-  isSlashCommand?: boolean,
-  isBot?: boolean
-): CommentScores {
-  // Get the word count from the text
-  const individualWordCount = countWords(text, isSlashCommand, isBot);
-
-  // If no comment group is provided, or this is a single comment, calculate normally
-  if (!commentGroup || commentGroup.commentIds.length <= 1) {
-    return {
-      wordCount: individualWordCount,
-      original: calculateOriginalScore(individualWordCount),
-      exponential: calculateExponentialScore(individualWordCount),
-      isGrouped: false,
-    };
+export function countWords(text: string, skipCodeBlocks = true, isBot = false): number {
+  // If this is a bot comment or the content is empty, return 0
+  if (isBot || !text) {
+    return 0;
   }
 
-  // For grouped comments, calculate scores based on the total word count of the group
-  // This ensures that splitting a long comment into multiple short ones doesn't avoid penalties
-  const groupWordCount = commentGroup.totalWordCount;
+  // Remove code blocks if required
+  const processedText = skipCodeBlocks
+    ? text.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "")
+    : text;
 
-  return {
-    wordCount: individualWordCount,
-    original: calculateOriginalScore(groupWordCount),
-    exponential: calculateExponentialScore(groupWordCount),
-    groupWordCount,
-    isGrouped: true,
-  };
+  // Count words (non-empty whitespace-separated tokens)
+  return processedText
+    .split(/\s+/)
+    .filter(token => token.trim().length > 0)
+    .length;
 }
 
 /**
- * Calculate scores for a comment that might be part of a consecutive group
- * @param text The text of the individual comment
- * @param commentId The comment ID
- * @param groupMap A map of comment IDs to their groups
+ * Calculate scores for a comment, taking into account comment grouping
+ *
+ * @param text Comment text
+ * @param commentId Comment ID
+ * @param commentGroups Map of comment groups
  * @param isSlashCommand Whether the comment is a slash command
  * @param isBot Whether the comment is from a bot
- * @returns CommentScores object with appropriate scores
+ * @returns Comment scores
  */
 export function calculateGroupAwareScores(
   text: string,
-  commentId: string | number,
-  groupMap: Record<string, CommentGroup>,
-  isSlashCommand?: boolean,
-  isBot?: boolean
+  commentId: number,
+  commentGroups: CommentGroupMap,
+  isSlashCommand = false,
+  isBot = false
 ): CommentScores {
-  // Get the comment group if this comment is part of one
-  const group = groupMap[String(commentId)];
+  const individualWordCount = countWords(text, true, isBot || isSlashCommand);
 
-  // Calculate scores (if part of a group, the group's word count will be used)
-  return calculateAllScores(text, group, isSlashCommand, isBot);
+  // Special case: if it's a slash command or bot, return zero scores
+  if (isSlashCommand || isBot) {
+    return {
+      wordCount: 0,
+      original: 0,
+      exponential: 0
+    };
+  }
+
+  // Check if this comment is part of a group
+  const groupInfo = commentGroups[String(commentId)];
+  if (groupInfo) {
+    // Use group word count for scoring if this is the last comment in the group
+    const isLastInGroup = groupInfo.commentIds[groupInfo.commentIds.length - 1] === commentId;
+
+    if (isLastInGroup) {
+      const groupWordCount = groupInfo.totalWordCount;
+
+      return {
+        wordCount: individualWordCount,
+        original: calculateOriginalScore(groupWordCount),
+        exponential: calculateExponentialScore(groupWordCount),
+        isGrouped: true,
+        groupWordCount
+      };
+    } else {
+      // For comments in a group that aren't the last one, return minimal scores
+      // to avoid double-counting
+      return {
+        wordCount: individualWordCount,
+        original: 0,
+        exponential: 0,
+        isGrouped: true
+      };
+    }
+  } else {
+    // For individual comments not in a group, calculate scores normally
+    return {
+      wordCount: individualWordCount,
+      original: calculateOriginalScore(individualWordCount),
+      exponential: calculateExponentialScore(individualWordCount)
+    };
+  }
+}
+
+/**
+ * Calculate scores for GitHub users based on their comments
+ *
+ * @param commentScoreMap Map of comment IDs to their scores
+ * @param comments List of GitHub comments
+ * @returns Map of usernames to their aggregate scores
+ */
+export function calculateUserScores(
+  commentScoreMap: Map<number, CommentScores>,
+  comments: any[]
+): Record<string, {
+  count: number,
+  original: number,
+  exponential: number,
+  avatar?: string,
+  url?: string,
+  totalWords: number
+}> {
+  const userScores: Record<string, {
+    count: number;
+    original: number;
+    exponential: number;
+    avatar?: string;
+    url?: string;
+    totalWords: number;
+  }> = {};
+
+  for (const comment of comments) {
+    if (!comment.user || !comment.id) continue;
+
+    const scores = commentScoreMap.get(comment.id);
+    if (!scores) continue;
+
+    const username = comment.user.login;
+
+    if (!userScores[username]) {
+      userScores[username] = {
+        count: 0,
+        original: 0,
+        exponential: 0,
+        avatar: comment.user.avatar_url,
+        url: comment.user.html_url,
+        totalWords: 0
+      };
+    }
+
+    userScores[username].count++;
+    userScores[username].original += scores.original;
+    userScores[username].exponential += scores.exponential;
+    userScores[username].totalWords += scores.wordCount;
+  }
+
+  return userScores;
 }

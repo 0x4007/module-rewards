@@ -1,16 +1,18 @@
-/**
- * MODULE TEMPLATE
- *
- * This template provides a pattern for creating new modules in the text-conversation-rewards system.
- * It demonstrates best practices for module structure, configuration, and implementation.
- *
- * To use this template:
- * 1. Copy this file to src/modules/your-module-name.ts
- * 2. Rename MyModuleConfig, MyModuleResult, and MyModule
- * 3. Implement the transform method logic
- * 4. Update the supportedEventTypes property
- */
+# Module Template
 
+This template provides a pattern for creating new modules in the text-conversation-rewards system.
+It demonstrates best practices for module structure, configuration, and implementation.
+
+## Usage
+
+1. Copy this template code to `src/modules/your-module-name.ts`
+2. Rename `MyModuleConfig`, `MyModuleResult`, and `MyModule`
+3. Implement the transform method logic
+4. Update the `supportedEventTypes` property
+
+## Template Code
+
+```typescript
 import { BaseModule } from "../core/module-base";
 import { CloudEvent } from "../utils/cloud-events";
 
@@ -101,10 +103,6 @@ export class MyModule extends BaseModule<MyModuleConfig, Record<string, any>> {
    * 2. Extract necessary data from the event
    * 3. Process the data
    * 4. Return updated results
-   *
-   * @param event The CloudEvent to process
-   * @param result The current result object from previous modules
-   * @returns Updated result with this module's contributions
    */
   async transform(event: CloudEvent, result: Record<string, any>): Promise<Record<string, any>> {
     // Check if we should skip processing
