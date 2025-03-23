@@ -29,11 +29,13 @@ const buildPromise = new Promise(async (resolve, reject) => {
       outdir: './public/js',
       target: 'browser',
       format: 'esm',
-      sourcemap: process.env.NODE_ENV !== 'production' ? 'inline' : false,
       minify: process.env.NODE_ENV === 'production',
+      sourcemap: process.env.NODE_ENV === 'production' ? 'external' : 'inline',
       external: ['marked'],
       define: {
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+        'global': 'window',
+        'process': '{ env: { NODE_ENV: ' + JSON.stringify(process.env.NODE_ENV || 'production') + ' } }'
       },
     }).then(result => {
       if (!result.success) {

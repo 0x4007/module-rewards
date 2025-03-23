@@ -97,13 +97,48 @@ class EventManager {
    * Set up WebSocket connection for live reload
    */
   private setupWebSocket(): void {
-    // Only initialize WebSocket in development mode
-    if (process.env.NODE_ENV !== 'production') {
-      import('./utils/hot-reload').then(module => {
-        module.setupHotReload();
-      }).catch(err => {
-        console.warn('Hot reload setup failed:', err);
-      });
+    // In production mode, don't do anything related to hot reload
+    // This ensures no WebSocket connection attempts are made
+    if (typeof process !== 'undefined' &&
+        process.env &&
+        process.env.NODE_ENV === 'production') {
+      console.log('Hot reload disabled in production mode');
+      return;
+    }
+
+    // Only in development: Try to connect to WebSocket server
+    try {
+      const connectWebSocket = () => {
+        try {
+          const ws = new WebSocket("ws://localhost:8081");
+
+          ws.onmessage = (event) => {
+            if (event.data === "reload") {
+              console.log("Live reload: Refreshing page...");
+              window.location.reload();
+            }
+          };
+
+          ws.onclose = () => {
+            console.log("WebSocket connection closed. Attempting to reconnect...");
+            setTimeout(connectWebSocket, 1000);
+          };
+
+          ws.onerror = () => {
+            // Silently fail in production or when server is not available
+          };
+        } catch (error) {
+          // Silently fail when WebSocket server is not available
+          setTimeout(connectWebSocket, 1000);
+        }
+      };
+
+      // Only try to connect if we're in a browser environment
+      if (typeof window !== 'undefined') {
+        connectWebSocket();
+      }
+    } catch (err) {
+      // Ignore errors in production
     }
   }
 
