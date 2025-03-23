@@ -136,24 +136,27 @@ footer {
 }
 
 #details {
-  margin-bottom: 1.5rem;
-  padding: 16px;
+  /* margin-bottom: 1.5rem; */
+  /* padding: 16px; */
   backdrop-filter: blur(24px);
   background-color: #80808010;
+  padding-top: 16px;
 }
 
 .title {
   font-size: 1.5rem;
   margin: 0;
+  text-align: center;
 }
 
 .meta {
-  color: #808080;
+  /* color: #808080; */
+  text-align: center;
 }
 
 .meta-separator {
   margin: 0 0.5rem;
-  color: var(--border);
+  /* color: var(--border); */
 }
 
 .meta strong {
@@ -437,7 +440,7 @@ footer {
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin: 8px auto;
   padding: 16px;
   justify-content: center;
   backdrop-filter: blur(24px);
@@ -522,7 +525,7 @@ footer {
   border-radius: 4px;
   padding: 8px 16px;
   backdrop-filter: blur(24px);
-  background-color: #80808010;
+  background-color: #80808008;
 }
 
 .score-summary-table th,
