@@ -8,8 +8,9 @@
 @font-face {
   font-family: "Ubiquity Nova";
   src: url("../fonts/ubiquity-nova-standard.eot");
-  src: url("../fonts/ubiquity-nova-standard.woff") format("woff"),
-       url("../fonts/ubiquity-nova-standard.ttf") format("truetype");
+  src:
+    url("../fonts/ubiquity-nova-standard.woff") format("woff"),
+    url("../fonts/ubiquity-nova-standard.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
@@ -51,7 +52,7 @@
 body {
   line-height: 1.6;
   color: var(--text);
-  background: var(--bg);
+  background: #000;
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
@@ -138,9 +139,11 @@ footer {
 #details {
   /* margin-bottom: 1.5rem; */
   /* padding: 16px; */
-  backdrop-filter: blur(24px);
-  background-color: #80808010;
+  backdrop-filter: blur(12px);
+  background-color: #00000040;
   padding-top: 16px;
+  border: 1px solid #ffffff10;
+  border-radius: 4px;
 }
 
 .title {
@@ -169,8 +172,9 @@ footer {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   margin: 1rem 0;
-  backdrop-filter: blur(24px);
-  background-color: #80808010;
+  backdrop-filter: blur(12px);
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .error-message {
@@ -193,8 +197,9 @@ footer {
   color: var(--text-light);
   border-radius: 6px;
   margin: 15px 0;
-  backdrop-filter: blur(24px);
-  background-color: #80808010;
+  backdrop-filter: blur(12px);
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .spinner {
@@ -207,8 +212,12 @@ footer {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .section-error-message {
@@ -235,9 +244,15 @@ footer {
 }
 
 @keyframes ellipsis-animation {
-  0% { content: "."; }
-  33% { content: ".."; }
-  66% { content: "..."; }
+  0% {
+    content: ".";
+  }
+  33% {
+    content: "..";
+  }
+  66% {
+    content: "...";
+  }
 }
 
 /* ========== COMMENT STYLES ========== */
@@ -247,8 +262,9 @@ footer {
   margin-bottom: 8px;
   padding: 8px 16px;
   position: relative;
-  backdrop-filter: blur(24px);
-  background-color: #80808010;
+  backdrop-filter: blur(12px);
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .grouped-comment {
@@ -443,8 +459,9 @@ footer {
   margin: 8px auto;
   padding: 16px;
   justify-content: center;
-  backdrop-filter: blur(24px);
-  background-color: #80808010;
+  backdrop-filter: blur(12px);
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .conversation-header svg {
@@ -460,8 +477,9 @@ footer {
   border-radius: 6px;
   min-width: 160px;
   justify-content: center;
-  backdrop-filter: blur(24px);
-  background-color: #80808010;
+  backdrop-filter: blur(12px);
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .empty-state svg {
@@ -524,7 +542,7 @@ footer {
   width: 100%;
   border-radius: 4px;
   padding: 8px 16px;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(12px);
   background-color: #80808008;
 }
 
@@ -544,7 +562,8 @@ footer {
 .score-summary-table th.sort-column {
   color: white;
   position: relative;
-  background-color: #80808010;
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .score-summary-table th.sort-column::after {
@@ -555,7 +574,8 @@ footer {
 
 .score-summary-table td.sort-column-cell {
   font-weight: bold;
-  background-color: #80808010;
+  background-color: #00000040;
+  border:1px solid #ffffff10;
 }
 
 .contributor-cell {
@@ -597,7 +617,8 @@ footer {
   color: var(--text);
 }
 
-.linked-issue-spec, .linked-prs-list {
+.linked-issue-spec,
+.linked-prs-list {
   margin: 0 0 2rem;
   padding: 1.5rem;
   border: 1px solid var(--border);
@@ -605,14 +626,16 @@ footer {
   background: var(--hover);
 }
 
-.linked-issue-spec .issue-header, .linked-prs-list .prs-header {
+.linked-issue-spec .issue-header,
+.linked-prs-list .prs-header {
   margin-bottom: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.linked-issue-spec h3, .linked-prs-list h3 {
+.linked-issue-spec h3,
+.linked-prs-list h3 {
   margin: 0 0 0.5rem;
   font-size: 1.2rem;
   color: var(--text);
@@ -621,13 +644,15 @@ footer {
   gap: 0.5rem;
 }
 
-.linked-issue-spec a, .linked-prs-list a {
+.linked-issue-spec a,
+.linked-prs-list a {
   color: var(--primary);
   text-decoration: none;
   font-weight: 600;
 }
 
-.linked-issue-spec a:hover, .linked-prs-list a:hover {
+.linked-issue-spec a:hover,
+.linked-prs-list a:hover {
   text-decoration: underline;
 }
 
@@ -690,7 +715,7 @@ pre {
   background-color: var(--error);
   color: white;
   border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   opacity: 1;
   transition: opacity 0.3s ease-in-out;
