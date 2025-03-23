@@ -10,9 +10,6 @@ interface DOMElements {
   analyzeForm: HTMLFormElement;
   loadingIndicator: HTMLElement;
   errorMessage: HTMLElement;
-  detailsElement: HTMLElement;
-  title: HTMLElement;
-  meta: HTMLElement;
   scoreSummary: HTMLElement;
   scoreSummaryContent: HTMLElement;
   issueConversation: HTMLElement;
@@ -36,9 +33,6 @@ class DOMManager {
         analyzeForm: document.getElementById("analyze-form") as HTMLFormElement,
         loadingIndicator: document.getElementById("loading-indicator") as HTMLElement,
         errorMessage: document.getElementById("error-message") as HTMLElement,
-        detailsElement: document.getElementById("details") as HTMLElement,
-        title: document.querySelector("#details .title") as HTMLElement,
-        meta: document.querySelector("#details .meta") as HTMLElement,
         scoreSummary: document.getElementById("score-summary") as HTMLElement,
         scoreSummaryContent: document.getElementById("score-summary-content") as HTMLElement,
         issueConversation: document.getElementById("issue-conversation") as HTMLElement,

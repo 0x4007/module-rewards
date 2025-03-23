@@ -77,23 +77,6 @@ export async function analyze(inputUrl: string): Promise<void> {
     const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(data);
     console.log(`${envPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`);
 
-    // Show essential information
-    domManager.show("detailsElement");
-    domManager.setText("title", `${data.details.title} (#${data.details.number})`);
-
-    // Set metadata information if available
-    let metaHTML = "";
-    if (prInfo) {
-      metaHTML += `<span class="meta-separator">|</span> <strong>${prInfo}</strong>`;
-    }
-    if (issueInfo) {
-      metaHTML += `<span class="meta-separator">|</span> <strong>${issueInfo}</strong>`;
-    }
-
-    domManager.withElement("meta", (element) => {
-      element.innerHTML = metaHTML.startsWith("<span") ? metaHTML.substring(30) : metaHTML;
-    });
-
     // Display comments with sections
     let prTitle, prNumber, issueTitle, issueNumber;
 
@@ -160,10 +143,6 @@ export async function analyze(inputUrl: string): Promise<void> {
  * Clear previous results
  */
 function clearResults(): void {
-  // Reset title and meta
-  domManager.setText("title", "");
-  domManager.setText("meta", "");
-
   // Clear score summary
   domManager.clearContent("scoreSummaryContent");
   domManager.hide("scoreSummary");
