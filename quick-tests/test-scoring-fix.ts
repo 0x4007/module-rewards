@@ -1,4 +1,4 @@
-import { calculateAllScores } from './src/scoring-utils';
+import { calculateAllScores } from '../src/scoring-utils';
 
 console.log('Testing Scoring Changes for Special Comments:
 ');
@@ -22,4 +22,3 @@ const botComment = 'This is a comment from a bot account';
 const botScores = calculateAllScores(botComment, undefined, false, true);
 console.log('Bot Comment Scores:');
 console.log(botScores);
-

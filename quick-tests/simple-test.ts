@@ -1,4 +1,4 @@
-import { calculateAllScores } from './src/scoring-utils';
+import { calculateAllScores } from '../src/scoring-utils';
 
 // Test 1: Regular comment
 console.log("=== Regular Comment ===");

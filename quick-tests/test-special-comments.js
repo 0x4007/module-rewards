@@ -8,7 +8,7 @@ const testScores = [
 ];
 
 // Import from score-summary-component
-const {renderScoreSummary} = require('./src/components/score-summary-component');
+const {renderScoreSummary} = require('../src/components/score-summary-component');
 
 // Test aggregation
 const result = aggregateScoresByContributor(
