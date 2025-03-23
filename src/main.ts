@@ -4,7 +4,9 @@
  */
 import { marked } from "marked";
 import { domManager } from "./dom-manager";
+import { initAuthHandler } from "./dom-utils";
 import { eventManager } from "./event-manager";
+import "./utils/token-test"; // Register token test functions to window
 
 // Make marked available globally for markdown rendering
 declare global {
@@ -22,6 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!domManager.initialize()) {
       throw new Error("Failed to initialize DOM manager");
     }
+
+    // Initialize the auth handler to provide token input functionality
+    initAuthHandler();
 
     // Initialize event handling system
     // This now includes URL query parameter processing

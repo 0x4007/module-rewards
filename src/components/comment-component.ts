@@ -39,7 +39,7 @@ function renderComment(
   commentElement.id = `${idPrefix}-${comment.id}`;
   commentElement.className = className;
 
-  // Add special class if this is part of a group
+  // Add special class if this is part of a consecutive double-post sequence
   if (scores?.isGrouped) {
     commentElement.classList.add("grouped-comment", "badge-base");
   }
@@ -108,24 +108,35 @@ function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-    // Add scores if provided and showScores is true
-  if (scores && showScores) {
-    // Add special classes for identified comment types
-    if (scores.wordCount === 0) {
-      // Add slash command styling
-      if (comment.body.trim().startsWith("/")) {
-        commentElement.classList.add("slash-command", "badge-base");
-      }
+    // Always check for slash commands and bots regardless of scores
+    // This fixes the slash command detection when it's not properly propagated from modules
+    const isSlashCommand = comment.body.trim().startsWith("/");
+    if (isSlashCommand) {
+      commentElement.classList.add("slash-command", "badge-base");
+      console.log("Slash command detected and styling applied:", comment.body);
 
-      // Add bot comment styling (check for bot indicators in username)
-      if (isGitHubBot(comment.user)) {
-        commentElement.classList.add("bot-comment", "badge-base");
+      // If it's a slash command but doesn't have proper zero scores, generate them
+      if (!scores || scores.wordCount !== 0) {
+        scores = {
+          wordCount: 0,
+          original: 0,
+          exponential: 0,
+          isGrouped: false,
+          isSlashCommand: true
+        };
       }
     }
 
-    const scoresElement = renderScores(scores);
-    commentElement.appendChild(scoresElement);
-  }
+    // Check for bot accounts
+    if (isGitHubBot(comment.user)) {
+      commentElement.classList.add("bot-comment", "badge-base");
+    }
+
+    // Add scores if provided and showScores is true (or it's a slash command which should always show scores)
+    if (scores && (showScores || isSlashCommand)) {
+      const scoresElement = renderScores(scores);
+      commentElement.appendChild(scoresElement);
+    }
 
   // Add the comment to the container
   container.appendChild(commentElement);
@@ -158,13 +169,13 @@ function renderScores(scores: CommentScores): HTMLElement {
     </div>
   `;
 
-  // If this comment is part of a group, add group information
+  // If this comment is part of a double-post sequence, add grouped comment information
   if (scores.isGrouped && scores.groupWordCount) {
     scoreHtml += `
       <div class="score-info group-info">
-        <span class="score-label">Group Words:</span>
+        <span class="score-label">Double Post:</span>
         <span class="score-value">${scores.groupWordCount}</span>
-        <span class="group-indicator" title="This comment is part of a sequence of consecutive comments by the same user in the same context (PR conversation, PR review, or issue). All comments in the sequence are scored as if they were a single comment to prevent gaming the system with multiple short comments.">⚠️</span>
+        <span class="group-indicator" title="This comment is part of a sequence of consecutive comments by the same user (double posting). All comments in the sequence are scored as if they were a single comment to prevent gaming the system with multiple short comments.">⚠️</span>
       </div>
     `;
   }
@@ -254,18 +265,18 @@ export function renderComments(
   for (const comment of sortedComments) {
     if (!comment.body) continue;
 
-    // Check if this comment is part of a group
-    const groupInfo = commentGroups[String(comment.id)];
+    // Check if this comment is part of a double-post sequence (consecutive comments from same user)
+    const doublePostInfo = commentGroups[String(comment.id)];
     let showScores = true;
     let commentScores: CommentScores | undefined;
 
-    if (groupInfo) {
-      // Only show scores on the last comment in each group
-      const isLastInGroup = groupInfo.commentIds[groupInfo.commentIds.length - 1] === comment.id;
-      showScores = isLastInGroup;
+    if (doublePostInfo) {
+      // Only show scores on the last comment in a double-post sequence
+      const isLastInSequence = doublePostInfo.commentIds[doublePostInfo.commentIds.length - 1] === comment.id;
+      showScores = isLastInSequence;
 
-      if (isLastInGroup) {
-        // For the last comment, calculate scores based on the entire group
+      if (isLastInSequence) {
+        // For the last comment, calculate scores based on the entire double-post sequence
         commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
 
         // Store scores in the map

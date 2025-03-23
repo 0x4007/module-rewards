@@ -62,8 +62,22 @@ export class GitHubClient {
     const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
 
     try {
+      // Show token debugging info
+      console.log(`${debugPrefix} 🔑 Token debug: GITHUB_TOKEN env var present:`, process.env.GITHUB_TOKEN ? "YES" : "NO");
+      console.log(`${debugPrefix} 🔑 Token debug: Client using token:`, this.token ? "YES" : "NO");
+      if (this.token) {
+        console.log(`${debugPrefix} 🔑 Token debug: Token length:`, this.token.length);
+        console.log(`${debugPrefix} 🔑 Token debug: Token first 4 chars:`, this.token.substring(0, 4));
+      }
+
       console.log(`${debugPrefix} Executing GraphQL query with variables:`, JSON.stringify(variables));
-      console.log(`${debugPrefix} Using API token:`, this.token ? 'Yes (token provided)' : 'No (anonymous access)');
+
+      // Log the actual headers being sent (redacting the token value)
+      const headersDebug = {...this.headers} as Record<string, string>;
+      if (headersDebug["Authorization"]) {
+        headersDebug["Authorization"] = headersDebug["Authorization"].replace(/Bearer .+/, 'Bearer [REDACTED]');
+      }
+      console.log(`${debugPrefix} Request headers:`, headersDebug);
 
       // Create a timestamp to track response time
       const startTime = Date.now();
@@ -81,13 +95,27 @@ export class GitHubClient {
       // Log headers for debugging
       const limitRemaining = response.headers.get('x-ratelimit-remaining');
       const limitReset = response.headers.get('x-ratelimit-reset');
+      const authHeader = response.headers.get('www-authenticate');
 
       if (limitRemaining) {
         console.log(`${debugPrefix} GitHub API rate limit remaining: ${limitRemaining}`);
       }
 
+      if (authHeader) {
+        console.log(`${debugPrefix} Authentication header in response: ${authHeader}`);
+      }
+
       if (!response.ok) {
-        throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
+        // Get more details about the error
+        let errorDetails = "";
+        try {
+          const errorBody = await response.text();
+          errorDetails = ` - Details: ${errorBody}`;
+        } catch (e) {
+          errorDetails = " - Could not read error details";
+        }
+
+        throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}${errorDetails}`);
       }
 
       const result: GraphQLResponse<T> = await response.json();
@@ -102,7 +130,7 @@ export class GitHubClient {
           console.error(`${debugPrefix} 🔍 DEBUG for Issue #30: GraphQL query failed with errors`);
         }
 
-        if (result.errors.some((e) => e.type === "NOT_FOUND" && e.path?.includes("repository"))) {
+        if (result.errors.some((e: any) => e.type === "NOT_FOUND" && e.path?.includes("repository"))) {
           console.log(`${debugPrefix} Repository not found: ${variables.owner}/${variables.repo}`);
           return null;
         }

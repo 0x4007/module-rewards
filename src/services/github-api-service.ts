@@ -1,18 +1,33 @@
 /**
  * GitHub API Service - Centralized handling of GitHub API requests
  * Includes caching and error handling
+ *
+ * Uses GitHubClientWithFallback to handle repositories with dot-prefixed names that cause GraphQL API issues
  */
-import { GitHubClient } from "../github/github-client";
+import { createAuthMessage } from "../dom-utils/auth-handler";
+import { GitHubClientWithFallback } from "../github/github-client-fix";
 import { FetchedData, UrlParseResult } from "../github/types";
 
 class GitHubApiService {
-  private client: GitHubClient;
+  private client: GitHubClientWithFallback;
   private readonly CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
   private readonly token?: string;
 
   constructor(token: string | null | undefined = null) {
     this.token = token || undefined;
-    this.client = new GitHubClient(this.token);
+    // Use the enhanced client that can handle dot-prefixed repositories
+    this.client = new GitHubClientWithFallback(this.token);
+
+    // Log information about the token
+    const inProduction = typeof window !== 'undefined' &&
+                         window.location.hostname !== "localhost" &&
+                         window.location.hostname !== "127.0.0.1";
+    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+
+    console.log(`${envPrefix} GitHub API Service initialized with token: ${this.token ? "YES" : "NO"}`);
+    if (this.token) {
+      console.log(`${envPrefix} Token length: ${this.token.length}, first chars: ${this.token.substring(0, 4)}`);
+    }
   }
 
   /**
@@ -118,12 +133,7 @@ class GitHubApiService {
         details: {
           title: `${type.toUpperCase()} #${number}`,
           body: inProduction
-            ? "## GitHub Authentication Required\n\n" +
-              "To view this content, you need to provide a GitHub personal access token.\n\n" +
-              "<div class='auth-error-actions'>\n" +
-              "  <button class='auth-token-button' onclick=\"window.open('/token-input.html', 'github_token', 'width=600,height=700')\">Add GitHub Token</button>\n" +
-              "</div>\n\n" +
-              "Error details: " + errorMessage
+            ? createAuthMessage(errorMessage)
             : "## API Request Failed\n\nError: " + errorMessage,
           number: parseInt(number),
           html_url: `https://github.com/${owner}/${repo}/${type === 'pr' ? 'pull' : 'issue'}/${number}`,

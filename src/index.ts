@@ -1,8 +1,10 @@
-import { GitHubClient } from "./github";
 import { EventRouter } from "./core/event-router";
 import { ModuleChain, ModuleChainRegistry } from "./core/module-chain";
-import { CommentProcessorConfig, IssueCommentProcessor, PRCommentProcessor } from "./processors";
 import { showError } from "./dom-utils";
+import { GitHubClientWithFallback } from "./github/github-client-fix";
+import { BotCommentPreprocessor } from "./modules/bot-comment-preprocessor";
+import { SlashCommandPreprocessor } from "./modules/slash-command-preprocessor";
+import { CommentProcessorConfig, IssueCommentProcessor, PRCommentProcessor } from "./processors";
 
 export interface GitHubWebhookHeaders {
   "x-github-event"?: string;
@@ -16,12 +18,20 @@ export interface GitHubWebhookHeaders {
 function initializeModuleChains(config: CommentProcessorConfig = {}): ModuleChainRegistry {
   const registry = new ModuleChainRegistry();
 
+  // Create preprocessor modules
+  const botPreprocessor = new BotCommentPreprocessor();
+  const slashCommandPreprocessor = new SlashCommandPreprocessor();
+
   // Create chains for different comment types
   const issueCommentChain = new ModuleChain("github-issue-comment-chain");
+  issueCommentChain.addModule(botPreprocessor);
+  issueCommentChain.addModule(slashCommandPreprocessor);
   issueCommentChain.addModule(new IssueCommentProcessor(config));
   registry.registerChain(issueCommentChain);
 
   const prCommentChain = new ModuleChain("github-pr-comment-chain");
+  prCommentChain.addModule(botPreprocessor);
+  prCommentChain.addModule(slashCommandPreprocessor);
   prCommentChain.addModule(new PRCommentProcessor(config));
   registry.registerChain(prCommentChain);
 
@@ -38,7 +48,9 @@ export async function processWebhook(
   headers: Record<string, string> = {}
 ): Promise<any> {
   try {
-    const client = new GitHubClient(process.env.GITHUB_TOKEN);
+    console.log("Processing webhook with token:", process.env.GITHUB_TOKEN ? "YES (token present)" : "NO (no token)");
+    // Use the enhanced client that supports dot-prefixed repositories
+    const client = new GitHubClientWithFallback(process.env.GITHUB_TOKEN);
 
     // Validate the webhook
     if (!client.validateWebhook(headers, payload)) {

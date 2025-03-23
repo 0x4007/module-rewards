@@ -1,8 +1,14 @@
 /**
  * DOM Utilities - Basic DOM manipulation functions
  * Simplified version to avoid redundancy with dom-manager.ts
+ *
+ * Also includes auth handling utilities for GitHub tokens
  */
+import { addTokenInputButton, clearGitHubToken, getGitHubToken, initAuthHandler, showTokenInput } from "./auth-handler";
 import { CommentDisplayOptions, ErrorDisplayOptions } from "./types";
+
+// Export auth handler functions
+export { addTokenInputButton, clearGitHubToken, getGitHubToken, initAuthHandler, showTokenInput };
 
 /**
  * Clear any existing results from the DOM

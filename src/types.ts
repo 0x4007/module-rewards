@@ -113,6 +113,8 @@ export interface CommentScores {
   exponential: number;
   isGrouped?: boolean;
   groupWordCount?: number;
+  isSlashCommand?: boolean;
+  isBot?: boolean;
 }
 
 export interface ScoringMetrics {
