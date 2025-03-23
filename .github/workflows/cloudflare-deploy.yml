@@ -1,0 +1,58 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types: [completed]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-to-cloudflare:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-22.04
+    environment: production
+    steps:
+      - name: Download build artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Build
+          name: public
+          path: public
+          run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Deploy to Cloudflare
+        id: deploy
+        uses: ubiquity/cloudflare-deploy-action@main
+        with:
+          repository: ${{ github.repository }}
+          production_branch: ${{ github.event.repository.default_branch }}
+          build_artifact_name: "public"
+          output_directory: "public"
+          current_branch: ${{ github.event.workflow_run.head_branch }}
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          commit_sha: ${{ github.event.workflow_run.head_sha }}
+          workflow_run_id: ${{ github.event.workflow_run.id }}
+          app_id: ${{ secrets.APP_ID }}
+          app_private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Verify Deployment
+        if: success()
+        shell: bash
+        run: |
+          # Wait for deployment to propagate
+          sleep 15
+
+          # Get deployment URL from previous step
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
+
+          # Verify deployment is accessible
+          if ! curl -sL --fail "$DEPLOYMENT_URL" > /dev/null; then
+            echo "::error::Deployment verification failed for $DEPLOYMENT_URL"
+            exit 1
+          fi
+
+          echo "::notice::Deployment verified successfully at $DEPLOYMENT_URL"
