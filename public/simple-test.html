@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple GitHub URL Tester</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+    .test-button {
+      background-color: #0077ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    .url-display {
+      display: block;
+      margin: 10px 0;
+      font-family: monospace;
+      word-break: break-all;
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 10px;
+      border-radius: 4px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      border-radius: 4px;
+    }
+    .content img {
+      max-width: 100%;
+    }
+    .loading {
+      display: none;
+      color: #0077ff;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simple GitHub URL Tester</h1>
+
+  <div class="test-section">
+    <h2>Test with Pre-defined URL</h2>
+    <div class="url-display">https://github.com/ubiquity/ubiquity-dollar/issues/100</div>
+    <button id="test-predefined" class="test-button">Test This URL</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Test with Custom URL</h2>
+    <input type="text" id="custom-url" placeholder="Enter GitHub URL">
+    <button id="test-custom" class="test-button">Test Custom URL</button>
+  </div>
+
+  <div id="loading" class="loading">Loading...</div>
+
+  <div id="results" class="test-section">
+    <h2>Results</h2>
+    <div id="content-display"></div>
+  </div>
+
+  <script>
+    // Wait for the page to load
+    document.addEventListener('DOMContentLoaded', () => {
+      const predefinedUrl = 'https://github.com/ubiquity/ubiquity-dollar/issues/100';
+      const predefinedButton = document.getElementById('test-predefined');
+      const customButton = document.getElementById('test-custom');
+      const customUrlInput = document.getElementById('custom-url');
+      const resultArea = document.getElementById('content-display');
+      const loadingIndicator = document.getElementById('loading');
+
+      // Function to directly analyze a URL
+      const directAnalyze = async (url) => {
+        try {
+          loadingIndicator.style.display = 'block';
+          resultArea.innerHTML = '';
+
+          // Fetch from GitHub API
+          console.log(`Fetching ${url} directly...`);
+
+          // Parse GitHub URL to extract owner, repo, etc.
+          const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)/);
+          if (!match) {
+            throw new Error('Invalid GitHub URL format');
+          }
+
+          const [_, owner, repo, type, number] = match;
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/${type === 'pull' ? 'pulls' : 'issues'}/${number}`;
+
+          console.log(`API URL: ${apiUrl}`);
+
+          const response = await fetch(apiUrl);
+
+          if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          console.log('Fetched data:', data);
+
+          // Display results
+          resultArea.innerHTML = `
+            <h3>${data.title}</h3>
+            <div class="metadata">
+              <p><strong>Author:</strong> ${data.user.login}</p>
+              <p><strong>Created:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+              <p><strong>Content Length:</strong> ${data.body ? data.body.length : 0} characters</p>
+            </div>
+            <div class="content">${data.body ? convertMarkdown(data.body) : 'No content'}</div>
+          `;
+
+          return true;
+        } catch (error) {
+          console.error('Error analyzing URL:', error);
+          resultArea.innerHTML = `<p>Error: ${error.message}</p>`;
+          return false;
+        } finally {
+          loadingIndicator.style.display = 'none';
+        }
+      };
+
+      // Simple markdown conversion
+      function convertMarkdown(text) {
+        // Basic conversion for headers, bold, italic, code, and links
+        // This is a very simplified version of markdown parsing
+        return text
+          // Code blocks
+          .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
+          // Inline code
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          // Headers
+          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+          // Bold
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          // Italic
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          // Links
+          .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+          // Images with regex to capture GitHub image URLs
+          .replace(/!\[(.*?)\]\((https:\/\/user-images\.githubusercontent\.com\/[^)]+)\)/g,
+                  '<img src="$2" alt="$1" style="max-width:100%;">')
+          // Line breaks
+          .replace(/\n/g, '<br>');
+      }
+
+      // Set up event listeners
+      predefinedButton.addEventListener('click', () => {
+        directAnalyze(predefinedUrl);
+      });
+
+      customButton.addEventListener('click', () => {
+        const url = customUrlInput.value.trim();
+        if (url) {
+          directAnalyze(url);
+        } else {
+          resultArea.innerHTML = '<p>Please enter a valid GitHub URL</p>';
+        }
+      });
+
+      // Initialize with custom URL from predefined
+      customUrlInput.value = predefinedUrl;
+    });
+  </script>
+</body>
+</html>

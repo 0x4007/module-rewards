@@ -1,48 +1,65 @@
 #!/usr/bin/env bun
-import { build } from 'esbuild';
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
-import { join } from 'path';
 
-// Ensure output directory exists
-const outputDir = './public/js';
-if (!existsSync(outputDir)) {
-  mkdirSync(outputDir, { recursive: true });
+console.log('🔨 Build process starting...');
+
+const BUILD_TIMEOUT = 10000; // 10 seconds
+
+// Set environment if not already set
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
 }
 
-// Clean up any existing files in the output directory
-try {
-  const files = readdirSync(outputDir);
-  for (const file of files) {
-    unlinkSync(join(outputDir, file));
-  }
-} catch (err) {
-  console.error('Error cleaning output directory:', err);
-}
+// Log build mode
+console.log(`Building for ${process.env.NODE_ENV} environment`);
 
-// Run the build process
-async function runBuild() {
+// Handle unexpected errors
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled promise rejection in build:', err);
+  process.exit(1);
+});
+
+// Run build with timeout
+const buildPromise = new Promise(async (resolve, reject) => {
   try {
-    console.log('Starting esbuild...');
+    console.log('Starting Bun build...');
+    const startTime = Date.now();
 
-    await build({
-      entryPoints: ['./src/main.ts'],
-      bundle: true,
-      outfile: join(outputDir, 'main.js'),
+    await Bun.build({
+      entrypoints: ['./src/main.ts', './src/analyzer.ts'],
+      outdir: './public/js',
+      target: 'browser',
       format: 'esm',
-      platform: 'browser',
-      target: ['es2020'],
-      minify: process.env.NODE_ENV === 'production',
-      sourcemap: process.env.NODE_ENV !== 'production',
-      external: ['marked'], // Mark marked as external since we load it from CDN
-      logLevel: 'info',
+      minify: false, // Disable minification for better debugging
+      sourcemap: 'inline', // Always use inline source maps for better debugging
+      external: ['marked'],
+      define: {
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+        'global': 'window'
+      },
+    }).then(result => {
+      if (!result.success) {
+        throw new Error(`Build failed: ${result.logs}`);
+      }
+      const buildTime = Date.now() - startTime;
+      console.log(`✓ Build completed in ${buildTime}ms`);
+      resolve(result);
     });
-
-    console.log('Build completed successfully!');
   } catch (error) {
-    console.error('Build failed:', error);
-    process.exit(1);
+    reject(error);
   }
-}
+});
 
-// Run build
-runBuild();
+const timeoutPromise = new Promise((_, reject) => {
+  setTimeout(() => {
+    reject(new Error('Build timed out after 10 seconds'));
+  }, BUILD_TIMEOUT);
+});
+
+Promise.race([buildPromise, timeoutPromise])
+  .catch(error => {
+    console.error('Build process error:', error);
+    process.exit(1);
+  })
+  .then(() => {
+    process.exit(0);
+  });
