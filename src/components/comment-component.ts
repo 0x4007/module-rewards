@@ -13,18 +13,18 @@ export const scoreMap = new Map<number, CommentScores>();
  * Common bot usernames to detect
  */
 const COMMON_BOT_NAMES = [
-  'dependabot',
-  'renovate',
-  'github-actions',
-  'codecov',
-  'stale',
-  'imgbot',
-  'semantic-release',
-  'netlify',
-  'allcontributors',
-  'now',
-  'vercel',
-  'snyk'
+  "dependabot",
+  "renovate",
+  "github-actions",
+  "codecov",
+  "stale",
+  "imgbot",
+  "semantic-release",
+  "netlify",
+  "allcontributors",
+  "now",
+  "vercel",
+  "snyk",
 ];
 
 /**
@@ -34,25 +34,23 @@ function isBotUsername(username?: string): boolean {
   if (!username) return false;
 
   // Check for standard [bot] suffix
-  if (username.endsWith('[bot]')) return true;
+  if (username.endsWith("[bot]")) return true;
 
   // Check against list of common bot names
-  return COMMON_BOT_NAMES.some(botName =>
-    username.toLowerCase().includes(botName.toLowerCase())
-  );
+  return COMMON_BOT_NAMES.some((botName) => username.toLowerCase().includes(botName.toLowerCase()));
 }
 
 /**
  * Check if a user object represents a bot
  */
-function isBotUser(user?: { login?: string; type?: string; }): boolean {
+function isBotUser(user?: { login?: string; type?: string }): boolean {
   if (!user) return false;
 
   // Check username pattern
   if (isBotUsername(user.login)) return true;
 
   // Check GitHub user type
-  if (user.type === 'Bot') return true;
+  if (user.type === "Bot") return true;
 
   return false;
 }
@@ -144,25 +142,24 @@ function renderComment(
 
   commentElement.appendChild(bodyElement);
 
-    // Add scores if provided and showScores is true
-    if (scores && showScores) {
-      // Add special classes for identified comment types
-      if (scores.wordCount === 0) {
-        // Add slash command styling
-        if (comment.body.trim().startsWith('/')) {
-          commentElement.classList.add('slash-command');
-        }
-
-        // Add bot comment styling (check for bot indicators in username)
-        if (comment.user?.login?.endsWith('[bot]') ||
-            isBotUsername(comment.user?.login)) {
-          commentElement.classList.add('bot-comment');
-        }
+  // Add scores if provided and showScores is true
+  if (scores && showScores) {
+    // Add special classes for identified comment types
+    if (scores.wordCount === 0) {
+      // Add slash command styling
+      if (comment.body.trim().startsWith("/")) {
+        commentElement.classList.add("slash-command");
       }
 
-      const scoresElement = renderScores(scores);
-      commentElement.appendChild(scoresElement);
+      // Add bot comment styling (check for bot indicators in username)
+      if (comment.user?.login?.endsWith("[bot]") || isBotUsername(comment.user?.login)) {
+        commentElement.classList.add("bot-comment");
+      }
     }
+
+    const scoresElement = renderScores(scores);
+    commentElement.appendChild(scoresElement);
+  }
 
   // Add the comment to the container
   container.appendChild(commentElement);
@@ -229,23 +226,25 @@ export function renderComments(
 
   // If no comments, show empty state with icon
   if (comments.length === 0) {
-    const emptyState = document.createElement('div');
-    emptyState.className = 'empty-state';
-    const icon = section === 'issue'
-      ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>'
-      : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>';
-    emptyState.innerHTML = `${icon} No ${section === 'issue' ? 'issue' : 'pull request'} comments yet`;
+    const emptyState = document.createElement("div");
+    emptyState.className = "empty-state";
+    const icon =
+      section === "issue"
+        ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>'
+        : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>';
+    emptyState.innerHTML = `${icon} No ${section === "issue" ? "issue" : "pull request"} comments yet`;
     container.appendChild(emptyState);
     return;
   }
 
   // Add section header with icon
-  const headerElement = document.createElement('div');
-  headerElement.className = 'conversation-header';
-  const icon = section === 'issue'
-    ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>'
-    : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>';
-  headerElement.innerHTML = `${icon} ${section === 'issue' ? 'Issue' : 'Pull Request'} Conversation`;
+  const headerElement = document.createElement("div");
+  headerElement.className = "conversation-header";
+  const icon =
+    section === "issue"
+      ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>';
+  headerElement.innerHTML = `${icon} ${section === "issue" ? "Issue" : "Pull Request"} Conversation`;
   container.appendChild(headerElement);
 
   // Sort comments - ensure PR/issue body (with special IDs like 0, -3) always comes first,
@@ -300,11 +299,11 @@ export function renderComments(
         }
       }
     } else {
-    // For comments not in a group, calculate scores normally
-    // Check for special comment types
-    const isSlashCommand = comment.body.trim().startsWith('/');
-    const isBot = isBotUser(comment.user);
-    commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
+      // For comments not in a group, calculate scores normally
+      // Check for special comment types
+      const isSlashCommand = comment.body.trim().startsWith("/");
+      const isBot = isBotUser(comment.user);
+      commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
 
       // Store scores in the map
       if (commentScores) {

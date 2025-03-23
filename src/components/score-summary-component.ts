@@ -28,7 +28,7 @@ function aggregateScoresByContributor(
   const contributorsMap = new Map<string, ContributorScores>();
 
   // Process each comment
-  allComments.forEach(comment => {
+  allComments.forEach((comment) => {
     // Skip comments without user info or scores
     if (!comment.user || !scoreMap.has(comment.id)) return;
 
@@ -42,7 +42,7 @@ function aggregateScoresByContributor(
         totalOriginal: 0,
         totalLogAdjusted: 0,
         totalExponential: 0,
-        commentCount: 0
+        commentCount: 0,
       });
     }
 
@@ -55,8 +55,7 @@ function aggregateScoresByContributor(
   });
 
   // Convert map to array and sort by highest exponential score
-  return Array.from(contributorsMap.values())
-    .sort((a, b) => b.totalExponential - a.totalExponential);
+  return Array.from(contributorsMap.values()).sort((a, b) => b.totalExponential - a.totalExponential);
 }
 
 /**
@@ -68,11 +67,7 @@ export function renderScoreSummary(
   scoreMap: Map<number, CommentScores>
 ): void {
   // Aggregate scores by contributor
-  const contributorScores = aggregateScoresByContributor(
-    prComments,
-    issueComments,
-    scoreMap
-  );
+  const contributorScores = aggregateScoresByContributor(prComments, issueComments, scoreMap);
 
   // Don't show empty summary
   if (contributorScores.length === 0) {
@@ -100,7 +95,7 @@ export function renderScoreSummary(
     table.appendChild(headerRow);
 
     // Add row for each contributor
-    contributorScores.forEach(contributor => {
+    contributorScores.forEach((contributor) => {
       const row = document.createElement("tr");
 
       // Contributor cell with avatar and name

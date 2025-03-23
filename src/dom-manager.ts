@@ -43,7 +43,7 @@ class DOMManager {
         scoreSummaryContent: document.getElementById("score-summary-content") as HTMLElement,
         issueConversation: document.getElementById("issue-conversation") as HTMLElement,
         prConversation: document.getElementById("pr-conversation") as HTMLElement,
-        contentColumns: document.getElementById("content-columns") as HTMLElement
+        contentColumns: document.getElementById("content-columns") as HTMLElement,
       };
 
       // Verify all elements were found
@@ -87,10 +87,7 @@ class DOMManager {
    * @param {K} key Element key
    * @param {(element: DOMElements[K]) => void} callback Function to execute with element
    */
-  public withElement<K extends keyof DOMElements>(
-    key: K,
-    callback: (element: DOMElements[K]) => void
-  ): void {
+  public withElement<K extends keyof DOMElements>(key: K, callback: (element: DOMElements[K]) => void): void {
     try {
       const element = this.get(key);
       callback(element);

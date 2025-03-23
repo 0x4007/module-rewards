@@ -30,7 +30,7 @@ export interface SlashCommandPreprocessorConfig {
  */
 const DEFAULT_CONFIG: SlashCommandPreprocessorConfig = {
   ignoreLeadingWhitespace: true,
-  excludeCommands: []
+  excludeCommands: [],
 };
 
 /**
@@ -129,7 +129,7 @@ export class SlashCommandPreprocessor extends BaseModule<SlashCommandPreprocesso
     }
 
     // Check if it starts with a slash
-    if (!trimmedContent.startsWith('/')) {
+    if (!trimmedContent.startsWith("/")) {
       return false;
     }
 

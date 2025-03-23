@@ -76,10 +76,10 @@ export async function analyze(inputUrl: string): Promise<void> {
     // Generate the score summary from both sets of comments
     try {
       // Using dynamic import to avoid circular dependencies
-      import("./components/score-summary-component").then(summaryModule => {
-        if (typeof summaryModule.renderScoreSummary === 'function') {
+      import("./components/score-summary-component").then((summaryModule) => {
+        if (typeof summaryModule.renderScoreSummary === "function") {
           // Import scoreMap from comment-component
-          import("./components/comment-component").then(commentModule => {
+          import("./components/comment-component").then((commentModule) => {
             // Only show score summary if we have comments
             if (prComments.length > 0 || issueComments.length > 0) {
               summaryModule.renderScoreSummary(prComments, issueComments, commentModule.scoreMap);
@@ -165,9 +165,9 @@ async function backgroundRefresh(
 
         // Update the score summary
         try {
-          import("./components/score-summary-component").then(summaryModule => {
-            if (typeof summaryModule.renderScoreSummary === 'function') {
-              import("./components/comment-component").then(commentModule => {
+          import("./components/score-summary-component").then((summaryModule) => {
+            if (typeof summaryModule.renderScoreSummary === "function") {
+              import("./components/comment-component").then((commentModule) => {
                 if (prComments.length > 0 || issueComments.length > 0) {
                   summaryModule.renderScoreSummary(prComments, issueComments, commentModule.scoreMap);
                 }

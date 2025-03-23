@@ -22,27 +22,27 @@ async function main() {
     {
       name: "Regular User Comment",
       content: "This is a normal comment from a regular user that should be scored as usual.",
-      author: "regular-user"
+      author: "regular-user",
     },
     {
       name: "GitHub Bot Comment",
       content: "This pull request has been automatically labeled with `enhancement`.",
-      author: "github-actions[bot]"
+      author: "github-actions[bot]",
     },
     {
       name: "Dependabot Comment",
       content: "Bumps [lodash](https://github.com/lodash/lodash) from 4.17.20 to 4.17.21.",
-      author: "dependabot"
+      author: "dependabot",
     },
     {
       name: "Custom Bot",
       content: "Build failed! See the logs for more details.",
-      author: "ci-bot"
+      author: "ci-bot",
     },
     {
       name: "Excluded Bot",
       content: "This comment is from a bot that's on the exclude list, so it should still be scored.",
-      author: "allowed-bot"
+      author: "allowed-bot",
     },
   ];
 
@@ -52,8 +52,8 @@ async function main() {
   // Create preprocessor with custom configuration
   const customPreprocessor = new BotCommentPreprocessor({
     additionalBotNames: ["ci-bot", "test-bot"], // Add some custom bot names
-    excludeBots: ["allowed-bot"],               // Exclude certain bots from filtering
-    checkGitHubBotProperty: true                // Check GitHub's bot property
+    excludeBots: ["allowed-bot"], // Exclude certain bots from filtering
+    checkGitHubBotProperty: true, // Check GitHub's bot property
   });
 
   // Process each sample comment with both preprocessors
@@ -73,9 +73,9 @@ async function main() {
           user: {
             login: sample.author,
             // If the author ends with [bot], also set the GitHub bot property
-            type: sample.author.endsWith("[bot]") ? "Bot" : "User"
-          }
-        }
+            type: sample.author.endsWith("[bot]") ? "Bot" : "User",
+          },
+        },
       },
     });
 
@@ -116,8 +116,8 @@ async function main() {
     data: {
       comment: {
         body: botComment,
-        user: { login: botAuthor }
-      }
+        user: { login: botAuthor },
+      },
     },
   });
 

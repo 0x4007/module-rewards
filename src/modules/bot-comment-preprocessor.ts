@@ -34,7 +34,7 @@ export interface BotCommentPreprocessorConfig {
 const DEFAULT_CONFIG: BotCommentPreprocessorConfig = {
   additionalBotNames: ["dependabot", "renovate", "github-actions"],
   excludeBots: [],
-  checkGitHubBotProperty: true
+  checkGitHubBotProperty: true,
 };
 
 /**
@@ -131,8 +131,7 @@ export class BotCommentPreprocessor extends BaseModule<BotCommentPreprocessorCon
     }
 
     // Check for additional bot name patterns
-    if (this.config.additionalBotNames?.some(botName =>
-      author.toLowerCase().includes(botName.toLowerCase()))) {
+    if (this.config.additionalBotNames?.some((botName) => author.toLowerCase().includes(botName.toLowerCase()))) {
       return !this.isExcludedBot(author);
     }
 
@@ -148,8 +147,7 @@ export class BotCommentPreprocessor extends BaseModule<BotCommentPreprocessorCon
    * Check if the author is in the excluded bots list
    */
   private isExcludedBot(author: string): boolean {
-    return this.config.excludeBots?.some(botName =>
-      author.toLowerCase() === botName.toLowerCase()) || false;
+    return this.config.excludeBots?.some((botName) => author.toLowerCase() === botName.toLowerCase()) || false;
   }
 
   /**

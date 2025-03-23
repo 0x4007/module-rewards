@@ -154,5 +154,8 @@ function countWordsInText(text: string): number {
   if (!text || typeof text !== "string") return 0;
 
   // A simple word count for this helper
-  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 }

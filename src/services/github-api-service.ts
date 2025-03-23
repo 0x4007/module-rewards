@@ -23,12 +23,7 @@ class GitHubApiService {
   /**
    * Fetch data from GitHub API with caching
    */
-  public async fetchData(
-    owner: string,
-    repo: string,
-    number: string,
-    type: "pr" | "issue"
-  ): Promise<FetchedData> {
+  public async fetchData(owner: string, repo: string, number: string, type: "pr" | "issue"): Promise<FetchedData> {
     // Set up cache keys
     const cacheKey = `data-${owner}-${repo}-${type}-${number}`;
     const cachedTimestampKey = `${cacheKey}-timestamp`;

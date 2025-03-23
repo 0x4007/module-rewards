@@ -47,7 +47,7 @@ async function main() {
   // Create preprocessor with custom configuration
   const customPreprocessor = new SlashCommandPreprocessor({
     ignoreLeadingWhitespace: false, // Only detect commands with no leading whitespace
-    excludeCommands: ["feedback"] // Don't filter comments starting with /feedback
+    excludeCommands: ["feedback"], // Don't filter comments starting with /feedback
   });
 
   // Process each sample comment with both preprocessors
@@ -64,9 +64,9 @@ async function main() {
         comment: {
           body: sample.content,
           user: {
-            login: "example-user"
-          }
-        }
+            login: "example-user",
+          },
+        },
       },
     });
 
@@ -105,8 +105,8 @@ async function main() {
     data: {
       comment: {
         body: slashComment,
-        user: { login: "example-user" }
-      }
+        user: { login: "example-user" },
+      },
     },
   });
 
