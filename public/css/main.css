@@ -361,7 +361,7 @@ footer {
   text-decoration: none;
   position: absolute;
   right: 16px;
-  color: #808080;
+  color: #ffffffbf;
 }
 
 .comment-body {
@@ -495,6 +495,7 @@ footer {
   font-size: 12px;
   color: var(--text-light);
   text-align: right;
+  /* width: 100%; */
 }
 
 .group-indicator {
@@ -506,7 +507,13 @@ footer {
   display: inline-block;
   align-items: center;
   opacity: 0.66;
-  padding: 4px 8px;
+  padding: 4px 4px;
+  /* max-width: 25%; */
+  overflow: hidden;
+  height: 24px;
+  white-space: nowrap;
+  direction: rtl;
+  text-overflow: ellipsis;
 }
 
 .score-label {
@@ -734,6 +741,7 @@ div#score-summary-content {
 
 a.timestamp:hover {
     text-decoration: underline;
+    color: #fff;
 }
 
 hr {

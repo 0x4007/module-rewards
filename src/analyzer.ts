@@ -35,56 +35,47 @@ export async function analyze(inputUrl: string): Promise<void> {
   uiStateManager.startLoading("pr");
 
   try {
-    // Add debugging metadata about environment
-    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
-    const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
-    console.log(`${debugPrefix} Analyzing URL: ${inputUrl}`);
+    // Detect environment consistently across the application
+    const inProduction = typeof window !== 'undefined' &&
+                          window.location.hostname !== "localhost" &&
+                          window.location.hostname !== "127.0.0.1";
+    const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+    console.log(`${envPrefix} Analyzing URL: ${inputUrl}`);
 
-    // Log if this is issue #30 specifically (for debugging linked PR #31 issue)
-    const isIssue30 = inputUrl.includes('/issues/30');
-    if (isIssue30) {
-      console.log(`${debugPrefix} 🔍 DEBUG: This is issue #30 - specifically watching for PR #31 loading issues`);
+    // Log all issues with linked PR detection for better visibility
+    const issueMatch = inputUrl.match(/\/issues\/(\d+)/);
+    if (issueMatch) {
+      const issueNumber = issueMatch[1];
+      console.log(`${envPrefix} Analyzing issue #${issueNumber} - monitoring linked PRs detection`);
     }
 
     // Parse the URL
     const parsedUrl = githubApiService.parseUrl(inputUrl);
     const { owner, repo, number, type } = parsedUrl;
-    console.log(`${debugPrefix} Parsed URL - Owner: ${owner}, Repo: ${repo}, Number: ${number}, Type: ${type}`);
+    console.log(`${envPrefix} Parsed URL - Owner: ${owner}, Repo: ${repo}, Number: ${number}, Type: ${type}`);
 
     // Store last URL for future use
     localStorage.setItem("last_url", inputUrl);
 
     // Fetch data from GitHub
-    console.log(`${debugPrefix} Fetching data from GitHub API...`);
+    console.log(`${envPrefix} Fetching data from GitHub API...`);
     const data = await githubApiService.fetchData(owner, repo, number, type);
-    console.log(`${debugPrefix} Data fetched successfully`);
+    console.log(`${envPrefix} Data fetched successfully`);
 
     // Check for linked PRs if this is an issue
     if (type === 'issue' && data.linkedPullRequests) {
-      console.log(`${debugPrefix} Linked PRs found:`,
-        data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
-
-      // Special debug for issue #30 / PR #31
-      if (isIssue30) {
-        const pr31 = data.linkedPullRequests.find(pr => pr.number === 31);
-        if (pr31) {
-          console.log(`${debugPrefix} 🎯 PR #31 found in linked PRs!`);
-          console.log(`${debugPrefix} PR #31 data:`, {
-            title: pr31.title,
-            state: pr31.state,
-            hasComments: Boolean(pr31.comments),
-            commentsCount: pr31.comments ? pr31.comments.length : 0
-          });
-        } else {
-          console.log(`${debugPrefix} ❌ PR #31 NOT found in linked PRs!`);
-        }
+      if (data.linkedPullRequests.length > 0) {
+        console.log(`${envPrefix} Linked PRs found:`,
+          data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
+      } else {
+        console.log(`${envPrefix} No linked PRs found for issue #${number}`);
       }
     }
 
     // Process the data
-    console.log(`${debugPrefix} Processing GitHub data...`);
+    console.log(`${envPrefix} Processing GitHub data...`);
     const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(data);
-    console.log(`${debugPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`);
+    console.log(`${envPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`);
 
     // Show essential information
     domManager.show("detailsElement");
@@ -180,12 +171,20 @@ async function backgroundRefresh(
   type: "pr" | "issue",
   originalData: any
 ): Promise<void> {
+  // Detect environment consistently
+  const inProduction = typeof window !== 'undefined' &&
+                      window.location.hostname !== "localhost" &&
+                      window.location.hostname !== "127.0.0.1";
+  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+
   // Wait a bit before checking for updates
   setTimeout(async () => {
     try {
+      console.log(`${envPrefix} Starting background refresh for ${owner}/${repo}/${type}/${number}`);
       const result = await githubApiService.refreshCachedData(owner, repo, number, type);
 
       if (result && result.updated) {
+        console.log(`${envPrefix} Content updated, refreshing display`);
         // Process and display updated data
         const { prComments, issueComments } = processGitHubData(result.data);
 
@@ -213,14 +212,16 @@ async function backgroundRefresh(
             }
           });
         } catch (error) {
-          console.error("Failed to update score summary:", error);
+          console.error(`${envPrefix} Failed to update score summary:`, error);
         }
 
         // Show notification
         notifyContentUpdated();
+      } else {
+        console.log(`${envPrefix} No content updates found during background refresh`);
       }
     } catch (error) {
-      console.error("Background refresh error:", error);
+      console.error(`${envPrefix} Background refresh error:`, error);
     }
   }, 30000); // Check after 30 seconds
 }
