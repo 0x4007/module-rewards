@@ -21,6 +21,65 @@ interface ServerAnalysisResponse {
   issueComments: GitHubComment[];
   prInfo?: string;
   issueInfo?: string;
+  hash?: string; // Content hash to detect changes
+}
+
+/**
+ * Generate a hash of the content to detect changes
+ */
+function generateContentHash(data: ServerAnalysisResponse): string {
+  const content = JSON.stringify({
+    pr: data.prComments.map(c => ({ id: c.id, body: c.body, updated_at: c.updated_at })),
+    issue: data.issueComments.map(c => ({ id: c.id, body: c.body, updated_at: c.updated_at }))
+  });
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const chr = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash.toString();
+}
+
+/**
+ * Render the analyzed data
+ */
+async function renderData(data: ServerAnalysisResponse): Promise<void> {
+  const { prComments, issueComments, prInfo, issueInfo } = data;
+
+  // Extract number from PR or issue info for rendering
+  const number = prInfo?.match(/#(\d+)/) || issueInfo?.match(/#(\d+)/);
+  const numberStr = number ? number[1] : "";
+
+  // Clear previous content
+  domManager.clearContent("prConversation");
+  domManager.clearContent("issueConversation");
+
+  // Render comments
+  renderComments("pr", prComments, "#pr-conversation",
+    prInfo ? { title: prInfo, number: numberStr } : undefined);
+
+  renderComments("issue", issueComments, "#issue-conversation",
+    issueInfo ? { title: issueInfo, number: numberStr } : undefined);
+
+  // Render score summary
+  renderScoreSummary(prComments, issueComments);
+
+  // Show both containers
+  domManager.show("contentColumns");
+}
+
+/**
+ * Check if data needs refresh based on last check time
+ */
+function needsRefresh(url: string): boolean {
+  const lastCheck = localStorage.getItem(`${url}-lastCheck`);
+  if (!lastCheck) return true;
+
+  const now = Date.now();
+  const fiveMinutes = 5 * 60 * 1000;
+  return (now - parseInt(lastCheck)) > fiveMinutes;
 }
 
 /**
@@ -51,118 +110,122 @@ export async function analyze(url: string): Promise<void> {
     domManager.clearContent("scoreSummaryContent");
     domManager.hide("scoreSummary");
 
-    // Initialize containers with loading states
+    // Register containers but don't show loading state yet
     domManager.withElement("prConversation", element => {
       uiStateManager.registerContainer("pr", element);
-      uiStateManager.startLoading("pr");
     });
 
     domManager.withElement("issueConversation", element => {
       uiStateManager.registerContainer("issue", element);
-      uiStateManager.startLoading("issue");
     });
 
-    // Use server-side API to fetch and analyze data
-    const response = await fetch(API_ENDPOINTS.ANALYZE, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ url })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `Server error: ${response.status}`);
+    // Try to get data from localStorage first
+    let initialData: ServerAnalysisResponse | null = null;
+    try {
+      const localData = localStorage.getItem(`${url}-data`);
+      if (localData) {
+        initialData = JSON.parse(localData) as ServerAnalysisResponse;
+        // Render instantly from localStorage
+        await renderData(initialData);
+        console.log("Rendered from localStorage");
+      }
+    } catch (error) {
+      console.warn("localStorage parse failed:", error);
     }
-
-    // Parse response
-    const { prComments, issueComments, prInfo, issueInfo } = await response.json() as ServerAnalysisResponse;
-
-    // Stop loading states
-    uiStateManager.stopLoading("pr");
-    uiStateManager.stopLoading("issue");
-
-    // Extract number from PR or issue info for rendering
-    const number = prInfo?.match(/#(\d+)/) || issueInfo?.match(/#(\d+)/);
-    const numberStr = number ? number[1] : "";
-
-    // Render comments
-    renderComments("pr", prComments, "#pr-conversation",
-      prInfo ? { title: prInfo, number: numberStr } : undefined);
-
-    renderComments("issue", issueComments, "#issue-conversation",
-      issueInfo ? { title: issueInfo, number: numberStr } : undefined);
-
-    // Render score summary
-    renderScoreSummary(prComments, issueComments);
-
-    // Show both containers
-    domManager.show("contentColumns");
 
     // Store URL in localStorage
     localStorage.setItem("last_url", url);
 
-    // Do a background refresh after analysis to get latest data
-    setTimeout(() => {
-      backgroundRefresh(url);
-    }, 30000); // 30 seconds delay
+    // If no localStorage data, show loading state
+    if (!initialData) {
+      uiStateManager.startLoading("pr");
+      uiStateManager.startLoading("issue");
+    }
 
+    // If we have no data at all, fetch immediately
+    if (!initialData) {
+      console.log("No cached data, fetching...");
+      try {
+        const response = await fetch(API_ENDPOINTS.ANALYZE, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            url,
+            forceGitHub: true
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json() as ServerAnalysisResponse;
+        const hash = generateContentHash(data);
+        localStorage.setItem(`${url}-hash`, hash);
+        localStorage.setItem(`${url}-data`, JSON.stringify(data));
+        localStorage.setItem(`${url}-lastCheck`, Date.now().toString());
+
+        await renderData(data);
+      } catch (error) {
+        console.warn("Data fetch failed:", error);
+        throw error;
+      } finally {
+        uiStateManager.stopLoading("pr");
+        uiStateManager.stopLoading("issue");
+      }
+    } else if (needsRefresh(url)) {
+      // We have data but it's stale - check for updates after a delay
+      console.log("Will check for updates in background...");
+      setTimeout(async () => {
+        try {
+          // Try cache API and fresh GitHub data in parallel
+          const [cachedData, freshData] = await Promise.all([
+          // Try server cache
+          fetch(API_ENDPOINTS.ANALYZE, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              url,
+              useCache: true
+            })
+          }).then(r => r.json()).catch(() => null),
+
+            // Fresh GitHub data
+            fetch(API_ENDPOINTS.ANALYZE, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                url,
+                forceGitHub: true
+              })
+            }).then(r => r.json()).catch(() => null)
+          ]);
+
+          if (freshData) {
+            const freshHash = generateContentHash(freshData);
+            const currentHash = localStorage.getItem(`${url}-hash`);
+
+            if (currentHash !== freshHash) {
+              await renderData(freshData);
+              uiStateManager.notifyContentUpdated();
+              localStorage.setItem(`${url}-hash`, freshHash);
+              localStorage.setItem(`${url}-data`, JSON.stringify(freshData));
+              localStorage.setItem(`${url}-lastCheck`, Date.now().toString());
+            }
+          }
+        } catch (error) {
+          console.warn("Background refresh failed:", error);
+        }
+      }, 2000); // Check after 2 seconds
+    }
   } catch (error) {
     console.error("Error analyzing content:", error);
     domManager.showError(`Error: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * Do a background refresh of data using the server API
- */
-async function backgroundRefresh(url: string): Promise<void> {
-  try {
-    console.log("Starting background refresh...");
-
-    // Use server API to refresh data
-    const response = await fetch(API_ENDPOINTS.ANALYZE, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        url,
-        refresh: true // Tell server this is a refresh request
-      })
-    });
-
-    if (!response.ok) {
-      console.warn("Background refresh failed:", response.status);
-      return;
-    }
-
-    // Parse response
-    const { prComments, issueComments, prInfo, issueInfo } = await response.json() as ServerAnalysisResponse;
-
-    // Extract number from PR or issue info for rendering
-    const number = prInfo?.match(/#(\d+)/) || issueInfo?.match(/#(\d+)/);
-    const numberStr = number ? number[1] : "";
-
-    // Clear previous content
-    domManager.clearContent("prConversation");
-    domManager.clearContent("issueConversation");
-
-    // Render updated comments
-    renderComments("pr", prComments, "#pr-conversation",
-      prInfo ? { title: prInfo, number: numberStr } : undefined);
-
-    renderComments("issue", issueComments, "#issue-conversation",
-      issueInfo ? { title: issueInfo, number: numberStr } : undefined);
-
-    // Update score summary
-    renderScoreSummary(prComments, issueComments);
-
-    // Show notification that content was updated
-    uiStateManager.notifyContentUpdated();
-  } catch (error) {
-    console.error("Background refresh failed:", error);
-    // Don't show user-facing error for background refresh
   }
 }

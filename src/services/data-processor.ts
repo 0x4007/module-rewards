@@ -16,10 +16,11 @@ export function processGitHubData(data: FetchedData): {
   issueInfo?: string;
 } {
   // Detect environment consistently across the application
-  const inProduction = typeof window !== 'undefined' &&
-                      window.location.hostname !== "localhost" &&
-                      window.location.hostname !== "127.0.0.1";
-  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+  const inProduction =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+  const envPrefix = inProduction ? "[PROD]" : "[DEV]";
 
   console.log(`${envPrefix} Processing GitHub data, type: ${data.type}`);
 
@@ -72,7 +73,7 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
       user: data.details.user,
       created_at: data.details.created_at,
       updated_at: data.details.updated_at,
-      html_url: data.details.html_url
+      html_url: data.details.html_url,
     };
     // Properly insert at the beginning to prevent double-post issues
     allComments.unshift(prBodyComment);
@@ -91,7 +92,7 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
         user: data.details.user, // Use PR author as fallback
         created_at: "",
         updated_at: "",
-        html_url: data.linkedIssue.html_url
+        html_url: data.linkedIssue.html_url,
       };
       issueComments.push(issueBodyComment);
     }
@@ -108,10 +109,11 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
  */
 function processIssueView(data: FetchedData, prComments: GitHubComment[], issueComments: GitHubComment[]): void {
   // Detect environment consistently across the application
-  const inProduction = typeof window !== 'undefined' &&
-                      window.location.hostname !== "localhost" &&
-                      window.location.hostname !== "127.0.0.1";
-  const envPrefix = inProduction ? '[PROD]' : '[DEV]';
+  const inProduction =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+  const envPrefix = inProduction ? "[PROD]" : "[DEV]";
 
   console.log(`${envPrefix} Processing issue view for #${data.details.number}`);
 
@@ -131,7 +133,7 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       user: data.details.user,
       created_at: data.details.created_at,
       updated_at: data.details.updated_at,
-      html_url: data.details.html_url
+      html_url: data.details.html_url,
     };
     // Properly insert at the beginning to prevent double-post issues
     allComments.unshift(issueBodyComment);
@@ -141,12 +143,16 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
   issueComments.push(...allComments);
 
   // Handle linked PRs if available
-  console.log(`${envPrefix} Checking linked PRs, data.linkedPullRequests:`,
-    data.linkedPullRequests ? `Found ${data.linkedPullRequests.length} PRs` : 'None found');
+  console.log(
+    `${envPrefix} Checking linked PRs, data.linkedPullRequests:`,
+    data.linkedPullRequests ? `Found ${data.linkedPullRequests.length} PRs` : "None found"
+  );
 
   if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
-    console.log(`${envPrefix} Linked PRs available:`,
-      data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
+    console.log(
+      `${envPrefix} Linked PRs available:`,
+      data.linkedPullRequests.map((pr) => `#${pr.number} (${pr.state})`).join(", ")
+    );
 
     const mainPR = data.linkedPullRequests[0];
     console.log(`${envPrefix} Processing main linked PR #${mainPR.number}`);
@@ -170,11 +176,11 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
         user: {
           login: mainPR.author.login,
           html_url: mainPR.author.html_url || "",
-          avatar_url: mainPR.author.avatar_url || ""
+          avatar_url: mainPR.author.avatar_url || "",
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        html_url: mainPR.url
+        html_url: mainPR.url,
       };
       // Properly insert at the beginning to prevent double-post issues
       prAllComments.unshift(prBodyComment);
@@ -195,11 +201,11 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
         user: {
           login: "GitHub References",
           html_url: "",
-          avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        html_url: ""
+        html_url: "",
       };
       prComments.push(prListComment);
     }
