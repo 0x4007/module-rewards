@@ -38,3 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>`;
   }
 });
+
+import { grid } from "./the-grid";
+grid(document.getElementById("grid") as HTMLElement, () => document.body.classList.add("grid-loaded")); // @DEV: display grid background

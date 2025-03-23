@@ -4,6 +4,7 @@
  */
 import { analyze } from "./analyzer";
 import { domManager } from "./dom-manager";
+import { getCorrectGitHubUrl } from "./github/browser-utils";
 
 class EventManager {
   private initialized = false;
@@ -31,7 +32,7 @@ class EventManager {
   private setupFormSubmission(): void {
     try {
       // Single event handler for form submission
-      const handleSubmit = (e?: Event) => {
+      const handleSubmit = async (e?: Event) => {
         if (e) e.preventDefault();
 
         const urlInput = domManager.get("urlInput");
@@ -40,7 +41,7 @@ class EventManager {
         console.log("Form submission triggered, input value:", inputValue);
 
         if (inputValue && inputValue.includes("github.com")) {
-          this.triggerAnalyze(inputValue);
+          await this.triggerAnalyze(inputValue);
         } else {
           console.error("Invalid URL or URL not provided");
         }
@@ -48,14 +49,14 @@ class EventManager {
 
       // Add event listener to form
       domManager.withElement("analyzeForm", (form) => {
-        form.addEventListener("submit", handleSubmit);
+        form.addEventListener("submit", (e) => void handleSubmit(e));
       });
 
       // Add click handler to button
       domManager.withElement("analyzeBtn", (button) => {
         button.addEventListener("click", (e) => {
           e.preventDefault(); // Prevent default form submission
-          handleSubmit();
+          void handleSubmit();
         });
       });
 
@@ -64,14 +65,14 @@ class EventManager {
         input.addEventListener("keydown", (e: KeyboardEvent) => {
           if (e.key === "Enter") {
             e.preventDefault(); // Prevent default form submission
-            handleSubmit();
+            void handleSubmit();
           }
         });
 
         // Handle manual submit events
         input.addEventListener("manualSubmit", () => {
           if (input.value.trim()) {
-            handleSubmit();
+            void handleSubmit();
           }
         });
       });
@@ -130,45 +131,59 @@ class EventManager {
    * Trigger analysis with URL validation and duplicate prevention
    * @param {string} inputValue URL to analyze
    */
-  public triggerAnalyze(inputValue?: string): void {
-    // Get the value from the input if not passed directly
-    if (!inputValue) {
-      inputValue = domManager.get("urlInput").value.trim();
-    }
+  public async triggerAnalyze(inputValue?: string): Promise<void> {
+    try {
+      // Get the value from the input if not passed directly
+      if (!inputValue) {
+        inputValue = domManager.get("urlInput").value.trim();
+      }
 
-    // Prevent multiple simultaneous calls
-    if (this.analysisInProgress) {
-      console.log("Analysis already in progress, ignoring duplicate call");
-      return;
-    }
+      // Prevent multiple simultaneous calls
+      if (this.analysisInProgress) {
+        console.log("Analysis already in progress, ignoring duplicate call");
+        return;
+      }
 
-    console.log("Triggering analysis for:", inputValue);
+      console.log("Triggering analysis for:", inputValue);
 
-    if (inputValue && inputValue.includes("github.com")) {
-      this.analysisInProgress = true;
+      if (inputValue && inputValue.includes("github.com")) {
+        this.analysisInProgress = true;
 
-      // Store in localStorage for diagnostic purposes
-      localStorage.setItem("last_manual_url", inputValue);
+        // Check if the URL needs to be redirected (e.g., from issues to pull)
+        const correctUrl = await getCorrectGitHubUrl(inputValue);
 
-      // Call analyze and reset the flag when done
-      analyze(inputValue).finally(() => {
-        this.analysisInProgress = false;
-      });
-    } else {
-      console.error("Invalid URL or URL not provided");
+        // Update the URL in the input field if it changed
+        if (correctUrl !== inputValue) {
+          domManager.get("urlInput").value = correctUrl;
+          history.replaceState(null, "", correctUrl);
+        }
+
+        // Store in localStorage for diagnostic purposes
+        localStorage.setItem("last_manual_url", correctUrl);
+
+        // Call analyze and reset the flag when done
+        await analyze(correctUrl).finally(() => {
+          this.analysisInProgress = false;
+        });
+      } else {
+        console.error("Invalid URL or URL not provided");
+      }
+    } catch (error) {
+      console.error("Error in triggerAnalyze:", error);
+      this.analysisInProgress = false;
     }
   }
 
   /**
    * Load and analyze last URL if available
    */
-  public loadLastUrl(): void {
+  public async loadLastUrl(): Promise<void> {
     const lastUrl = localStorage.getItem("last_url");
 
     if (lastUrl) {
       domManager.withElement("urlInput", (input) => {
         input.value = lastUrl;
-        this.triggerAnalyze(lastUrl);
+        void this.triggerAnalyze(lastUrl);
       });
     }
   }

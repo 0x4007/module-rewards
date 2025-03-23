@@ -254,6 +254,7 @@ footer {
   padding: 8px 16px;
   background: #80808010;
   position: relative;
+  backdrop-filter: blur(24px);
 }
 
 /* Styles for grouped comments (consecutive comments from the same user) */
@@ -572,6 +573,7 @@ footer {
   background-color: #80808010;
   border-radius: 4px;
   padding: 8px 16px;
+  backdrop-filter: blur(24px);
 }
 
 .score-summary-table th,
