@@ -13,6 +13,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  pull-requests: write
+  contents: read
+  deployments: write
+
 jobs:
   deploy:
     runs-on: ubuntu-22.04
@@ -138,6 +143,9 @@ jobs:
 
             Visit the URL to preview your changes.
           comment_tag: cloudflare-deployment
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mode: upsert
+          create_if_not_exists: true
 
   # This job will always succeed, ensuring GitHub shows a green checkmark
   report_success:
