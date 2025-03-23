@@ -35,18 +35,56 @@ export async function analyze(inputUrl: string): Promise<void> {
   uiStateManager.startLoading("pr");
 
   try {
+    // Add debugging metadata about environment
+    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
+    console.log(`${debugPrefix} Analyzing URL: ${inputUrl}`);
+
+    // Log if this is issue #30 specifically (for debugging linked PR #31 issue)
+    const isIssue30 = inputUrl.includes('/issues/30');
+    if (isIssue30) {
+      console.log(`${debugPrefix} 🔍 DEBUG: This is issue #30 - specifically watching for PR #31 loading issues`);
+    }
+
     // Parse the URL
     const parsedUrl = githubApiService.parseUrl(inputUrl);
     const { owner, repo, number, type } = parsedUrl;
+    console.log(`${debugPrefix} Parsed URL - Owner: ${owner}, Repo: ${repo}, Number: ${number}, Type: ${type}`);
 
     // Store last URL for future use
     localStorage.setItem("last_url", inputUrl);
 
     // Fetch data from GitHub
+    console.log(`${debugPrefix} Fetching data from GitHub API...`);
     const data = await githubApiService.fetchData(owner, repo, number, type);
+    console.log(`${debugPrefix} Data fetched successfully`);
+
+    // Check for linked PRs if this is an issue
+    if (type === 'issue' && data.linkedPullRequests) {
+      console.log(`${debugPrefix} Linked PRs found:`,
+        data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
+
+      // Special debug for issue #30 / PR #31
+      if (isIssue30) {
+        const pr31 = data.linkedPullRequests.find(pr => pr.number === 31);
+        if (pr31) {
+          console.log(`${debugPrefix} 🎯 PR #31 found in linked PRs!`);
+          console.log(`${debugPrefix} PR #31 data:`, {
+            title: pr31.title,
+            state: pr31.state,
+            hasComments: Boolean(pr31.comments),
+            commentsCount: pr31.comments ? pr31.comments.length : 0
+          });
+        } else {
+          console.log(`${debugPrefix} ❌ PR #31 NOT found in linked PRs!`);
+        }
+      }
+    }
 
     // Process the data
+    console.log(`${debugPrefix} Processing GitHub data...`);
     const { prComments, issueComments, prInfo, issueInfo } = processGitHubData(data);
+    console.log(`${debugPrefix} Data processed: PR comments: ${prComments.length}, Issue comments: ${issueComments.length}`);
 
     // Show essential information
     domManager.show("detailsElement");

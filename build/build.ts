@@ -34,8 +34,7 @@ const buildPromise = new Promise(async (resolve, reject) => {
       external: ['marked'],
       define: {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-        'global': 'window',
-        'process': '{ env: { NODE_ENV: ' + JSON.stringify(process.env.NODE_ENV || 'production') + ' } }'
+        'global': 'window'
       },
     }).then(result => {
       if (!result.success) {

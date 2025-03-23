@@ -26,27 +26,31 @@ export interface LinkedPullRequestsResponse {
 }
 
 export interface LinkedPRsQueryResponse {
-  repository: {
-    issue: {
-      title: string;
-      body: string;
-      timelineItems: {
-        nodes: Array<{
-          source: {
-            number: number;
-            title: string;
-            url: string;
-            state: string;
-            body: string;
-            author: {
-              login: string;
-              url: string;
-              avatarUrl: string;
+  repository?: {
+    issue?: {
+      title?: string;
+      body?: string;
+      number?: number;
+      url?: string;
+      state?: string;
+      timelineItems?: {
+        totalCount?: number;
+        nodes?: Array<{
+          source?: {
+            number?: number;
+            title?: string;
+            url?: string;
+            state?: string;
+            body?: string;
+            author?: {
+              login?: string;
+              url?: string;
+              avatarUrl?: string;
             };
-            repository: {
-              name: string;
-              owner: {
-                login: string;
+            repository?: {
+              name?: string;
+              owner?: {
+                login?: string;
               };
             };
           };

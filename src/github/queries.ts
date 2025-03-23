@@ -31,7 +31,11 @@ export const ISSUES_LINKED_PRS_QUERY = `
       issue(number: $issueNumber) {
         title
         body
-        timelineItems(first: 50, itemTypes: [CROSS_REFERENCED_EVENT]) {
+        number
+        url
+        state
+        timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT]) {
+          totalCount
           nodes {
             ... on CrossReferencedEvent {
               source {

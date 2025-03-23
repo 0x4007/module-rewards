@@ -58,33 +58,83 @@ export class GitHubClient {
   }
 
   private async executeGraphQL<T>(query: string, variables: any): Promise<T | null> {
-    try {
-      console.log("Executing GraphQL query with variables:", JSON.stringify(variables));
+    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
 
+    try {
+      console.log(`${debugPrefix} Executing GraphQL query with variables:`, JSON.stringify(variables));
+      console.log(`${debugPrefix} Using API token:`, this.token ? 'Yes (token provided)' : 'No (anonymous access)');
+
+      // Create a timestamp to track response time
+      const startTime = Date.now();
+
+      // Execute the request
       const response = await fetch(this.graphqlEndpoint, {
         method: "POST",
         headers: this.headers,
         body: JSON.stringify({ query, variables }),
       });
 
+      const responseTime = Date.now() - startTime;
+      console.log(`${debugPrefix} GraphQL response received in ${responseTime}ms, status: ${response.status}`);
+
+      // Log headers for debugging
+      const limitRemaining = response.headers.get('x-ratelimit-remaining');
+      const limitReset = response.headers.get('x-ratelimit-reset');
+
+      if (limitRemaining) {
+        console.log(`${debugPrefix} GitHub API rate limit remaining: ${limitRemaining}`);
+      }
+
       if (!response.ok) {
-        throw new Error(`GraphQL request failed: ${response.status}`);
+        throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
       }
 
       const result: GraphQLResponse<T> = await response.json();
 
+      // Special logging for issue #30 looking for PR #31
+      const isIssue30Query = variables.issueNumber === 30;
+
       if (result.errors) {
-        console.error("GraphQL errors:", result.errors);
+        console.error(`${debugPrefix} GraphQL errors:`, result.errors);
+
+        if (isIssue30Query) {
+          console.error(`${debugPrefix} 🔍 DEBUG for Issue #30: GraphQL query failed with errors`);
+        }
+
         if (result.errors.some((e) => e.type === "NOT_FOUND" && e.path?.includes("repository"))) {
-          console.log(`Repository not found: ${variables.owner}/${variables.repo}`);
+          console.log(`${debugPrefix} Repository not found: ${variables.owner}/${variables.repo}`);
           return null;
         }
+
+        // Log partial data if available despite errors
+        if (result.data) {
+          console.log(`${debugPrefix} Partial data received despite errors:`,
+            JSON.stringify(result.data, null, 2).substring(0, 200) + '...');
+        }
+
         return null;
+      }
+
+      // Debug success response
+      if (isIssue30Query) {
+        console.log(`${debugPrefix} 🔍 DEBUG for Issue #30: GraphQL query successful`);
+        console.log(`${debugPrefix} Data preview:`, JSON.stringify(result.data).substring(0, 100) + '...');
+
+        // Check for timeline nodes specifically
+        const timelineNodes = result.data?.repository?.issue?.timelineItems?.nodes;
+        if (timelineNodes) {
+          console.log(`${debugPrefix} Timeline nodes count: ${timelineNodes.length}`);
+          console.log(`${debugPrefix} First few nodes:`,
+            JSON.stringify(timelineNodes.slice(0, 2), null, 2));
+        } else {
+          console.log(`${debugPrefix} No timeline nodes found in result`);
+        }
       }
 
       return result.data || null;
     } catch (error) {
-      console.error("Error executing GraphQL query:", error);
+      console.error(`${debugPrefix} Error executing GraphQL query:`, error);
       return null;
     }
   }
@@ -130,23 +180,41 @@ export class GitHubClient {
   }
 
   public async findLinkedPullRequests(owner: string, repo: string, issueNumber: string): Promise<LinkedPullRequest[]> {
-    console.log(`🔎 Finding linked PRs for issue ${owner}/${repo}#${issueNumber}`);
+    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
+
+    console.log(`${debugPrefix} 🔎 Finding linked PRs for issue ${owner}/${repo}#${issueNumber}`);
 
     try {
-      const data = await this.executeGraphQL<LinkedPRsQueryResponse>(ISSUES_LINKED_PRS_QUERY, {
+      const variables = {
         owner,
         repo,
         issueNumber: parseInt(issueNumber, 10),
-      });
+      };
+
+      console.log(`${debugPrefix} Executing GraphQL query with variables:`, JSON.stringify(variables));
+
+      const data = await this.executeGraphQL<LinkedPRsQueryResponse>(ISSUES_LINKED_PRS_QUERY, variables);
+
+      console.log(`${debugPrefix} GraphQL response received for issue #${issueNumber}:`,
+        data ? 'Data received' : 'No data received');
 
       if (!data?.repository?.issue) {
-        console.log(`No issue #${issueNumber} found in repository`);
+        console.log(`${debugPrefix} No issue #${issueNumber} found in repository`);
         return [];
       }
 
       const timelineNodes = data.repository.issue.timelineItems?.nodes || [];
+      console.log(`${debugPrefix} Timeline nodes found: ${timelineNodes.length}`);
+
       const linkedPRs = timelineNodes
-        .filter((node: any) => node.source && node.source.number)
+        .filter((node: any) => {
+          const hasSource = Boolean(node.source && node.source.number);
+          if (!hasSource) {
+            console.log(`${debugPrefix} Skipping timeline node without source`);
+          }
+          return hasSource;
+        })
         .map((node: any) => {
           const pr = node.source;
           return {
@@ -169,10 +237,11 @@ export class GitHubClient {
           };
         });
 
-      console.log(`Found ${linkedPRs.length} linked PRs for issue #${issueNumber}`);
+      console.log(`${debugPrefix} Found ${linkedPRs.length} linked PRs for issue #${issueNumber}:`,
+        linkedPRs.map(pr => `#${pr.number}`).join(', '));
       return linkedPRs;
     } catch (error) {
-      console.error("Error finding linked PRs:", error);
+      console.error(`${debugPrefix} Error finding linked PRs:`, error);
       return [];
     }
   }

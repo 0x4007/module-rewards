@@ -16,6 +16,11 @@ export function processGitHubData(data: FetchedData): {
   prInfo?: string;
   issueInfo?: string;
 } {
+  const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+  const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
+
+  console.log(`${debugPrefix} Processing GitHub data, type: ${data.type}`);
+
   // Initialize return values
   const prComments: GitHubComment[] = [];
   const issueComments: GitHubComment[] = [];
@@ -35,9 +40,13 @@ export function processGitHubData(data: FetchedData): {
     if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
       const mainPR = data.linkedPullRequests[0];
       prInfo = `Linked PR #${mainPR.number}: ${mainPR.title}`;
+      console.log(`${debugPrefix} Set PR info: ${prInfo}`);
+    } else {
+      console.log(`${debugPrefix} No linked PRs found for issue #${data.details.number}`);
     }
   }
 
+  console.log(`${debugPrefix} Processed ${prComments.length} PR comments and ${issueComments.length} issue comments`);
   return { prComments, issueComments, prInfo, issueInfo };
 }
 
@@ -90,6 +99,11 @@ function processPRView(data: FetchedData, prComments: GitHubComment[], issueComm
  * Process and prepare Issue data for display
  */
 function processIssueView(data: FetchedData, prComments: GitHubComment[], issueComments: GitHubComment[]): void {
+  const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+  const debugPrefix = isProduction ? '[PROD]' : '[DEV]';
+
+  console.log(`${debugPrefix} Processing issue view for #${data.details.number}`);
+
   // Add issue body as first comment if it exists
   if (data.details.body) {
     const issueBodyComment: GitHubComment = {
@@ -110,11 +124,19 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
   }
 
   // Handle linked PRs if available
+  console.log(`${debugPrefix} Checking linked PRs, data.linkedPullRequests:`,
+    data.linkedPullRequests ? `Found ${data.linkedPullRequests.length} PRs` : 'None found');
+
   if (data.linkedPullRequests && data.linkedPullRequests.length > 0) {
+    console.log(`${debugPrefix} Linked PRs available:`,
+      data.linkedPullRequests.map(pr => `#${pr.number} (${pr.state})`).join(', '));
+
     const mainPR = data.linkedPullRequests[0];
+    console.log(`${debugPrefix} Processing main linked PR #${mainPR.number}`);
 
     // If we have the PR body, add it as first comment
     if (mainPR.body) {
+      console.log(`${debugPrefix} Adding PR body as comment`);
       const prBodyComment: GitHubComment = {
         id: -3,
         body: mainPR.body,
@@ -128,12 +150,16 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
         html_url: mainPR.url,
       };
       prComments.push(prBodyComment);
+    } else {
+      console.log(`${debugPrefix} PR #${mainPR.number} has no body content`);
     }
 
     // Add PR comments if available
     if (mainPR.comments) {
+      console.log(`${debugPrefix} Adding ${mainPR.comments.length} PR comments`);
       prComments.push(...mainPR.comments);
     } else {
+      console.log(`${debugPrefix} No comments found for PR #${mainPR.number}, generating PR list HTML instead`);
       // If no comments, just show PR references
       const prListHTML = generatePRListHTML(data.linkedPullRequests);
       const prListComment: GitHubComment = {
@@ -150,7 +176,11 @@ function processIssueView(data: FetchedData, prComments: GitHubComment[], issueC
       };
       prComments.push(prListComment);
     }
+  } else {
+    console.log(`${debugPrefix} No linked PRs found for issue #${data.details.number}`);
   }
+
+  console.log(`${debugPrefix} Finished processing issue view, PR comments count: ${prComments.length}`);
 }
 
 /**
