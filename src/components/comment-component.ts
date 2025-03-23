@@ -214,9 +214,9 @@ export function renderComments(
   // Include title and number if provided
   let headerContent = "";
   if (titleInfo && titleInfo.title) {
-    headerContent = `${icon} ${section === "issue" ? "Issue" : "Pull Request"} #${titleInfo.number}: ${titleInfo.title}`;
+    headerContent = `${icon} <h6>${titleInfo.title}</h6>`;
   } else {
-    headerContent = `${icon} ${section === "issue" ? "Issue" : "Pull Request"} Conversation`;
+    headerContent = `${icon} Conversation`;
   }
 
   headerElement.innerHTML = headerContent;

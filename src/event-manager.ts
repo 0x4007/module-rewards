@@ -189,7 +189,8 @@ class EventManager {
         // Update the URL in the input field if it changed
         if (correctUrl !== inputValue) {
           domManager.get("urlInput").value = correctUrl;
-          history.replaceState(null, "", correctUrl);
+          // Removed history.replaceState to avoid cross-origin issues
+          // when GitHub URLs are used from localhost
         }
 
         // Store in localStorage for diagnostic purposes
