@@ -1,16 +1,21 @@
 /* Score display styles (dark-mode compatible) */
 
-.comment-scores {
+.comment-scores-outer {
+  width: 100%;
+  overflow: hidden; /* Ensure content doesn't flow outside */
+}
+
+.comment-scores-inner {
   /* background-color: var(--hover); */
   /* border-top: 1px solid var(--border); */
   /* padding: 10px 15px; */
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Prevent wrapping to the next line */
   gap: 15px;
   font-size: 12px;
   color: var(--text-light);
-  /* overflow: scroll; */
-  /* height: 16px; */
+  overflow-x: auto; /* Enable horizontal scrolling */
+  white-space: nowrap; /* Keep all content on one line */
 }
 
 .score-info {

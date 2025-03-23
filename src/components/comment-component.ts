@@ -137,8 +137,10 @@ function renderComment(
  * Render scores for a comment
  */
 function renderScores(scores: CommentScores): HTMLElement {
-  const scoreDiv = document.createElement("div");
-  scoreDiv.className = "comment-scores";
+  const scoreDivOuter = document.createElement("div");
+  scoreDivOuter.className = "comment-scores-outer";
+  const scoreDivInner = document.createElement("div");
+  scoreDivInner.className = "comment-scores-inner";
 
   // Start with basic scores
   let scoreHtml = `
@@ -171,8 +173,9 @@ function renderScores(scores: CommentScores): HTMLElement {
     `;
   }
 
-  scoreDiv.innerHTML = scoreHtml;
-  return scoreDiv;
+  scoreDivInner.innerHTML = scoreHtml;
+  scoreDivOuter.appendChild(scoreDivInner);
+  return scoreDivOuter;
 }
 
 /**
