@@ -34,6 +34,9 @@ function aggregateScoresByContributor(
     const username = comment.user.login;
     const scores = scoreMap.get(comment.id)!;
 
+    // Skip bot comments and slash commands - they don't contribute to scores
+    if (scores.isBot === true || scores.isSlashCommand === true) return;
+
     // Get or create contributor entry
     if (!contributorsMap.has(username)) {
       contributorsMap.set(username, {

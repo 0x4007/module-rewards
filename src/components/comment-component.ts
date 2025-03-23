@@ -111,25 +111,28 @@ function renderComment(
     // Always check for slash commands and bots regardless of scores
     // This fixes the slash command detection when it's not properly propagated from modules
     const isSlashCommand = comment.body.trim().startsWith("/");
+    const isBot = isGitHubBot(comment.user);
+
+    // Apply appropriate styling for slash commands
     if (isSlashCommand) {
       commentElement.classList.add("slash-command", "badge-base");
-      console.log("Slash command detected and styling applied:", comment.body);
-
-      // If it's a slash command but doesn't have proper zero scores, generate them
-      if (!scores || scores.wordCount !== 0) {
-        scores = {
-          wordCount: 0,
-          original: 0,
-          exponential: 0,
-          isGrouped: false,
-          isSlashCommand: true
-        };
-      }
     }
 
-    // Check for bot accounts
-    if (isGitHubBot(comment.user)) {
+    // Apply styling for bot accounts
+    if (isBot) {
       commentElement.classList.add("bot-comment", "badge-base");
+    }
+
+    // If it's a slash command or bot comment but doesn't have proper zero scores, generate them
+    if ((isSlashCommand || isBot) && (!scores || scores.wordCount !== 0)) {
+      scores = {
+        wordCount: 0,
+        original: 0,
+        exponential: 0,
+        isGrouped: false,
+        isSlashCommand: isSlashCommand,
+        isBot: isBot
+      };
     }
 
     // Add scores if provided and showScores is true (or it's a slash command which should always show scores)
@@ -276,11 +279,30 @@ export function renderComments(
       showScores = isLastInSequence;
 
       if (isLastInSequence) {
-        // For the last comment, calculate scores based on the entire double-post sequence
-        commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups);
+        // Check if this is a special comment type before calculating scores
+        const isSlashCommand = comment.body.trim().startsWith("/");
+        const isBot = isGitHubBot(comment.user);
 
-        // Store scores in the map
+        // Log detection of special comments in groups
+        if (isSlashCommand || isBot) {
+          console.log(`Detected special comment in group - ID: ${comment.id}, User: ${comment.user?.login}`);
+          console.log(`  isSlashCommand: ${isSlashCommand}, isBot: ${isBot}`);
+        }
+
+        // For the last comment, calculate scores based on the entire double-post sequence
+        commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
+
+        // Ensure flags are properly set in the scores object
         if (commentScores) {
+          // Double-check the flags are set properly
+          if (isSlashCommand && !commentScores.isSlashCommand) {
+            commentScores.isSlashCommand = true;
+          }
+          if (isBot && !commentScores.isBot) {
+            commentScores.isBot = true;
+          }
+
+          // Store scores in the map
           scoreMap.set(comment.id, commentScores);
         }
       }
@@ -289,10 +311,26 @@ export function renderComments(
       // Check for special comment types
       const isSlashCommand = comment.body.trim().startsWith("/");
       const isBot = isGitHubBot(comment.user);
+
+      // Log detection of special comments
+      if (isSlashCommand || isBot) {
+        console.log(`Detected special comment - ID: ${comment.id}, User: ${comment.user?.login}`);
+        console.log(`  isSlashCommand: ${isSlashCommand}, isBot: ${isBot}`);
+      }
+
       commentScores = calculateGroupAwareScores(comment.body, comment.id, commentGroups, isSlashCommand, isBot);
 
-      // Store scores in the map
+      // Ensure flags are properly set in the scores object
       if (commentScores) {
+        // Double-check the flags are set properly
+        if (isSlashCommand && !commentScores.isSlashCommand) {
+          commentScores.isSlashCommand = true;
+        }
+        if (isBot && !commentScores.isBot) {
+          commentScores.isBot = true;
+        }
+
+        // Store scores in the map
         scoreMap.set(comment.id, commentScores);
       }
     }

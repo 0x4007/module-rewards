@@ -66,6 +66,8 @@ export function calculateAllScores(
       original: calculateOriginalScore(individualWordCount),
       exponential: calculateExponentialScore(individualWordCount),
       isGrouped: false,
+      isSlashCommand, // Include the flag in the returned object
+      isBot,          // Include the flag in the returned object
     };
   }
 
@@ -79,6 +81,8 @@ export function calculateAllScores(
     exponential: calculateExponentialScore(groupWordCount),
     groupWordCount,
     isGrouped: true,
+    isSlashCommand, // Include the flag in the returned object
+    isBot,          // Include the flag in the returned object
   };
 }
 
